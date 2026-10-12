@@ -44,36 +44,37 @@ const JUNRIDE_LEVELS = [
   { id: 6, name: "Conquistador", minTrips: 80, maxTrips: 9999, icon: "https://files.catbox.moe/htwomx.png", desc: "Rango supremo de honor JunRide. Conquistador de la cima: insignia dorada en perfil, bonificación en tokens y asistencia directa 24/7." }
 ];
 
+// COORDENADAS CALIBRADAS SOBRE EL ASFALTO REAL DE LA TRONCAL 4 Y POIS EMBLEMÁTICOS
 const JUNQUITO_ALL_KMS = [
-  { km: 0, name: "Km 0 (La Yaguara / Metro)", lat: 10.4768, lon: -66.9600 },
-  { km: 1, name: "Km 1 (Inicio Carretera Vieja)", lat: 10.4735, lon: -66.9680 },
-  { km: 2, name: "Km 2 (Sector El Samán)", lat: 10.4705, lon: -66.9750 },
-  { km: 3, name: "Km 3 (Sector Los Pinos)", lat: 10.4678, lon: -66.9820 },
-  { km: 4, name: "Km 4 (El Amparo / Mirador)", lat: 10.4652, lon: -66.9890 },
-  { km: 5, name: "Km 5 (Curva Los Caobos)", lat: 10.4638, lon: -66.9965 },
-  { km: 6, name: "Km 6 (Sector La Roca)", lat: 10.4622, lon: -67.0040 },
-  { km: 7, name: "Km 7 (Entrada Carapita Alta)", lat: 10.4618, lon: -67.0115 },
-  { km: 8, name: "Km 8 (El Junquito Bajo)", lat: 10.4612, lon: -67.0195 },
-  { km: 9, name: "Km 9 (Sector El Naranjal)", lat: 10.4608, lon: -67.0270 },
-  { km: 10, name: "Km 10 (Curva El Limón)", lat: 10.4610, lon: -67.0345 },
-  { km: 11, name: "Km 11 (Sector Los Olivos)", lat: 10.4614, lon: -67.0420 },
-  { km: 12, name: "Km 12 (Panadería La Parada)", lat: 10.4618, lon: -67.0495 },
-  { km: 13, name: "Km 13 (Sector El Café)", lat: 10.4616, lon: -67.0570 },
-  { km: 14, name: "Km 14 (Curva La Cabaña)", lat: 10.4613, lon: -67.0645 },
-  { km: 15, name: "Km 15 (Entrada La Loma)", lat: 10.4611, lon: -67.0720 },
-  { km: 16, name: "Km 16 (Pueblo / Plaza Bolívar)", lat: 10.4609, lon: -67.0805 },
-  { km: 17, name: "Km 17 (Salida del Pueblo)", lat: 10.4614, lon: -67.0880 },
-  { km: 18, name: "Km 18 (Sector Los Manantiales)", lat: 10.4623, lon: -67.0955 },
-  { km: 19, name: "Km 19 (Zona Turística / Fresas)", lat: 10.4638, lon: -67.1030 },
-  { km: 20, name: "Km 20 (Sector La Colina)", lat: 10.4660, lon: -67.1105 },
-  { km: 21, name: "Km 21 (Entrada Tibroncito)", lat: 10.4680, lon: -67.1180 },
-  { km: 22, name: "Km 22 (Sector Monte Alto)", lat: 10.4702, lon: -67.1255 },
-  { km: 23, name: "Km 23 (El Retén / La Niebla)", lat: 10.4732, lon: -67.1330 },
-  { km: 24, name: "Km 24 (Bosque Nublado)", lat: 10.4708, lon: -67.1405 },
-  { km: 25, name: "Km 25 (Sector El Parador)", lat: 10.4668, lon: -67.1485 },
-  { km: 26, name: "Km 26 (Paso de Montaña)", lat: 10.4628, lon: -67.1565 },
-  { km: 27, name: "Km 27 (Curva Los Sauces)", lat: 10.4588, lon: -67.1655 },
-  { km: 28, name: "Km 28 (Cruce Colonia Tovar)", lat: 10.4548, lon: -67.1745 }
+  { km: 0, name: "Km 0 (La Yaguara / Metro)", lat: 10.4768, lon: -66.9600, alt: 940 },
+  { km: 1, name: "Km 1 (Inicio Carretera Vieja)", lat: 10.4735, lon: -66.9680, alt: 990 },
+  { km: 2, name: "Km 2 (Sector El Samán)", lat: 10.4705, lon: -66.9750, alt: 1040 },
+  { km: 3, name: "Km 3 (Sector Los Pinos)", lat: 10.4678, lon: -66.9820, alt: 1100 },
+  { km: 4, name: "Km 4 (El Amparo / Mirador)", lat: 10.4652, lon: -66.9890, alt: 1160 },
+  { km: 5, name: "Km 5 (Curva Los Caobos)", lat: 10.4638, lon: -66.9965, alt: 1220 },
+  { km: 6, name: "Km 6 (Sector La Roca)", lat: 10.4622, lon: -67.0040, alt: 1280 },
+  { km: 7, name: "Km 7 (Entrada Carapita Alta)", lat: 10.4618, lon: -67.0115, alt: 1330 },
+  { km: 8, name: "Km 8 (El Junquito Bajo)", lat: 10.4612, lon: -67.0195, alt: 1380 },
+  { km: 9, name: "Km 9 (Sector El Naranjal)", lat: 10.4608, lon: -67.0270, alt: 1430 },
+  { km: 10, name: "Km 10 (Curva El Limón)", lat: 10.4610, lon: -67.0345, alt: 1480 },
+  { km: 11, name: "Km 11 (Sector Los Olivos)", lat: 10.4614, lon: -67.0420, alt: 1530 },
+  { km: 12, name: "Km 12 (Panadería La Parada)", lat: 10.4618, lon: -67.0495, alt: 1580 },
+  { km: 13, name: "Km 13 (Sector El Café)", lat: 10.4616, lon: -67.0570, alt: 1620 },
+  { km: 14, name: "Km 14 (Curva La Cabaña)", lat: 10.4613, lon: -67.0645, alt: 1660 },
+  { km: 15, name: "Km 15 (Entrada La Loma)", lat: 10.4611, lon: -67.0720, alt: 1700 },
+  { km: 16, name: "Km 16 (Pueblo / Plaza Bolívar)", lat: 10.4609, lon: -67.0805, alt: 1740 },
+  { km: 17, name: "Km 17 (Salida del Pueblo)", lat: 10.4614, lon: -67.0880, alt: 1770 },
+  { km: 18, name: "Km 18 (Sector Los Manantiales)", lat: 10.4623, lon: -67.0955, alt: 1800 },
+  { km: 19, name: "Km 19 (Zona Turística / El Rey de la Fresa)", lat: 10.4638, lon: -67.1030, alt: 1840 },
+  { km: 20, name: "Km 20 (Sector La Colina)", lat: 10.4660, lon: -67.1105, alt: 1870 },
+  { km: 21, name: "Km 21 (Entrada Tibroncito)", lat: 10.4680, lon: -67.1180, alt: 1910 },
+  { km: 22, name: "Km 22 (Sector Monte Alto)", lat: 10.4702, lon: -67.1255, alt: 1950 },
+  { km: 23, name: "Km 23 (El Retén / La Niebla)", lat: 10.4732, lon: -67.1330, alt: 1980 },
+  { km: 24, name: "Km 24 (Bosque Nublado)", lat: 10.4708, lon: -67.1405, alt: 2010 },
+  { km: 25, name: "Km 25 (Sector El Parador)", lat: 10.4668, lon: -67.1485, alt: 2040 },
+  { km: 26, name: "Km 26 (Paso de Montaña)", lat: 10.4628, lon: -67.1565, alt: 2070 },
+  { km: 27, name: "Km 27 (Curva Los Sauces)", lat: 10.4588, lon: -67.1655, alt: 2100 },
+  { km: 28, name: "Km 28 (Cruce Colonia Tovar)", lat: 10.4548, lon: -67.1745, alt: 2120 }
 ];
 
 const JUNQUITO_BOUNDS = [
@@ -139,7 +140,6 @@ let mediaRecorder = null;
 let audioChunks = [];
 let isRecordingAudio = false;
 let isChatModalOpen = false;
-let lastSeenMsgTimestamp = Date.now();
 
 document.addEventListener('DOMContentLoaded', () => {
   const tomorrow = new Date();
@@ -189,7 +189,7 @@ function snapToNearestHighway(lat, lon) {
     }
   });
 
-  return { snappedCoords: { lat: closestKm.lat, lon: closestKm.lon }, index: closestIdx, kmName: closestKm.name };
+  return { snappedCoords: { lat: closestKm.lat, lon: closestKm.lon }, index: closestIdx, kmName: closestKm.name, alt: closestKm.alt };
 }
 
 function requestStartupGpsLocation() {
@@ -277,27 +277,40 @@ function openKmPickerModal(target) {
   currentKmPickerTarget = target;
   const modal = document.getElementById('modal-km-picker');
   const title = document.getElementById('km-picker-modal-title');
-  const container = document.getElementById('km-cards-container');
+  const searchBox = document.getElementById('poi-search-box');
+  if (searchBox) searchBox.value = '';
 
   if (target === 'origin') title.innerText = 'Punto de Salida (Origen)';
   else if (target === 'destination') title.innerText = 'Punto de Llegada (Destino)';
   else title.innerText = 'Parada Intermedia';
 
-  container.innerHTML = '';
-  JUNQUITO_ALL_KMS.forEach((pt, idx) => {
-    const isSelected = (target === 'origin' && idx === selectedOriginIdx) ||
-                       (target === 'destination' && idx === selectedDestIdx) ||
-                       (target === 'stop' && idx === selectedStopIdx);
-
-    container.innerHTML += `
-      <div class="km-card-item ${isSelected ? 'selected' : ''}" onclick="selectKmItem(${idx})">
-        <strong>${pt.name}</strong>
-        <span>${isSelected ? 'Seleccionado ✓' : 'Elegir'}</span>
-      </div>
-    `;
-  });
-
+  filterKmPickerList('');
   modal.classList.add('active');
+}
+
+function filterKmPickerList(query = '') {
+  const container = document.getElementById('km-cards-container');
+  if (!container) return;
+  container.innerHTML = '';
+  const q = query.toLowerCase().trim();
+
+  JUNQUITO_ALL_KMS.forEach((pt, idx) => {
+    if (!q || pt.name.toLowerCase().includes(q)) {
+      const isSelected = (currentKmPickerTarget === 'origin' && idx === selectedOriginIdx) ||
+                         (currentKmPickerTarget === 'destination' && idx === selectedDestIdx) ||
+                         (currentKmPickerTarget === 'stop' && idx === selectedStopIdx);
+
+      container.innerHTML += `
+        <div class="km-card-item ${isSelected ? 'selected' : ''}" onclick="selectKmItem(${idx})">
+          <div>
+            <strong>${pt.name}</strong>
+            <p style="font-size:0.68rem; color:#94a3b8;">Altitud estimada: ${pt.alt} msnm</p>
+          </div>
+          <span>${isSelected ? 'Seleccionado ✓' : 'Elegir'}</span>
+        </div>
+      `;
+    }
+  });
 }
 
 function closeKmPickerModal() {
@@ -328,6 +341,14 @@ function triggerPanicSOS() {
   const lon = customOriginCoords ? customOriginCoords.lon : JUNQUITO_ALL_KMS[selectedOriginIdx].lon;
   const msg = encodeURIComponent(`🚨 ALERTA SOS JUNRIDE: Necesito asistencia inmediata en El Junquito.\nUbicación satelital en vivo: https://maps.google.com/?q=${lat},${lon}\nUsuario: ${userData.name || 'David'}`);
   window.location.href = `https://wa.me/584123167126?text=${msg}`;
+}
+
+function shareLiveTripStatus() {
+  triggerHaptic(40);
+  const orig = JUNQUITO_ALL_KMS[selectedOriginIdx].name;
+  const dest = JUNQUITO_ALL_KMS[selectedDestIdx].name;
+  const msg = encodeURIComponent(`🚗 Voy en camino en JunRide desde ${orig} hacia ${dest}. Conductor: ${currentTripData ? (currentTripData.driverName || 'Asignado') : 'Asignado'}. Seguimiento con PIN de seguridad satelital activado 🏔️`);
+  window.location.href = `https://wa.me/?text=${msg}`;
 }
 
 function redeemTokensForWallet() {
@@ -417,7 +438,8 @@ function openReceiptModal() {
   document.getElementById('rec-service-name').innerText = selectedOrderCategory;
   document.getElementById('rec-route-text').innerText = `${JUNQUITO_ALL_KMS[selectedOriginIdx].name} ➔ ${JUNQUITO_ALL_KMS[selectedDestIdx].name}`;
   document.getElementById('rec-amount-text').innerText = `$${offeredOrderPrice.toFixed(2)} USD`;
-  document.getElementById('rec-date-text').innerText = new Date().toLocaleDateString();
+  document.getElementById('rec-amount-ves').innerText = `(Bs. ${(offeredOrderPrice * currentBcvRate).toFixed(2)})`;
+  document.getElementById('rec-date-text').innerText = new Date().toLocaleString();
   document.getElementById('modal-trip-receipt').classList.add('active');
 }
 function closeReceiptModal() { document.getElementById('modal-trip-receipt').classList.remove('active'); }
@@ -429,7 +451,7 @@ function selectTagBadge(badge) {
 }
 
 function shareReceiptWhatsApp() {
-  const msg = encodeURIComponent(`🧾 Recibo JunRide:\nServicio: ${selectedOrderCategory}\nTarifa: $${offeredOrderPrice.toFixed(2)} USD\nRuta: ${JUNQUITO_ALL_KMS[selectedOriginIdx].name} a ${JUNQUITO_ALL_KMS[selectedDestIdx].name}\nEstado: Pagado y Verificado 🏔️`);
+  const msg = encodeURIComponent(`🧾 Recibo Oficial JunRide:\nServicio: ${selectedOrderCategory}\nTarifa: $${offeredOrderPrice.toFixed(2)} USD (Bs. ${(offeredOrderPrice * currentBcvRate).toFixed(2)})\nRuta: ${JUNQUITO_ALL_KMS[selectedOriginIdx].name} a ${JUNQUITO_ALL_KMS[selectedDestIdx].name}\nEstado: Completado con Seguridad Satelital 🏔️`);
   window.location.href = `https://wa.me/?text=${msg}`;
 }
 
@@ -496,7 +518,6 @@ function playChimeSound() {
   } catch(e) {}
 }
 
-// SONIDO DE MENSAJE NUEVO
 function playMessageNotificationSound() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -613,7 +634,6 @@ function switchTab(tabName) {
   const targetTab = document.getElementById(`tab-${tabName}`);
   if (targetTab) targetTab.style.display = 'block';
 
-  // Si entra a mensajes, limpiar el punto rojo
   if (tabName === 'driver-mensajes') {
     const dot = document.getElementById('nav-unread-badge-driver');
     if (dot) dot.style.display = 'none';
@@ -1182,7 +1202,7 @@ async function confirmOrderTrip() {
 
   localStorage.setItem('jr_offline_active_trip', JSON.stringify({
     id: activeTripId, price: offeredOrderPrice.toFixed(2), otp: otpCode, status: 'Buscando conductor',
-    pickupCoords: { lat: origPt.lat, lon: origPt.lon }
+    pickupCoords: { lat: origPt.lat, lon: origPt.lon }, dropoffCoords: { lat: destPt.lat, lon: destPt.lon }
   }));
 
   document.getElementById('passenger-otp-val').innerText = otpCode;
@@ -1205,6 +1225,7 @@ async function cancelTrip(isManual = false) {
     }
     localStorage.removeItem('jr_offline_active_trip');
     localStorage.removeItem('jr_active_trip_id');
+    localStorage.removeItem('jr_driver_active_trip_cache');
     activeTripId = null;
     currentTripData = null;
 
@@ -1320,17 +1341,15 @@ function openDriverNavExternalCurrent() {
   if (currentTripData && currentTripData.pickupCoords) {
     openDriverNavExternal(currentTripData.pickupCoords.lat, currentTripData.pickupCoords.lon);
   } else {
-    // Si no tiene coordenadas explícitas, guiar al centro de El Junquito
     openDriverNavExternal(10.4609, -67.0805);
   }
 }
 
-// VALIDAR PIN DEL PASAJERO
+// VALIDAR PIN DEL PASAJERO (RECUPERACIÓN BLINDADA)
 async function validatePassengerOTP() {
   triggerHaptic(50);
   const enteredOtp = document.getElementById('driver-input-otp').value.trim();
   
-  // Si no está en memoria, recuperarlo de localStorage
   if (!currentTripData) {
     const saved = localStorage.getItem('jr_driver_active_trip_cache');
     if (saved) {
@@ -1364,7 +1383,7 @@ async function validatePassengerOTP() {
     document.getElementById('driver-in-route-area').style.display = 'block';
   } else {
     triggerHaptic(150);
-    showNeonToast('error', `❌ PIN incorrecto (${enteredOtp}). El pasajero tiene el código en su pantalla.`);
+    showNeonToast('error', `❌ PIN incorrecto. Pídele el código al pasajero.`);
   }
 }
 
@@ -1410,7 +1429,6 @@ function openActiveChatModal() {
   isChatModalOpen = true;
   document.getElementById('modal-active-chat').classList.add('active');
   
-  // Limpiar punto rojo de mensajes al abrir el chat
   const dot = document.getElementById('nav-unread-badge-driver');
   if (dot) dot.style.display = 'none';
 
@@ -1424,6 +1442,11 @@ function closeActiveChatModal() {
 
 function handleChatKeyPress(e) {
   if (e.key === 'Enter') sendChatMessageText();
+}
+
+function sendQuickReply(text) {
+  document.getElementById('chat-text-input').value = text;
+  sendChatMessageText();
 }
 
 async function sendChatMessageText() {
@@ -1529,7 +1552,6 @@ function listenChatMessagesRealtime() {
       }
       container.appendChild(bubble);
 
-      // Si es un mensaje nuevo de la otra persona y el chat estaba cerrado
       if (!isMe && !isChatModalOpen) {
         const dot = document.getElementById('nav-unread-badge-driver');
         if (dot) dot.style.display = 'block';
