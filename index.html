@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=35">
+  <link rel="manifest" href="manifest.json?v=36">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -57,11 +57,11 @@
     </div>
   </section>
 
-  <!-- 2. PANTALLA DE SELECCIÓN DE ROL (CON NUEVO ICONO OFICIAL DE CLIENTE) -->
+  <!-- 2. PANTALLA DE SELECCIÓN DE ROL -->
   <section id="screen-role-select" class="welcome-screen-wrap animate-fade" style="display:none;">
     <div class="welcome-hero-content">
       <h2 style="font-size:1.6rem; color:#fff; font-weight:900;">¿Cómo deseas usar JunRide?</h2>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">Selecciona tu rol principal en la plataforma. Puedes alternar después.</p>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">Selecciona tu rol principal en la plataforma. Podrás alternarlo en cualquier momento.</p>
       
       <div class="role-card card-neon" onclick="chooseAppRole('passenger')">
         <div class="role-icon-box">
@@ -69,7 +69,7 @@
         </div>
         <div style="text-align:left;">
           <h3 style="color:#00ff87; font-size:1.15rem; font-weight:900;">Modo Pasajero / Cliente</h3>
-          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, colectivos y mudanzas en la montaña.</p>
+          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, puestos compartidos y mudanzas en la montaña.</p>
         </div>
       </div>
 
@@ -89,23 +89,23 @@
   <div class="modal" id="modal-auth-form">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
-        <h3 style="color:white; font-size:1.15rem;" id="auth-modal-title">Crear Cuenta JunRide</h3>
+        <h3 style="color:white; font-size:1.15rem;" id="auth-modal-title">Acceso JunRide</h3>
         <button class="btn-close" onclick="closeAuthModal()">&times;</button>
       </div>
       
-      <p style="font-size:0.75rem; color:var(--text-muted);" id="auth-modal-desc">Ingresa tus datos para activar tu perfil de usuario.</p>
+      <p style="font-size:0.75rem; color:var(--text-muted);" id="auth-modal-desc">Ingresa tus datos.</p>
 
       <form id="auth-main-form" onsubmit="handleAuthSubmit(event)">
         <div id="auth-register-extra-fields">
           <label style="font-size:0.75rem; color:var(--text-muted);">Nombre:</label>
-          <input type="text" id="auth-input-name" placeholder="Ej. David">
+          <input type="text" id="auth-input-name" placeholder="Tu nombre">
 
           <label style="font-size:0.75rem; color:var(--text-muted);">Apellido:</label>
-          <input type="text" id="auth-input-lastname" placeholder="Ej. Morales">
+          <input type="text" id="auth-input-lastname" placeholder="Tu apellido">
         </div>
 
         <label style="font-size:0.75rem; color:var(--text-muted);">Teléfono Móvil (WhatsApp):</label>
-        <input type="tel" id="auth-input-phone" placeholder="Ej. 04123167126" required>
+        <input type="tel" id="auth-input-phone" placeholder="Ej. 04123456789" required>
 
         <label style="font-size:0.75rem; color:var(--text-muted);">Correo Electrónico:</label>
         <input type="email" id="auth-input-email" placeholder="Ej. usuario@correo.com" required>
@@ -238,7 +238,7 @@
         <div class="wallet-banner card-neon" onclick="switchTab('recargas')">
           <div>
             <span style="font-size:0.75rem; color:var(--text-muted);">Billetera (Saldo Disponible)</span>
-            <div class="wallet-balance-num" id="ui-km-balance">$5.00</div>
+            <div class="wallet-balance-num" id="ui-km-balance">$0.00</div>
           </div>
           <button class="btn-primary-neon btn-sm">Recargar</button>
         </div>
@@ -276,7 +276,7 @@
             <div>
               <h3 style="color:white; font-size:1.08rem; font-weight:800;">Cartera Digital</h3>
               <span style="font-size:0.75rem; color:var(--text-muted);">Saldo activo para tus viajes</span>
-              <div style="font-size:2rem; font-weight:900; color:var(--primary); line-height:1.1; margin-top:4px;" id="recarga-km-val">$5.00</div>
+              <div style="font-size:2rem; font-weight:900; color:var(--primary); line-height:1.1; margin-top:4px;" id="recarga-km-val">$0.00</div>
             </div>
           </div>
         </div>
@@ -459,7 +459,7 @@
         </div>
       </section>
 
-      <!-- Pestaña PERFIL -->
+      <!-- Pestaña PERFIL (LIMPIO SIN DATOS FIJOS) -->
       <section class="tab-content animate-fade" id="tab-perfil" style="display:none;">
         <div class="profile-header-card">
           <div class="profile-user-row">
@@ -469,19 +469,19 @@
             </div>
             
             <div class="profile-name-box">
-              <h2 id="profile-fullname">David Morales</h2>
-              <div class="profile-rank-subtitle" id="profile-tier-name">Senderista (Nivel 2)</div>
+              <h2 id="profile-fullname">---</h2>
+              <div class="profile-rank-subtitle" id="profile-tier-name">---</div>
             </div>
 
             <div class="profile-tier-badge-right" onclick="openLevelsModal()" title="Toca para ver tu rango">
-              <img id="profile-tier-icon-right" src="https://files.catbox.moe/hpp6uj.png" alt="Trofeo Nivel">
+              <img id="profile-tier-icon-right" src="https://files.catbox.moe/31p0et.png" alt="Trofeo Nivel">
             </div>
           </div>
 
           <div id="driver-maintenance-hud" style="display:none; margin-top:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border-glow); padding:12px; border-radius:16px;">
             <div class="panel-header-row" style="margin-bottom:6px;">
-              <span style="font-size:0.75rem; color:#38bdf8; font-weight:800;">🔧 Mantenimiento de Unidad (<span id="profile-driver-veh-type">Moto</span>)</span>
-              <span style="font-size:0.72rem; color:var(--primary); font-weight:800;" id="profile-driver-plate-tag">AA1B23C</span>
+              <span style="font-size:0.75rem; color:#38bdf8; font-weight:800;">🔧 Mantenimiento de Unidad (<span id="profile-driver-veh-type">---</span>)</span>
+              <span style="font-size:0.72rem; color:var(--primary); font-weight:800;" id="profile-driver-plate-tag">---</span>
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.72rem;">
               <div style="background:rgba(0,0,0,0.3); padding:8px; border-radius:10px;">
@@ -498,10 +498,10 @@
           <div class="tier-progress-section" id="passenger-tier-hud">
             <div class="tier-progress-header">
               <span>Progreso de Nivel</span>
-              <strong id="profile-tier-exp-text">11 / 15 Viajes para Explorador</strong>
+              <strong id="profile-tier-exp-text">0 / 5 Viajes</strong>
             </div>
             <div class="tier-bar-track">
-              <div class="tier-bar-fill" id="profile-tier-progress-bar" style="width: 73%;"></div>
+              <div class="tier-bar-fill" id="profile-tier-progress-bar" style="width: 10%;"></div>
             </div>
           </div>
 
@@ -511,11 +511,11 @@
               <div class="stat-lbl-dim">Calificación</div>
             </div>
             <div class="stat-box-mini">
-              <div class="stat-val-bold" style="color:#38bdf8;" id="stats-total-trips">11</div>
+              <div class="stat-val-bold" style="color:#38bdf8;" id="stats-total-trips">0</div>
               <div class="stat-lbl-dim">Viajes totales</div>
             </div>
             <div class="stat-box-mini" onclick="redeemTokensForWallet()" style="cursor:pointer;" title="Toca para canjear por saldo">
-              <div class="stat-val-bold" style="color:var(--primary);" id="stats-total-tokens">2,150</div>
+              <div class="stat-val-bold" style="color:var(--primary);" id="stats-total-tokens">0</div>
               <div class="stat-lbl-dim">🪙 Tokens (Canjear)</div>
             </div>
           </div>
@@ -543,7 +543,7 @@
               <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
               <span class="profile-menu-title">Invitar Amigos (Gana $1.00)</span>
             </div>
-            <span class="badge-tag-neon" id="profile-referral-tag">Código: DAVID412</span>
+            <span class="badge-tag-neon" id="profile-referral-tag">Código: ---</span>
           </div>
 
           <div class="profile-menu-item" onclick="toggleBatterySaverMode()">
@@ -559,7 +559,7 @@
               <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
               <span class="profile-menu-title" id="profile-levels-title">Escala de Niveles JunRide</span>
             </div>
-            <span style="font-size:0.75rem; color:var(--primary); font-weight:800;">6 Rangos</span>
+            <span style="font-size:0.75rem; color:var(--primary); font-weight:800;">Rangos</span>
           </div>
 
           <div class="profile-menu-item" onclick="openKycWhatsAppModal()">
@@ -711,7 +711,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE CHAT CON MICRÓFONO AMPLIADO -->
+  <!-- MODAL DE CHAT -->
   <div class="modal" id="modal-active-chat">
     <div class="modal-content card-neon animate-fade" style="height:80vh; max-height:550px; display:flex; flex-direction:column; padding:16px;">
       <div class="panel-header-row" style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
@@ -732,7 +732,6 @@
         <p style="text-align:center; font-size:0.72rem; color:var(--text-muted);">Usa este chat para indicar referencias de entradas o veredas.</p>
       </div>
 
-      <!-- Barra de Envío con Micrófono Ergonómico Grande -->
       <div style="display:flex; align-items:center; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
         <button type="button" id="btn-record-audio" class="chat-mic-large-btn" onclick="toggleAudioRecording()" title="Toca para grabar nota de voz">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="#00ff87"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
@@ -746,7 +745,7 @@
     </div>
   </div>
 
-  <!-- MODAL SELECTOR DE KILÓMETROS CON Z-INDEX SUPERIOR -->
+  <!-- MODAL SELECTOR DE KILÓMETROS -->
   <div class="modal" id="modal-km-picker" style="z-index: 100000 !important;">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
