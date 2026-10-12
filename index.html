@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=29">
+  <link rel="manifest" href="manifest.json?v=30">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -60,7 +60,6 @@
     <!-- Pestaña INICIO (Modo Pasajero) -->
     <section class="tab-content animate-fade" id="tab-inicio">
       
-      <!-- Marquesina de Alertas Viales en Vivo -->
       <div class="live-alerts-ticker" id="live-alerts-banner" onclick="openReportTrafficModal()" style="display:none;">
         <span style="font-size:1.2rem;">⚠️</span>
         <div>
@@ -70,7 +69,7 @@
       </div>
 
       <div class="search-bar-neon" onclick="openRideOrderScreen('Carro')">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5 2.5-1.12 2.5 2.5z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
         <span>¿A qué punto de la montaña vas hoy?</span>
       </div>
 
@@ -115,9 +114,10 @@
         <button class="btn-primary-neon btn-sm">Recargar</button>
       </div>
 
+      <!-- SEGUIMIENTO DE VIAJE ACTIVO PARA EL PASAJERO -->
       <div class="card-neon" id="live-tracking-box" style="display:none; padding:18px; margin-bottom:14px;">
         <div class="panel-header-row">
-          <h4 style="color:var(--primary);">🛰️ Conductor Asignado</h4>
+          <h4 style="color:var(--primary);" id="passenger-trip-status-title">🛰️ Conductor Asignado</h4>
           <button class="btn-sm btn-secondary-dim" onclick="cancelTrip(true)">Cancelar</button>
         </div>
         <div style="background:rgba(0,255,135,0.08); padding:12px; border-radius:14px; margin:10px 0;">
@@ -126,11 +126,14 @@
         </div>
         
         <div style="background:rgba(0,255,135,0.12); border:2px dashed var(--primary); padding:12px; border-radius:14px; text-align:center;">
-          <span style="font-size:0.72rem; color:var(--text-muted);">PIN DE SEGURIDAD PARA EL CHOFER:</span>
-          <div style="font-size:2rem; font-weight:900; letter-spacing:8px; color:var(--primary);" id="passenger-otp-val">0000</div>
+          <span style="font-size:0.72rem; color:var(--text-muted);">DALE ESTE PIN AL CHOFER AL SUBIRTE:</span>
+          <div style="font-size:2.2rem; font-weight:900; letter-spacing:8px; color:var(--primary);" id="passenger-otp-val">0000</div>
         </div>
 
-        <button class="btn-sm btn-secondary-dim" style="width:100%; margin-top:10px;" onclick="openReceiptModal()">🧾 Ver Recibo Digital / Comprobante</button>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:10px;">
+          <button class="btn-primary-neon btn-sm" onclick="openActiveChatModal()">💬 Abrir Chat y Voz</button>
+          <button class="btn-sm btn-secondary-dim" onclick="openReceiptModal()">🧾 Comprobante</button>
+        </div>
       </div>
     </section>
 
@@ -217,6 +220,36 @@
           <small id="driver-status-text" style="color:#ef4444; font-size:0.75rem; font-weight:800;">🔴 Desconectado (Toca el botón para conectarte)</small>
         </div>
 
+        <!-- PANEL DE VIAJE EN CURSO PARA EL CONDUCTOR (VALIDACIÓN DE PIN) -->
+        <div id="driver-active-trip-box" style="display:none; background:rgba(0,255,135,0.06); border:1.5px solid var(--primary); border-radius:18px; padding:16px; margin-bottom:14px;">
+          <div class="panel-header-row">
+            <span style="font-size:0.8rem; font-weight:800; color:var(--primary);">🚕 VIAJE EN EJECUCIÓN</span>
+            <span style="font-size:0.85rem; font-weight:900; color:#fff;" id="driver-trip-fare-badge">$0.00</span>
+          </div>
+          
+          <p style="font-size:0.8rem; color:#fff; margin:6px 0;" id="driver-trip-route-info">Origen ➔ Destino</p>
+          
+          <div id="driver-otp-input-area" style="margin:10px 0; background:rgba(0,0,0,0.4); padding:10px; border-radius:14px; text-align:center;">
+            <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:4px;">Pide el PIN de 4 dígitos al pasajero:</label>
+            <div style="display:flex; justify-content:center; gap:8px;">
+              <input type="number" id="driver-input-otp" placeholder="Ej. 5537" maxlength="4" style="max-width:140px; text-align:center; font-size:1.4rem; font-weight:900; letter-spacing:4px; margin:0;">
+              <button class="btn-primary-neon btn-sm" onclick="validatePassengerOTP()">Validar</button>
+            </div>
+          </div>
+
+          <div id="driver-in-route-area" style="display:none; margin:10px 0;">
+            <div style="background:rgba(0,255,135,0.15); color:var(--primary); padding:8px; border-radius:12px; text-align:center; font-weight:800; font-size:0.8rem;">
+              🟢 En trayecto hacia el destino
+            </div>
+            <button class="btn-primary-neon" style="width:100%; margin-top:8px; padding:12px;" onclick="completeActiveTripDriver()">🏁 FINALIZAR VIAJE Y COBRAR</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:8px;">
+            <button class="btn-sm btn-secondary-dim" onclick="openActiveChatModal()">💬 Chat y Notas</button>
+            <button class="btn-sm btn-secondary-dim" id="btn-driver-ext-map" onclick="openDriverNavExternalCurrent()">🗺️ Abrir Maps</button>
+          </div>
+        </div>
+
         <h4 style="margin-top:14px; color:white;">Solicitudes de Carreras en Vivo:</h4>
         <ul id="driver-requests-list" style="list-style:none; margin-top:10px; display:flex; flex-direction:column; gap:8px;"></ul>
       </div>
@@ -272,16 +305,17 @@
           </div>
         </div>
 
-        <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">Historial de mensajes de coordinación y notas de voz.</p>
-        <div class="chat-user-item" onclick="showNeonToast('info', 'El canal de chat se activa al aceptar un servicio.')">
+        <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">Comunícate con el pasajero de tu carrera activa o asistencia vial:</p>
+        
+        <div class="chat-user-item card-flat" style="padding:12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="openActiveChatModal()">
           <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:42px; height:42px; border-radius:50%; background:#1e293b; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--border-glow);">👤</div>
+            <div style="width:44px; height:44px; border-radius:50%; background:rgba(0,255,135,0.12); border:1.5px solid var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">💬</div>
             <div>
-              <strong style="font-size:0.88rem; color:#fff;">Central de Soporte JunRide</strong>
-              <p style="font-size:0.72rem; color:var(--text-muted);">Asistencia vial y seguridad 24/7</p>
+              <strong style="font-size:0.88rem; color:#fff;" id="chat-hub-passenger-name">Chat de Carrera Activa</strong>
+              <p style="font-size:0.72rem; color:var(--text-muted);">Mensajes y notas de voz en directo</p>
             </div>
           </div>
-          <span style="font-size:0.7rem; color:var(--primary); font-weight:800;">Activo</span>
+          <span class="badge-tag-neon">En Vivo</span>
         </div>
       </div>
     </section>
@@ -517,6 +551,36 @@
     </div>
   </div>
 
+  <!-- MODAL DE CHAT EN TIEMPO REAL CON NOTAS DE VOZ -->
+  <div class="modal" id="modal-active-chat">
+    <div class="modal-content card-neon animate-fade" style="height:80vh; max-height:550px; display:flex; flex-direction:column; padding:16px;">
+      <div class="panel-header-row" style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+        <div>
+          <h3 style="color:white; font-size:1.05rem;" id="chat-partner-title">💬 Chat del Viaje</h3>
+          <span style="font-size:0.7rem; color:var(--primary); font-weight:700;">Coordinación y Punto de Encuentro</span>
+        </div>
+        <button class="btn-close" onclick="closeActiveChatModal()">&times;</button>
+      </div>
+
+      <!-- Historial de Mensajes -->
+      <div id="chat-messages-container" style="flex:1; overflow-y:auto; padding:12px 4px; display:flex; flex-direction:column; gap:8px;">
+        <p style="text-align:center; font-size:0.72rem; color:var(--text-muted);">Usa este chat para indicar puntos de referencia, color de casa o portón.</p>
+      </div>
+
+      <!-- Barra de Envío con Botón de Voz -->
+      <div style="display:flex; align-items:center; gap:6px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
+        <button type="button" id="btn-record-audio" class="btn-icon-top" onclick="toggleAudioRecording()" style="width:42px; height:42px; border-radius:50%; flex-shrink:0;" title="Mantén o pulsa para grabar nota de voz">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+        </button>
+        <input type="text" id="chat-text-input" placeholder="Escribe tu referencia aquí..." style="margin:0; padding:10px 14px; font-size:0.85rem;" onkeypress="handleChatKeyPress(event)">
+        <button type="button" class="btn-primary-neon btn-sm" onclick="sendChatMessageText()" style="padding:10px 14px;">➤</button>
+      </div>
+      <div id="audio-recording-indicator" style="display:none; text-align:center; font-size:0.72rem; color:#ef4444; font-weight:800; margin-top:4px;">
+        🔴 Grabando nota de voz... Toca de nuevo el micro para enviar.
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL SELECTOR DE KILÓMETROS -->
   <div class="modal" id="modal-km-picker">
     <div class="modal-content card-neon animate-fade">
@@ -643,7 +707,6 @@
   <!-- Barra de Navegación Inferior -->
   <nav class="bottom-nav" id="dynamic-bottom-nav"></nav>
 
-  <!-- LIBRERÍAS CARGADAS EN EL ORDEN CORRECTO -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
