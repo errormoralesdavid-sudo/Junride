@@ -1,8 +1,8 @@
 {
   "name": "JunRide - Movilidad El Junquito",
   "short_name": "JunRide",
-  "id": "junride-pwa-2026-v28",
-  "start_url": "index.html?pwa=28",
+  "id": "https://errormoralesdavid-sudo.github.io/junride-app-official",
+  "start_url": "index.html?app=junride",
   "scope": "./",
   "display": "standalone",
   "background_color": "#050811",
