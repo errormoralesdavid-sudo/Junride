@@ -46,7 +46,7 @@ body {
 body.battery-saver .topo-background { display: none; }
 body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 
-/* Bienvenida */
+/* Bienvenida y Selección de Rol */
 .welcome-screen-wrap {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: radial-gradient(circle at 50% 20%, rgba(0, 255, 135, 0.16) 0%, #050811 80%);
@@ -56,7 +56,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 
 .welcome-hero-content {
   width: 100%; max-width: 420px; display: flex; flex-direction: column;
-  align-items: center; text-align: center; gap: 20px; margin: auto;
+  align-items: center; text-align: center; gap: 16px; margin: auto;
 }
 
 .welcome-logo-container {
@@ -108,6 +108,18 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   width: 100%; padding: 16px; font-size: 1rem; font-weight: 800; border-radius: 18px;
 }
 .welcome-footer-note { font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; }
+
+/* Tarjetas de Selección de Rol */
+.role-card {
+  width: 100%; padding: 18px; display: flex; align-items: center; gap: 16px;
+  cursor: pointer; transition: all 0.2s ease; border-radius: 20px;
+}
+.role-card:active { transform: scale(0.98); border-color: var(--primary); }
+.role-icon-box {
+  width: 58px; height: 58px; border-radius: 18px; background: rgba(255,255,255,0.05);
+  display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0;
+  border: 1.5px solid var(--border-glow);
+}
 
 .card-neon {
   background: var(--surface-card);
@@ -338,7 +350,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 .km-card-item strong { font-size: 0.85rem; color: #fff; }
 .km-card-item span { font-size: 0.72rem; color: var(--primary); font-weight: 800; }
 
-/* Selectores Táctiles para Modales (Sin menús nativos feos) */
+/* Selectores Táctiles para Modales */
 .touch-chips-selector {
   display: flex; gap: 6px; overflow-x: auto; padding: 6px 0; margin-bottom: 6px;
   scrollbar-width: none;
@@ -514,15 +526,16 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   visibility: hidden !important;
 }
 
+/* CORRECCIÓN DE ANCLAJE: EL PIN TOCA DIRECTO LA CARRETERA */
 .custom-neon-pin {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  transform: translate(-50%, -100%);
+  transform: translate(0, 0);
 }
 .custom-neon-pin svg { filter: drop-shadow(0 0 10px var(--primary)); }
 .pin-label-popup {
   background: #050811; color: var(--primary); border: 1px solid var(--primary);
   font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 8px;
-  white-space: nowrap; margin-top: -2px; box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  white-space: nowrap; margin-top: -4px; box-shadow: 0 2px 8px rgba(0,0,0,0.8);
 }
 
 /* Choferes reales conectados */
