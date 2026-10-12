@@ -116,8 +116,8 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 }
 .role-card:active { transform: scale(0.98); border-color: var(--primary); }
 .role-icon-box {
-  width: 58px; height: 58px; border-radius: 18px; background: rgba(255,255,255,0.05);
-  display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0;
+  width: 60px; height: 60px; border-radius: 18px; background: rgba(255,255,255,0.05);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   border: 1.5px solid var(--border-glow);
 }
 
@@ -526,10 +526,9 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   visibility: hidden !important;
 }
 
-/* CORRECCIÓN DE ANCLAJE: EL PIN TOCA DIRECTO LA CARRETERA */
+/* PIN QUE TOCA EXACTAMENTE EL PAVIMENTO */
 .custom-neon-pin {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  transform: translate(0, 0);
 }
 .custom-neon-pin svg { filter: drop-shadow(0 0 10px var(--primary)); }
 .pin-label-popup {
@@ -629,6 +628,32 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 }
 .chat-audio-player {
   display: flex; align-items: center; gap: 8px;
+}
+
+/* MICRÓFONO ERGONÓMICO GRANDE */
+.chat-mic-large-btn {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(15, 23, 42, 0.95); border: 1.5px solid var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; box-shadow: 0 0 14px var(--primary-glow);
+  transition: all 0.2s ease;
+}
+.chat-mic-large-btn:active { transform: scale(0.92); }
+.chat-mic-large-btn.recording {
+  background: rgba(239, 68, 68, 0.3) !important; border-color: var(--danger) !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6) !important;
+  animation: pulseDot 1s infinite;
+}
+.chat-mic-large-btn.recording svg { fill: #ef4444 !important; }
+
+/* PUNTO ROJO DENTRO DEL BOTÓN DE CHAT ACTIVO DEL CHOFER */
+.chat-btn-unread-dot {
+  position: absolute; top: -3px; right: -3px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #ef4444; border: 1.5px solid #050811;
+  box-shadow: 0 0 10px #ef4444;
+  animation: pulseDot 1.4s infinite ease-in-out;
+  display: none;
 }
 
 /* Modales */
