@@ -62,7 +62,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   border-radius: 18px;
 }
 
-/* Cabecera Superior */
+/* Cabecera */
 .top-bar {
   position: fixed; top: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto;
   padding: calc(10px + var(--safe-top)) 16px 10px 16px;
@@ -108,6 +108,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   cursor: pointer; fill: var(--text-muted);
 }
 .btn-icon-top.active { background: rgba(245, 158, 11, 0.2); border-color: var(--warning); fill: #fbbf24; }
+.btn-icon-top.recording { background: rgba(239, 68, 68, 0.3) !important; border-color: var(--danger) !important; fill: #ef4444 !important; animation: pulseAlert 1s infinite; }
 .btn-sos-top { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); fill: #ef4444; }
 
 .content-app { 
@@ -246,7 +247,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   background: var(--primary); color: #050811; border-color: var(--primary);
 }
 
-/* Casillas de Selección de Kilómetros Estilizadas */
+/* Casillas Kilómetros */
 .km-selector-trigger {
   width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.05);
   border: 1px solid var(--border-card); border-radius: 14px; color: white;
@@ -377,7 +378,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 .level-trips-req { font-size: 0.8rem; font-weight: 800; color: var(--primary); }
 .level-desc-text { font-size: 0.78rem; color: #cbd5e1; line-height: 1.45; }
 
-/* Pantalla Dedicada de Pedido */
+/* Pantalla Pedido */
 #screen-ride-order {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: var(--bg-dark); z-index: 2500; display: none;
@@ -498,6 +499,23 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   border-radius: 12px; color: white; font-size: 0.75rem; font-weight: 800; cursor: pointer; text-align: center;
 }
 .cash-calc-btn:active { border-color: var(--primary); background: rgba(0,255,135,0.1); color: var(--primary); }
+
+/* BURBUJAS DE CHAT Y MENSAJES */
+.chat-msg-bubble {
+  max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.82rem; line-height: 1.35;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.chat-msg-bubble.sent {
+  align-self: flex-end; background: rgba(0, 255, 135, 0.15); border: 1px solid var(--primary);
+  color: #fff; border-bottom-right-radius: 4px;
+}
+.chat-msg-bubble.received {
+  align-self: flex-start; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-card);
+  color: #e2e8f0; border-bottom-left-radius: 4px;
+}
+.chat-audio-player {
+  display: flex; align-items: center; gap: 8px;
+}
 
 /* Modales */
 .modal {
