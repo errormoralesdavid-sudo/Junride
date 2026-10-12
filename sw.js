@@ -1,4 +1,4 @@
-const CACHE_NAME = 'junride-pwa-v30';
+const CACHE_NAME = 'junride-pwa-v28';
 const LOCAL_ASSETS = [
   './',
   './index.html',
