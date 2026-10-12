@@ -46,9 +46,7 @@ body {
 body.battery-saver .topo-background { display: none; }
 body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 
-/* ============================================================== */
-/* ESTILOS DE LA PANTALLA PRINCIPAL DE BIENVENIDA / ONBOARDING    */
-/* ============================================================== */
+/* Bienvenida */
 .welcome-screen-wrap {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: radial-gradient(circle at 50% 20%, rgba(0, 255, 135, 0.16) 0%, #050811 80%);
@@ -77,7 +75,6 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   50% { transform: scale(1.2); opacity: 0.9; }
 }
 
-/* Animación de Levitación Flotante en 3D */
 .welcome-floating-logo {
   width: 110px; height: 110px; object-fit: contain; z-index: 2;
   filter: drop-shadow(0 0 24px var(--primary-glow));
@@ -96,7 +93,6 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 .welcome-subtitle { font-size: 1rem; font-weight: 700; color: #f8fafc; }
 .welcome-tagline { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
 
-/* Banner de Descarga PWA */
 .welcome-install-banner {
   width: 100%; padding: 12px 16px; border-radius: 18px;
   background: rgba(0, 255, 135, 0.08); border: 1.5px dashed var(--primary);
@@ -113,7 +109,6 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 }
 .welcome-footer-note { font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; }
 
-/* Tarjetas y Contenedores */
 .card-neon {
   background: var(--surface-card);
   backdrop-filter: blur(20px);
@@ -504,14 +499,20 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   white-space: nowrap; margin-top: -2px; box-shadow: 0 2px 8px rgba(0,0,0,0.8);
 }
 
-.nearby-veh-marker {
-  display: flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 50%;
-  background: rgba(5,8,17,0.9); border: 1.5px solid var(--primary);
-  box-shadow: 0 0 14px var(--primary-glow);
-  transition: all 0.8s ease-in-out;
+/* Choferes reales conectados en el mapa */
+.driver-real-marker-box {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(5,8,17,0.92); border: 1.5px solid var(--primary);
+  box-shadow: 0 0 16px var(--primary-glow);
+  transition: all 1s ease-in-out;
 }
-.nearby-veh-marker img { width: 24px; height: 24px; object-fit: contain; }
+.driver-real-marker-box img { width: 26px; height: 26px; object-fit: contain; }
+.driver-marker-name-tag {
+  background: #050811; color: var(--primary); border: 1px solid var(--primary);
+  font-size: 0.62rem; font-weight: 800; padding: 1px 5px; border-radius: 6px;
+  white-space: nowrap; margin-top: -2px;
+}
 
 .search-radar-overlay {
   display: none; flex-direction: column; align-items: center; justify-content: center;
