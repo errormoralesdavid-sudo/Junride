@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=32">
+  <link rel="manifest" href="manifest.json?v=33">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,13 +21,10 @@
   <!-- Contenedor Flotante de Notificaciones Toast Neón -->
   <div id="toast-container"></div>
 
-  <!-- ============================================================== -->
-  <!-- PANTALLA PRINCIPAL DE BIENVENIDA / REGISTRO (WELCOME ONBOARDING) -->
-  <!-- ============================================================== -->
+  <!-- PANTALLA PRINCIPAL DE BIENVENIDA / ONBOARDING -->
   <section id="screen-welcome" class="welcome-screen-wrap animate-fade">
     <div class="welcome-hero-content">
       
-      <!-- Logo Flotante Neón con Animación 3D -->
       <div class="welcome-logo-container">
         <div class="welcome-logo-halo"></div>
         <img src="https://files.catbox.moe/oh53r9.png" alt="Logo JunRide" class="welcome-floating-logo">
@@ -39,7 +36,6 @@
         <span class="welcome-tagline">Seguridad satelital • Conexión de montaña • Sin pérdidas</span>
       </div>
 
-      <!-- Botón de Descargar App PWA (Visible si el dispositivo no la tiene instalada) -->
       <div id="welcome-install-pwa-box" class="welcome-install-banner" style="display:none;" onclick="triggerPwaInstallPrompt()">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="#00ff87"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
         <div>
@@ -48,7 +44,6 @@
         </div>
       </div>
 
-      <!-- Botones de Acción Principal -->
       <div class="welcome-action-buttons">
         <button class="btn-primary-neon btn-welcome-main" onclick="openAuthModal('register')">
           Crear Cuenta Nueva
@@ -62,7 +57,7 @@
     </div>
   </section>
 
-  <!-- MODAL DE REGISTRO E INICIO DE SESIÓN -->
+  <!-- MODAL DE REGISTRO / LOGIN -->
   <div class="modal" id="modal-auth-form">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -88,7 +83,7 @@
         <input type="email" id="auth-input-email" placeholder="Ej. usuario@correo.com" required>
 
         <div style="background:rgba(0,255,135,0.06); border:1px solid var(--border-glow); padding:10px; border-radius:14px; margin:8px 0; font-size:0.72rem; color:#cbd5e1;">
-          📍 <strong>Nota:</strong> Al entrar se activará el GPS satelital para calibrar automáticamente tu punto en la montaña.
+          📍 <strong>Ubicación:</strong> Al entrar se calibrará automáticamente tu punto en la Troncal 4 de El Junquito.
         </div>
 
         <button type="submit" class="btn-primary-neon" style="width:100%; padding:14px; margin-top:4px;" id="auth-submit-btn">
@@ -100,9 +95,7 @@
 
   <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
 
-  <!-- ============================================================== -->
-  <!-- APLICACIÓN PRINCIPAL (VISIBLE SOLO CUANDO HAY SESIÓN INICIADA) -->
-  <!-- ============================================================== -->
+  <!-- INTERFAZ PRINCIPAL -->
   <div id="app-main-interface" style="display:none;">
     
     <!-- Cabecera Superior -->
@@ -139,15 +132,19 @@
 
     <main class="content-app" id="main-app-content">
 
-      <!-- Pestaña INICIO (Modo Pasajero) -->
+      <!-- Pestaña INICIO -->
       <section class="tab-content animate-fade" id="tab-inicio">
         
-        <div class="live-alerts-ticker" id="live-alerts-banner" onclick="openReportTrafficModal()" style="display:none;">
-          <span style="font-size:1.2rem;">⚠️</span>
-          <div>
-            <strong id="alert-banner-title">Alerta Comunitaria en la Vía</strong>
-            <p id="alert-banner-desc">Precaución en la carretera de la montaña.</p>
+        <!-- Marquesina de Alertas Viales con botón de cerrar [X] -->
+        <div class="live-alerts-ticker" id="live-alerts-banner" style="display:none;">
+          <div style="display:flex; align-items:center; gap:10px; flex:1; cursor:pointer;" onclick="openReportTrafficModal()">
+            <span style="font-size:1.2rem;">⚠️</span>
+            <div>
+              <strong id="alert-banner-title">Alerta Comunitaria en la Vía</strong>
+              <p id="alert-banner-desc">Precaución en la carretera de la montaña.</p>
+            </div>
           </div>
+          <button class="alert-dismiss-btn" onclick="dismissRoadAlertBanner(event)" title="Ocultar alerta">&times;</button>
         </div>
 
         <div class="search-bar-neon" onclick="openRideOrderScreen('Carro')">
@@ -464,12 +461,13 @@
             <span class="badge-tag-neon">$1.00 = 1K</span>
           </div>
 
+          <!-- Código de Referidos Personal Dinámico -->
           <div class="profile-menu-item" onclick="shareReferralCode()">
             <div class="profile-menu-left">
               <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
               <span class="profile-menu-title">Invitar Amigos (Gana $1.00)</span>
             </div>
-            <span class="badge-tag-neon">Código: DAVIDJR</span>
+            <span class="badge-tag-neon" id="profile-referral-tag">Código: DAVID412</span>
           </div>
 
           <div class="profile-menu-item" onclick="toggleBatterySaverMode()">
@@ -514,7 +512,7 @@
     <nav class="bottom-nav" id="dynamic-bottom-nav"></nav>
   </div>
 
-  <!-- PANTALLA DEDICADA DE PEDIDO CON SELECTORES MODALES -->
+  <!-- PANTALLA DEDICADA DE PEDIDO -->
   <div id="screen-ride-order">
     <div class="order-screen-header">
       <div class="btn-round-back" onclick="closeRideOrderScreen()">
@@ -547,7 +545,7 @@
           <span style="font-size:0.7rem; color:var(--primary); font-weight:800; cursor:pointer;" onclick="useCurrentGpsLocation()">📍 Mi GPS</span>
         </div>
         <div class="km-selector-trigger" onclick="openKmPickerModal('origin')">
-          <span id="trigger-origin-name">Km 16 (Pueblo / Plaza Bolívar)</span>
+          <span id="trigger-origin-name">Km 11 (Sector Los Olivos / Urb. El Panorama)</span>
           <span>Cambiar ▾</span>
         </div>
 
@@ -637,7 +635,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE CHAT EN TIEMPO REAL CON NOTAS DE VOZ -->
+  <!-- MODAL DE CHAT EN TIEMPO REAL -->
   <div class="modal" id="modal-active-chat">
     <div class="modal-content card-neon animate-fade" style="height:80vh; max-height:550px; display:flex; flex-direction:column; padding:16px;">
       <div class="panel-header-row" style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
@@ -679,9 +677,86 @@
         <button class="btn-close" onclick="closeKmPickerModal()">&times;</button>
       </div>
       
-      <input type="text" id="poi-search-box" placeholder="Buscar por lugar (ej. Plaza Bolívar, La Parada)..." oninput="filterKmPickerList(this.value)" style="margin:6px 0 10px 0;">
+      <input type="text" id="poi-search-box" placeholder="Buscar por lugar (ej. El Panorama, Plaza Bolívar, La Parada)..." oninput="filterKmPickerList(this.value)" style="margin:6px 0 10px 0;">
       
       <div id="km-cards-container" style="max-height:55vh; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL APARTAR VIAJE CON SELECTORES TÁCTILES LIMPIOS -->
+  <div class="modal" id="modal-schedule-trip">
+    <div class="modal-content card-neon animate-fade">
+      <div class="panel-header-row">
+        <h3 style="color:white; font-size:1.05rem;">⏰ Apartar Viaje de Madrugada</h3>
+        <button class="btn-close" onclick="closeScheduleTripModal()">&times;</button>
+      </div>
+      <label style="font-size:0.75rem; color:var(--text-muted);">Fecha del Viaje:</label>
+      <input type="date" id="schedule-date-input">
+      
+      <label style="font-size:0.75rem; color:var(--text-muted);">Hora de Salida:</label>
+      <div class="touch-chips-selector" id="sched-hour-chips">
+        <div class="touch-chip" onclick="selectSchedHour('04:00 AM', this)">04:00 AM</div>
+        <div class="touch-chip active" onclick="selectSchedHour('04:30 AM', this)">04:30 AM</div>
+        <div class="touch-chip" onclick="selectSchedHour('05:00 AM', this)">05:00 AM</div>
+        <div class="touch-chip" onclick="selectSchedHour('05:30 AM', this)">05:30 AM</div>
+        <div class="touch-chip" onclick="selectSchedHour('06:00 AM', this)">06:00 AM</div>
+      </div>
+      <input type="hidden" id="schedule-hour-val" value="04:30 AM">
+
+      <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">Servicio:</label>
+      <div class="touch-chips-selector" id="sched-service-chips">
+        <div class="touch-chip active" onclick="selectSchedService('Carro', this)">🚗 Carro</div>
+        <div class="touch-chip" onclick="selectSchedService('Moto', this)">🏍️ Moto</div>
+        <div class="touch-chip" onclick="selectSchedService('Colectivo', this)">🚐 Puesto</div>
+        <div class="touch-chip" onclick="selectSchedService('Carga', this)">🚚 Carga</div>
+      </div>
+      <input type="hidden" id="schedule-service-val" value="Carro">
+
+      <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">Punto de Salida:</label>
+      <div class="km-selector-trigger" onclick="openKmPickerModal('schedule_origin')">
+        <span id="trigger-sched-origin-name">Km 11 (Sector Los Olivos / Urb. El Panorama)</span>
+        <span>Cambiar ▾</span>
+      </div>
+
+      <label style="font-size:0.75rem; color:var(--text-muted);">Destino:</label>
+      <div class="km-selector-trigger" onclick="openKmPickerModal('schedule_dest')">
+        <span id="trigger-sched-dest-name">Km 0 (La Yaguara / Metro)</span>
+        <span>Cambiar ▾</span>
+      </div>
+
+      <label style="font-size:0.75rem; color:var(--text-muted);">Tarifa Ofrecida ($):</label>
+      <input type="number" step="0.5" id="schedule-fare-input" value="4.00">
+      <button class="btn-primary-neon" style="width:100%; margin-top:6px;" onclick="confirmScheduleTrip()">Confirmar Reserva</button>
+    </div>
+  </div>
+
+  <!-- MODAL REPORTAR ALERTA EN LA VÍA LIMPIO -->
+  <div class="modal" id="modal-traffic-alert">
+    <div class="modal-content card-neon animate-fade">
+      <div class="panel-header-row">
+        <h3 style="color:white; font-size:1.05rem;">⚠️ Reportar Alerta en la Vía</h3>
+        <button class="btn-close" onclick="closeReportTrafficModal()">&times;</button>
+      </div>
+
+      <label style="font-size:0.75rem; color:var(--text-muted);">Tipo de Incidente:</label>
+      <div class="touch-chips-selector-vertical" id="incident-type-chips">
+        <div class="touch-chip active" onclick="selectIncidentType('Derrumbe o Piedras en Vía', this)">🪨 Derrumbe o Piedras en Vía</div>
+        <div class="touch-chip" onclick="selectIncidentType('Falla de Borde Activa', this)">🚧 Falla de Borde Activa</div>
+        <div class="touch-chip" onclick="selectIncidentType('Tranca o Accidente', this)">🚗💥 Tranca o Accidente</div>
+        <div class="touch-chip" onclick="selectIncidentType('Neblina Extrema', this)">🌫️ Neblina Extrema</div>
+      </div>
+      <input type="hidden" id="incident-type-val" value="Derrumbe o Piedras en Vía">
+
+      <label style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">Kilómetro del Evento:</label>
+      <div class="km-selector-trigger" onclick="openKmPickerModal('traffic_km')">
+        <span id="trigger-traffic-km-name">Km 4 (El Amparo / Mirador)</span>
+        <span>Cambiar ▾</span>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn-primary-neon" style="flex:1;" onclick="publishRoadAlert()">Publicar Alerta</button>
+        <button class="btn-secondary-dim btn-sm" onclick="clearCurrentRoadAlertCommunity()">Despejar Vía</button>
+      </div>
     </div>
   </div>
 
@@ -707,7 +782,7 @@
       
       <div style="background:rgba(255,255,255,0.03); padding:14px; border-radius:16px; border:1px solid var(--border-glow); font-size:0.8rem; line-height:1.7;">
         <div><strong>Servicio:</strong> <span id="rec-service-name">Carro</span></div>
-        <div><strong>Ruta:</strong> <span id="rec-route-text">Km 16 ➔ Km 0</span></div>
+        <div><strong>Ruta:</strong> <span id="rec-route-text">Km 11 ➔ Km 0</span></div>
         <div><strong>Monto Abonado:</strong> <span id="rec-amount-text">$2.50</span> <small id="rec-amount-ves" style="color:var(--text-muted);"></small></div>
         <div><strong>Fecha y Hora:</strong> <span id="rec-date-text">Hoy</span></div>
         <div><strong>Seguridad:</strong> <span style="color:var(--primary); font-weight:800;">✓ PIN Validado</span></div>
@@ -726,65 +801,6 @@
     </div>
   </div>
 
-  <!-- Modales Adicionales -->
-  <div class="modal" id="modal-schedule-trip">
-    <div class="modal-content card-neon animate-fade">
-      <div class="panel-header-row">
-        <h3 style="color:white; font-size:1.05rem;">⏰ Apartar Viaje de Madrugada</h3>
-        <button class="btn-close" onclick="closeScheduleTripModal()">&times;</button>
-      </div>
-      <label style="font-size:0.75rem; color:var(--text-muted);">Fecha del Viaje:</label>
-      <input type="date" id="schedule-date-input">
-      <label style="font-size:0.75rem; color:var(--text-muted);">Hora de Salida:</label>
-      <select id="schedule-hour-select">
-        <option value="04:00 AM">04:00 AM</option>
-        <option value="04:30 AM" selected>04:30 AM</option>
-        <option value="05:00 AM">05:00 AM</option>
-        <option value="05:30 AM">05:30 AM</option>
-        <option value="06:00 AM">06:00 AM</option>
-      </select>
-      <label style="font-size:0.75rem; color:var(--text-muted);">Servicio:</label>
-      <select id="schedule-service-select">
-        <option value="Carro">🚗 Carro Particular</option>
-        <option value="Moto">🏍️ Moto Express</option>
-        <option value="Colectivo">🚐 Puesto Compartido</option>
-        <option value="Carga">🚚 Mudanza / Carga</option>
-      </select>
-      <label style="font-size:0.75rem; color:var(--text-muted);">Punto de Salida:</label>
-      <input type="text" id="schedule-pickup-input" value="Km 16 (Pueblo / Plaza Bolívar)">
-      <label style="font-size:0.75rem; color:var(--text-muted);">Destino:</label>
-      <input type="text" id="schedule-dest-input" value="Km 0 (La Yaguara / Metro)">
-      <label style="font-size:0.75rem; color:var(--text-muted);">Tarifa Ofrecida ($):</label>
-      <input type="number" step="0.5" id="schedule-fare-input" value="4.00">
-      <button class="btn-primary-neon" style="width:100%; margin-top:6px;" onclick="confirmScheduleTrip()">Confirmar Reserva</button>
-    </div>
-  </div>
-
-  <div class="modal" id="modal-traffic-alert">
-    <div class="modal-content card-neon animate-fade">
-      <div class="panel-header-row">
-        <h3 style="color:white; font-size:1.05rem;">⚠️ Reportar Alerta en la Vía</h3>
-        <button class="btn-close" onclick="closeReportTrafficModal()">&times;</button>
-      </div>
-      <label style="font-size:0.75rem; color:var(--text-muted);">Tipo de Evento:</label>
-      <select id="traffic-incident-type">
-        <option value="Derrumbe o Piedras en Vía">🪨 Derrumbe o Piedras en Vía</option>
-        <option value="Falla de Borde Activa">🚧 Falla de Borde Activa</option>
-        <option value="Tranca o Accidente">🚗💥 Tranca o Accidente</option>
-        <option value="Neblina Extrema">🌫️ Neblina Extrema</option>
-      </select>
-      <label style="font-size:0.75rem; color:var(--text-muted);">Kilómetro:</label>
-      <select id="traffic-incident-km">
-        <option value="Km 4">Km 4 (El Amparo)</option>
-        <option value="Km 8">Km 8 (El Junquito Bajo)</option>
-        <option value="Km 12">Km 12 (Panadería La Parada)</option>
-        <option value="Km 16">Km 16 (Pueblo / Plaza Bolívar)</option>
-        <option value="Km 23">Km 23 (El Retén / La Niebla)</option>
-      </select>
-      <button class="btn-primary-neon" style="width:100%; margin-top:6px;" onclick="publishRoadAlert()">Publicar Alerta</button>
-    </div>
-  </div>
-
   <div class="modal" id="modal-kyc-whatsapp">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -796,7 +812,7 @@
     </div>
   </div>
 
-  <!-- LIBRERÍAS CARGADAS EN EL ORDEN CORRECTO -->
+  <!-- SCRIPTS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
