@@ -70,8 +70,7 @@ const JUNRIDE_LEVELS = [
   { id: 6, name: "Conquistador", minTrips: 80, maxTrips: 9999, icon: "https://files.catbox.moe/htwomx.png", desc: "Rango supremo de honor JunRide. Conquistador de la cima: insignia dorada en perfil, bonificación en tokens y asistencia directa 24/7." }
 ];
 
-// COORDENADAS CALIBRADAS SOBRE EL ASFALTO REAL DE LA CARRETERA (TRONCAL 4)
-// INCLUYE KM 11 EL PANORAMA CON COORDENADAS EXACTAS
+// COORDENADAS CALIBRADAS SOBRE EL ASFALTO REAL DE LA TRONCAL 4 (EL PANORAMA COMO KM 11 PRINCIPAL)
 const JUNQUITO_ALL_KMS = [
   { km: 0, name: "Km 0 (La Yaguara / Metro)", lat: 10.4768, lon: -66.9600, alt: 940 },
   { km: 1, name: "Km 1 (Inicio Carretera Vieja)", lat: 10.4735, lon: -66.9680, alt: 990 },
@@ -157,13 +156,13 @@ let offeredOrderPrice = 2.50;
 let escrowHeldAmount = 0.00;
 let selectedRechargeMethodKey = 'bdv';
 
-// PREDETERMINADO EN KM 11 (EL PANORAMA)
+// PREDETERMINADO EN KM 11 EL PANORAMA
 let selectedOriginIdx = 11;
 let selectedDestIdx = 0;
 let selectedStopIdx = 12;
 let currentKmPickerTarget = 'origin';
 
-// MAPA DE MARCADORES DE CONDUCTORES REALES CONECTADOS
+// MAPA DE MARCADORES DE CONDUCTORES REALES
 let activeRealDriversMarkers = {};
 
 let mediaRecorder = null;
@@ -190,10 +189,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (avatarInput) avatarInput.addEventListener('change', handleAvatarFileSelected);
 });
 
-// GESTIÓN DE SESIÓN Y PANTALLA PRINCIPAL
+// GESTIÓN DE SESIÓN Y FLUJO DE BIENVENIDA / ROLES
 function checkSessionAndAuth() {
-  const saved = localStorage.getItem('jr_user_profile_v34');
+  const saved = localStorage.getItem('jr_user_profile_v35');
   const welcomeScreen = document.getElementById('screen-welcome');
+  const roleSelectScreen = document.getElementById('screen-role-select');
   const mainApp = document.getElementById('app-main-interface');
 
   if (saved) {
@@ -201,7 +201,9 @@ function checkSessionAndAuth() {
       userData = JSON.parse(saved);
       if (userData && userData.isRegistered) {
         if (welcomeScreen) welcomeScreen.style.display = 'none';
+        if (roleSelectScreen) roleSelectScreen.style.display = 'none';
         if (mainApp) mainApp.style.display = 'block';
+
         updateUIProfile();
         renderDynamicBottomNav();
         requestStartupGpsLocation();
@@ -211,6 +213,7 @@ function checkSessionAndAuth() {
   }
 
   if (welcomeScreen) welcomeScreen.style.display = 'flex';
+  if (roleSelectScreen) roleSelectScreen.style.display = 'none';
   if (mainApp) mainApp.style.display = 'none';
 }
 
@@ -225,12 +228,12 @@ function openAuthModal(mode = 'register') {
 
   if (mode === 'register') {
     title.innerText = 'Crear Cuenta JunRide';
-    desc.innerText = 'Completa tus datos para activar tu perfil de usuario y tu saldo de bienvenida.';
+    desc.innerText = 'Completa tus datos para activar tu perfil de usuario.';
     extraFields.style.display = 'block';
-    submitBtn.innerText = 'Crear y Comenzar';
+    submitBtn.innerText = 'Continuar a Selección de Rol';
   } else {
     title.innerText = 'Iniciar Sesión';
-    desc.innerText = 'Ingresa tu número de teléfono y correo para restaurar tu cuenta y saldo.';
+    desc.innerText = 'Ingresa tu número de teléfono y correo para entrar.';
     extraFields.style.display = 'none';
     submitBtn.innerText = 'Entrar a JunRide';
   }
@@ -256,60 +259,93 @@ async function handleAuthSubmit(e) {
     return;
   }
 
-  // Generar código de referido personalizado único
+  // Generar código de referido único
   const cleanName = name.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 6) || 'JUNRIDE';
   const randomSuffix = Math.floor(100 + Math.random() * 900);
   const userReferralCode = `${cleanName}${randomSuffix}`;
 
-  if (authCurrentMode === 'register') {
-    userData = {
-      name: name,
-      lastname: lastname,
-      phone: phone,
-      email: email,
-      referralCode: userReferralCode,
-      role: 'passenger',
-      isRegistered: true,
-      kmBalance: 5.00,
-      driverEarnings: 0.00,
-      driverTripsCount: 0,
-      totalTrips: 0,
-      tokens: 500,
-      rating: 5.00,
-      avatar: 'https://files.catbox.moe/oh53r9.png',
-      batterySaver: false,
-      walletLedger: [{ type: 'credit', title: 'Bono Bienvenida JunRide', amount: 5.00, date: 'Hoy' }]
-    };
-  } else {
-    const existing = localStorage.getItem('jr_user_profile_v34');
-    if (existing) {
-      try { userData = JSON.parse(existing); } catch(err) {}
-    }
-    if (!userData) {
-      userData = {
-        name: name, lastname: lastname, phone: phone, email: email,
-        referralCode: userReferralCode, role: 'passenger',
-        isRegistered: true, kmBalance: 5.00, driverEarnings: 0.00, driverTripsCount: 0,
-        totalTrips: 11, tokens: 2150, rating: 5.00, avatar: 'https://files.catbox.moe/oh53r9.png',
-        batterySaver: false, walletLedger: [{ type: 'credit', title: 'Bono Inicial', amount: 5.00, date: 'Hoy' }]
-      };
-    }
-    userData.isRegistered = true;
-    userData.phone = phone;
-    userData.email = email;
-    if (!userData.referralCode) userData.referralCode = userReferralCode;
-  }
-
-  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
-
-  if (db) {
-    db.collection('users').doc(currentUserId).set(userData, { merge: true }).catch(() => {});
-  }
+  userData = {
+    name: name,
+    lastname: lastname,
+    phone: phone,
+    email: email,
+    referralCode: userReferralCode,
+    role: 'passenger',
+    isRegistered: false, // Se confirma al elegir rol
+    kmBalance: 5.00,
+    driverEarnings: 0.00,
+    driverTripsCount: 0,
+    totalTrips: 0,
+    tokens: 500,
+    rating: 5.00,
+    avatar: 'https://files.catbox.moe/oh53r9.png',
+    batterySaver: false,
+    walletLedger: [{ type: 'credit', title: 'Bono Bienvenida JunRide', amount: 5.00, date: 'Hoy' }]
+  };
 
   closeAuthModal();
 
+  if (authCurrentMode === 'register') {
+    // Pasa a la pantalla de selección de rol
+    document.getElementById('screen-welcome').style.display = 'none';
+    document.getElementById('screen-role-select').style.display = 'flex';
+  } else {
+    // Login directo
+    userData.isRegistered = true;
+    localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+    launchMainApplication();
+  }
+}
+
+function chooseAppRole(role) {
+  triggerHaptic(40);
+  if (!userData) return;
+  userData.role = role;
+
+  if (role === 'driver') {
+    document.getElementById('screen-role-select').style.display = 'none';
+    document.getElementById('modal-driver-vehicle-setup').classList.add('active');
+  } else {
+    userData.isRegistered = true;
+    localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+    document.getElementById('screen-role-select').style.display = 'none';
+    launchMainApplication();
+  }
+}
+
+function selectSetupVehicleType(type, elem) {
+  triggerHaptic(20);
+  document.querySelectorAll('#driver-veh-setup-chips .touch-chip').forEach(c => c.classList.remove('active'));
+  elem.classList.add('active');
+  document.getElementById('driver-veh-setup-val').value = type;
+}
+
+function finishDriverRegistration() {
+  triggerHaptic(50);
+  const vehType = document.getElementById('driver-veh-setup-val').value;
+  const vehModel = document.getElementById('driver-veh-model-input').value.trim() || 'Vehículo de Montaña';
+  const vehPlate = document.getElementById('driver-veh-plate-input').value.trim() || 'S/P';
+
+  userData.role = 'driver';
+  userData.isRegistered = true;
+  userData.vehicleType = vehType;
+  userData.vehicleModel = vehModel;
+  userData.vehiclePlate = vehPlate;
+
+  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+  document.getElementById('modal-driver-vehicle-setup').classList.remove('active');
+  launchMainApplication();
+  switchTab('driver-panel');
+}
+
+function launchMainApplication() {
   document.getElementById('screen-welcome').style.display = 'none';
+  document.getElementById('screen-role-select').style.display = 'none';
   document.getElementById('app-main-interface').style.display = 'block';
+
+  if (db && currentUserId) {
+    db.collection('users').doc(currentUserId).set(userData, { merge: true }).catch(() => {});
+  }
 
   updateUIProfile();
   renderDynamicBottomNav();
@@ -334,14 +370,13 @@ function restoreOfflineTripState() {
   }
 }
 
-// ADHERENCIA ESTRICTA A LA TRONCAL 4
+// ADHERENCIA A LA TRONCAL 4
 function snapToNearestHighway(lat, lon) {
-  let closestKm = JUNQUITO_ALL_KMS[11]; // Predeterminado: Km 11 El Panorama
+  let closestKm = JUNQUITO_ALL_KMS[11];
   let minDist = 999999;
   let closestIdx = 11;
 
   JUNQUITO_ALL_KMS.forEach((pt, idx) => {
-    // Distancia métrica aproximada en grados
     let dLat = (pt.lat - lat) * 111000;
     let dLon = (pt.lon - lon) * 109000;
     let d = Math.hypot(dLat, dLon);
@@ -363,9 +398,7 @@ function requestStartupGpsLocation() {
       const lon = pos.coords.longitude;
       const accuracy = pos.coords.accuracy;
 
-      // Si la precisión es mayor a 120m, es antena 3G lejana: anclar en Km 11 El Panorama
       if (accuracy > 120) {
-        console.warn("Señal 3G imprecisa por antena. Fijando en Km 11 (El Panorama).");
         selectedOriginIdx = 11;
         customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
         const triggerEl = document.getElementById('trigger-origin-name');
@@ -471,7 +504,7 @@ async function clearCurrentRoadAlertCommunity() {
   }
 }
 
-// SELECTOR MODAL DE KILÓMETROS Y POIS
+// SELECTOR MODAL DE KILÓMETROS
 function openKmPickerModal(target) {
   triggerHaptic(20);
   currentKmPickerTarget = target;
@@ -609,7 +642,7 @@ function shareReferralCode() {
 function toggleBatterySaverMode() {
   triggerHaptic();
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -720,7 +753,7 @@ function handleAvatarFileSelected(event) {
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       userData.avatar = compressedDataUrl;
-      localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
       
       if (currentUserId && db) {
         db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
@@ -782,7 +815,7 @@ function speakDriverAlert(text) {
 function switchDriverMode() {
   triggerHaptic();
   userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('driver-panel');
@@ -792,7 +825,7 @@ function switchDriverMode() {
 function switchPassengerMode() {
   triggerHaptic();
   userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('inicio');
@@ -903,7 +936,6 @@ function updateUIProfile() {
     const tagBal = document.getElementById('profile-wallet-balance-tag');
     if (tagBal) tagBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
 
-    // Código de referidos dinámico
     const refTag = document.getElementById('profile-referral-tag');
     if (refTag) refTag.innerText = `Código: ${userData.referralCode || 'DAVID412'}`;
 
@@ -914,6 +946,23 @@ function updateUIProfile() {
 
     applyBatterySaverUI();
 
+    // Adaptar vista del perfil: Chofer vs Pasajero
+    const isDriver = (userData.role === 'driver');
+    const driverMaintHud = document.getElementById('driver-maintenance-hud');
+    const passengerTierHud = document.getElementById('passenger-tier-hud');
+
+    if (isDriver) {
+      if (driverMaintHud) driverMaintHud.style.display = 'block';
+      if (passengerTierHud) passengerTierHud.style.display = 'none';
+      const vehTypeTag = document.getElementById('profile-driver-veh-type');
+      if (vehTypeTag) vehTypeTag.innerText = userData.vehicleType || 'Unidad';
+      const plateTag = document.getElementById('profile-driver-plate-tag');
+      if (plateTag) plateTag.innerText = userData.vehiclePlate || 'Conductor';
+    } else {
+      if (driverMaintHud) driverMaintHud.style.display = 'none';
+      if (passengerTierHud) passengerTierHud.style.display = 'block';
+    }
+
     const totalTrips = userData.totalTrips || 0;
     const { current, next } = getUserCurrentLevel(totalTrips);
 
@@ -921,7 +970,7 @@ function updateUIProfile() {
     if (tierIconRight) tierIconRight.src = current.icon;
 
     const tierName = document.getElementById('profile-tier-name');
-    if (tierName) tierName.innerText = `${current.name} (Nivel ${current.id})`;
+    if (tierName) tierName.innerText = isDriver ? `Chofer Activo (${userData.vehicleType || 'Moto'})` : `${current.name} (Nivel ${current.id})`;
 
     const tierExpText = document.getElementById('profile-tier-exp-text');
     const tierBar = document.getElementById('profile-tier-progress-bar');
@@ -944,7 +993,7 @@ function updateUIProfile() {
 
     const headerBadge = document.getElementById('header-driver-badge');
     if (headerBadge) {
-      headerBadge.style.display = (userData.role === 'driver') ? 'flex' : 'none';
+      headerBadge.style.display = isDriver ? 'flex' : 'none';
     }
 
     const earnVal = document.getElementById('driver-total-earnings-val');
@@ -1122,7 +1171,7 @@ function logWalletMovement(type, title, amount) {
   userData.walletLedger.unshift({
     type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
   });
-  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
   renderWalletLedger();
 }
 
@@ -1194,11 +1243,11 @@ function selectOrderVehicle(cat) {
     else if (cat === 'Carga') radarIcon.src = 'https://files.catbox.moe/bjsczm.png';
   }
 
-  // Refrescar mapa de conductores según la categoría escogida (Moto, Carro, etc.)
   listenRealDriversInZone();
   calculateRouteOrder();
 }
 
+// CORRECCIÓN EXACTA DE LOS PINES (TOCAN LA CARRETERA CON PRECISIÓN)
 function createNeonPinIcon(label) {
   return L.divIcon({
     className: 'custom-neon-pin-wrapper',
@@ -1211,7 +1260,7 @@ function createNeonPinIcon(label) {
       </div>
     `,
     iconSize: [34, 46],
-    iconAnchor: [17, 46]
+    iconAnchor: [17, 34]
   });
 }
 
@@ -1227,7 +1276,7 @@ function initOrderMap() {
     maxBounds: JUNQUITO_BOUNDS,
     minZoom: 11,
     maxZoom: 18
-  }).setView([origPt.lat, origPt.lon], 13);
+  }).setView([origPt.lat, origPt.lon], 14);
   
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     bounds: JUNQUITO_BOUNDS
@@ -1245,13 +1294,11 @@ function initOrderMap() {
   originMarker = L.marker([origPt.lat, origPt.lon], { icon: createNeonPinIcon('Origen') }).addTo(orderMapInstance);
   destMarker = L.marker([destPt.lat, destPt.lon], { icon: createNeonPinIcon('Destino') }).addTo(orderMapInstance);
 
-  // Escucha exclusiva de conductores reales filtrados
   listenRealDriversInZone();
-
   drawRouteOnMap(origPt, destPt);
 }
 
-// SOLO CHOFERES REALES CONECTADOS (EXCLUYE PROPIO CELULAR Y FILTRA POR VEHÍCULO)
+// SOLO CHOFERES REALES (EXCLUYE PROPIO CELULAR Y FILTRA POR VEHÍCULO)
 function listenRealDriversInZone() {
   if (!db || !orderMapInstance) return;
 
@@ -1265,14 +1312,14 @@ function listenRealDriversInZone() {
       const driver = doc.data();
       const driverId = doc.id;
 
-      // 1. Descartar al usuario actual para no verse a sí mismo
+      // 1. Excluir al propio usuario
       if (driverId === currentUserId) return;
 
-      // 2. Filtrar estrictamente por el tipo de vehículo seleccionado (ej. Moto solo con Moto)
+      // 2. Filtrar estrictamente por categoría
       const matchesCategory = (driver.vehicleType || 'Carro') === selectedOrderCategory;
       if (!matchesCategory) return;
 
-      // 3. Radio de proximidad de montaña (±4 kilómetros)
+      // 3. Proximidad en la montaña (±4 km)
       const closestToDriver = snapToNearestHighway(driver.lat, driver.lon);
       const driverKm = closestToDriver.closestKm ? closestToDriver.closestKm.km : 11;
       const diffKm = Math.abs(driverKm - myOrigKm);
@@ -1305,7 +1352,6 @@ function listenRealDriversInZone() {
       }
     });
 
-    // Remover del mapa conductores desconectados o no coincidentes
     Object.keys(activeRealDriversMarkers).forEach(id => {
       if (!currentActiveIds[id]) {
         orderMapInstance.removeLayer(activeRealDriversMarkers[id]);
@@ -1313,10 +1359,10 @@ function listenRealDriversInZone() {
       }
     });
 
-  }, err => console.warn("Error en escucha de choferes:", err));
+  }, () => {});
 }
 
-// TRAZADO LIMPIO DIRECTO SOBRE LA CARRETERA TRONCAL 4 (SIN VUELTAS POR ANTÍMANO)
+// TRAZADO LIMPIO DIRECTO SOBRE LA CARRETERA (SIN DESVÍOS POR ANTÍMANO)
 async function drawRouteOnMap(startCoords, endCoords) {
   if (orderRouteLayer && orderMapInstance) {
     orderMapInstance.removeLayer(orderRouteLayer);
@@ -1335,8 +1381,8 @@ async function drawRouteOnMap(startCoords, endCoords) {
       const routeDistanceKm = data.routes[0].distance / 1000;
       const directKm = Math.abs(JUNQUITO_ALL_KMS[selectedOriginIdx].km - JUNQUITO_ALL_KMS[selectedDestIdx].km);
 
-      // Si la ruta calculada no da una vuelta loca hacia Caracas
-      if (routeDistanceKm <= (directKm * 1.8 + 2)) {
+      // Si la ruta calculada no da una vuelta ilógica hacia Caracas
+      if (routeDistanceKm <= (directKm * 1.8 + 2.5)) {
         const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
         orderRouteLayer = L.polyline(coords, { color: '#00ff87', weight: 4.5 }).addTo(orderMapInstance);
         orderMapInstance.fitBounds(orderRouteLayer.getBounds(), { padding: [35, 35] });
@@ -1348,7 +1394,7 @@ async function drawRouteOnMap(startCoords, endCoords) {
     }
   } catch(e) {}
 
-  // Trazado de respaldo continuo por los puntos reales de la Troncal 4
+  // Trazado de respaldo continuo por los puntos reales de la carretera
   const startIdx = Math.min(selectedOriginIdx, selectedDestIdx);
   const endIdx = Math.max(selectedOriginIdx, selectedDestIdx);
   const highwayPoints = [];
@@ -1544,7 +1590,7 @@ function toggleDriverStatus() {
             lat: snap.snappedCoords.lat,
             lon: snap.snappedCoords.lon,
             heading: pos.coords.heading || 0,
-            vehicleType: selectedOrderCategory || 'Carro',
+            vehicleType: userData.vehicleType || 'Moto',
             updatedAt: new Date()
           }, { merge: true }).catch(() => {});
         }
@@ -1615,9 +1661,14 @@ function openDriverNavExternal(lat, lon) {
   window.location.href = url;
 }
 
+// NAVEGACIÓN DUAL: SI ESTÁ EN RECOGIDA VA AL ORIGEN, SI ESTÁ EN TRAYECTO VA AL DESTINO
 function openDriverNavExternalCurrent() {
   triggerHaptic(40);
-  if (currentTripData && currentTripData.pickupCoords) {
+  if (!currentTripData) return;
+
+  if (currentTripData.status === 'En trayecto' && currentTripData.dropoffCoords) {
+    openDriverNavExternal(currentTripData.dropoffCoords.lat, currentTripData.dropoffCoords.lon);
+  } else if (currentTripData.pickupCoords) {
     openDriverNavExternal(currentTripData.pickupCoords.lat, currentTripData.pickupCoords.lon);
   } else {
     openDriverNavExternal(10.4614, -67.0420);
@@ -1660,6 +1711,10 @@ async function validatePassengerOTP() {
 
     document.getElementById('driver-otp-input-area').style.display = 'none';
     document.getElementById('driver-in-route-area').style.display = 'block';
+    
+    // El botón de mapa se actualiza para guiar hacia el destino final
+    const btnMap = document.getElementById('btn-driver-ext-map');
+    if (btnMap) btnMap.innerText = '🗺️ Navegar al Destino';
   } else {
     triggerHaptic(150);
     showNeonToast('error', `❌ PIN incorrecto (${enteredOtp}). Pídele el código al pasajero.`);
@@ -1676,7 +1731,7 @@ async function completeActiveTripDriver() {
 
   userData.driverEarnings = (userData.driverEarnings || 0) + netEarnings;
   userData.driverTripsCount = (userData.driverTripsCount || 0) + 1;
-  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
   updateUIProfile();
 
   if (db && activeTripId) {
@@ -1936,6 +1991,8 @@ function listenTripsRealtime() {
           if (trip.status === 'En trayecto') {
             document.getElementById('driver-otp-input-area').style.display = 'none';
             document.getElementById('driver-in-route-area').style.display = 'block';
+            const btnMap = document.getElementById('btn-driver-ext-map');
+            if (btnMap) btnMap.innerText = '🗺️ Navegar al Destino';
           }
         }
       }
@@ -2010,7 +2067,7 @@ function logout() {
   triggerHaptic(40);
   if (userData) {
     userData.isRegistered = false;
-    localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
+    localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
   }
   localStorage.removeItem('jr_active_trip_id');
   location.reload();
