@@ -5,6 +5,32 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// CAPTURA DEL EVENTO DE INSTALACIÓN PWA
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const installBox = document.getElementById('welcome-install-pwa-box');
+  if (installBox) installBox.style.display = 'flex';
+});
+
+function triggerPwaInstallPrompt() {
+  triggerHaptic(40);
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        showNeonToast('success', '¡Gracias por instalar JunRide!');
+        const installBox = document.getElementById('welcome-install-pwa-box');
+        if (installBox) installBox.style.display = 'none';
+      }
+      deferredInstallPrompt = null;
+    });
+  } else {
+    showNeonToast('info', 'Toca los 3 puntos de tu navegador y selecciona "Instalar aplicación".');
+  }
+}
+
 // SISTEMA TOAST NEÓN NATIVO
 function showNeonToast(type, message, duration = 3200) {
   const container = document.getElementById('toast-container');
@@ -44,7 +70,6 @@ const JUNRIDE_LEVELS = [
   { id: 6, name: "Conquistador", minTrips: 80, maxTrips: 9999, icon: "https://files.catbox.moe/htwomx.png", desc: "Rango supremo de honor JunRide. Conquistador de la cima: insignia dorada en perfil, bonificación en tokens y asistencia directa 24/7." }
 ];
 
-// COORDENADAS CALIBRADAS SOBRE EL ASFALTO REAL DE LA TRONCAL 4 Y POIS EMBLEMÁTICOS
 const JUNQUITO_ALL_KMS = [
   { km: 0, name: "Km 0 (La Yaguara / Metro)", lat: 10.4768, lon: -66.9600, alt: 940 },
   { km: 1, name: "Km 1 (Inicio Carretera Vieja)", lat: 10.4735, lon: -66.9680, alt: 990 },
@@ -82,7 +107,7 @@ const JUNQUITO_BOUNDS = [
   [10.4950, -66.9450]
 ];
 
-// FIREBASE DEFENSIVO
+// INICIALIZACIÓN DEFENSIVA DE FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyAsBnD8C_E_o5oHzmw7bWmKrmW2JAjdcaU",
   authDomain: "geomercado-9d642.firebaseapp.com",
@@ -140,6 +165,7 @@ let mediaRecorder = null;
 let audioChunks = [];
 let isRecordingAudio = false;
 let isChatModalOpen = false;
+let authCurrentMode = 'register'; // 'register' o 'login'
 
 document.addEventListener('DOMContentLoaded', () => {
   const tomorrow = new Date();
@@ -151,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchBCVRate();
   renderRechargeDetails('bdv');
   renderLevelsBreakdownList();
-  requestStartupGpsLocation();
   restoreOfflineTripState();
   listenRoadAlertsRealtime();
   listenTripsRealtime();
@@ -159,6 +184,134 @@ document.addEventListener('DOMContentLoaded', () => {
   const avatarInput = document.getElementById('profile-avatar-input');
   if (avatarInput) avatarInput.addEventListener('change', handleAvatarFileSelected);
 });
+
+// ==============================================================
+// GESTIÓN DE SESIÓN Y PANTALLA PRINCIPAL DE BIENVENIDA
+// ==============================================================
+function checkSessionAndAuth() {
+  const saved = localStorage.getItem('jr_user_profile_v32');
+  const welcomeScreen = document.getElementById('screen-welcome');
+  const mainApp = document.getElementById('app-main-interface');
+
+  if (saved) {
+    try {
+      userData = JSON.parse(saved);
+      if (userData && userData.isRegistered) {
+        // Usuario ya registrado: entra directo a la app
+        if (welcomeScreen) welcomeScreen.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'block';
+        updateUIProfile();
+        renderDynamicBottomNav();
+        requestStartupGpsLocation();
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // Si no está registrado, mostrar pantalla de bienvenida
+  if (welcomeScreen) welcomeScreen.style.display = 'flex';
+  if (mainApp) mainApp.style.display = 'none';
+}
+
+function openAuthModal(mode = 'register') {
+  triggerHaptic(30);
+  authCurrentMode = mode;
+  const modal = document.getElementById('modal-auth-form');
+  const title = document.getElementById('auth-modal-title');
+  const desc = document.getElementById('auth-modal-desc');
+  const extraFields = document.getElementById('auth-register-extra-fields');
+  const submitBtn = document.getElementById('auth-submit-btn');
+
+  if (mode === 'register') {
+    title.innerText = 'Crear Cuenta JunRide';
+    desc.innerText = 'Completa tus datos para activar tu perfil de usuario y tu saldo de bienvenida.';
+    extraFields.style.display = 'block';
+    submitBtn.innerText = 'Crear y Comenzar';
+  } else {
+    title.innerText = 'Iniciar Sesión';
+    desc.innerText = 'Ingresa tu número de teléfono y correo para restaurar tu cuenta y saldo.';
+    extraFields.style.display = 'none';
+    submitBtn.innerText = 'Entrar a JunRide';
+  }
+
+  modal.classList.add('active');
+}
+
+function closeAuthModal() {
+  document.getElementById('modal-auth-form').classList.remove('active');
+}
+
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  triggerHaptic(50);
+
+  const phone = document.getElementById('auth-input-phone').value.trim();
+  const email = document.getElementById('auth-input-email').value.trim();
+  const name = document.getElementById('auth-input-name').value.trim() || 'Usuario';
+  const lastname = document.getElementById('auth-input-lastname').value.trim() || '';
+
+  if (!phone || !email) {
+    showNeonToast('error', 'Por favor ingresa teléfono y correo.');
+    return;
+  }
+
+  if (authCurrentMode === 'register') {
+    userData = {
+      name: name,
+      lastname: lastname,
+      phone: phone,
+      email: email,
+      role: 'passenger',
+      isRegistered: true,
+      kmBalance: 5.00,
+      driverEarnings: 0.00,
+      driverTripsCount: 0,
+      totalTrips: 0,
+      tokens: 500,
+      rating: 5.00,
+      avatar: 'https://files.catbox.moe/oh53r9.png',
+      batterySaver: false,
+      walletLedger: [{ type: 'credit', title: 'Bono Bienvenida JunRide', amount: 5.00, date: 'Hoy' }]
+    };
+  } else {
+    // Modo Login
+    const existing = localStorage.getItem('jr_user_profile_v32');
+    if (existing) {
+      try { userData = JSON.parse(existing); } catch(err) {}
+    }
+    if (!userData) {
+      userData = {
+        name: 'David', lastname: 'Morales', phone: phone, email: email, role: 'passenger',
+        isRegistered: true, kmBalance: 5.00, driverEarnings: 0.00, driverTripsCount: 0,
+        totalTrips: 11, tokens: 2150, rating: 5.00, avatar: 'https://files.catbox.moe/oh53r9.png',
+        batterySaver: false, walletLedger: [{ type: 'credit', title: 'Bono Inicial', amount: 5.00, date: 'Hoy' }]
+      };
+    }
+    userData.isRegistered = true;
+    userData.phone = phone;
+    userData.email = email;
+  }
+
+  localStorage.setItem('jr_user_profile_v32', JSON.stringify(userData));
+
+  if (db) {
+    db.collection('users').doc(currentUserId).set(userData, { merge: true }).catch(() => {});
+  }
+
+  closeAuthModal();
+
+  // Transición suave hacia la interfaz principal
+  document.getElementById('screen-welcome').style.display = 'none';
+  document.getElementById('app-main-interface').style.display = 'block';
+
+  updateUIProfile();
+  renderDynamicBottomNav();
+  playChimeSound();
+  showNeonToast('success', `¡Bienvenido a JunRide, ${userData.name}!`);
+
+  // Activar GPS satelital inmediatamente al entrar
+  requestStartupGpsLocation();
+}
 
 function restoreOfflineTripState() {
   const savedTrip = localStorage.getItem('jr_offline_active_trip');
@@ -192,8 +345,10 @@ function snapToNearestHighway(lat, lon) {
   return { snappedCoords: { lat: closestKm.lat, lon: closestKm.lon }, index: closestIdx, kmName: closestKm.name, alt: closestKm.alt };
 }
 
+// SOLICITUD DE UBICACIÓN SATELITAL CON ALTA PRECISIÓN AL ENTRAR
 function requestStartupGpsLocation() {
   if (navigator.geolocation) {
+    showNeonToast('info', 'Calibrando GPS en la montaña...');
     navigator.geolocation.getCurrentPosition(pos => {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
@@ -207,50 +362,12 @@ function requestStartupGpsLocation() {
         selectedOriginIdx = snap.index;
         const triggerEl = document.getElementById('trigger-origin-name');
         if (triggerEl) triggerEl.innerText = snap.kmName;
+        showNeonToast('success', `📍 Ubicación fijada: ${snap.kmName}`);
       }
-    }, err => {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    }, err => {
+      console.warn("Permiso de GPS no concedido de inmediato.");
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
   }
-}
-
-function checkSessionAndAuth() {
-  const saved = localStorage.getItem('jr_user_profile_v31');
-  if (saved) {
-    try {
-      userData = JSON.parse(saved);
-    } catch(e) {
-      setupDefaultUser();
-    }
-  } else {
-    setupDefaultUser();
-  }
-
-  if (!userData.role) userData.role = 'passenger';
-
-  updateUIProfile();
-  renderDynamicBottomNav();
-  initAuth();
-}
-
-function setupDefaultUser() {
-  userData = {
-    name: 'David', lastname: 'Morales', phone: '04123167126', role: 'passenger',
-    kmBalance: 5.00, driverEarnings: 0.00, driverTripsCount: 0,
-    totalTrips: 11, tokens: 2150, rating: 5.00, avatar: 'https://files.catbox.moe/oh53r9.png',
-    batterySaver: false,
-    walletLedger: [{ type: 'credit', title: 'Bono Inicial de Cartera', amount: 5.00, date: 'Hoy' }]
-  };
-  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
-}
-
-function initAuth() {
-  if (!auth) return;
-  auth.signInAnonymously().then(res => {
-    currentUserId = res.user.uid;
-    localStorage.setItem('jr_session_uid', currentUserId);
-    if (userData && currentUserId && db) {
-      db.collection('users').doc(currentUserId).set(userData, { merge: true }).catch(() => {});
-    }
-  }).catch(() => {});
 }
 
 function listenRoadAlertsRealtime() {
@@ -376,7 +493,7 @@ function shareReferralCode() {
 function toggleBatterySaverMode() {
   triggerHaptic();
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v32', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -487,7 +604,7 @@ function handleAvatarFileSelected(event) {
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       userData.avatar = compressedDataUrl;
-      localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_v32', JSON.stringify(userData));
       
       if (currentUserId && db) {
         db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
@@ -549,7 +666,7 @@ function speakDriverAlert(text) {
 function switchDriverMode() {
   triggerHaptic();
   userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v32', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('driver-panel');
@@ -559,7 +676,7 @@ function switchDriverMode() {
 function switchPassengerMode() {
   triggerHaptic();
   userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v32', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('inicio');
@@ -677,7 +794,7 @@ function updateUIProfile() {
 
     applyBatterySaverUI();
 
-    const totalTrips = userData.totalTrips || 11;
+    const totalTrips = userData.totalTrips || 0;
     const { current, next } = getUserCurrentLevel(totalTrips);
 
     const tierIconRight = document.getElementById('profile-tier-icon-right');
@@ -703,7 +820,7 @@ function updateUIProfile() {
     if (statTrips) statTrips.innerText = totalTrips;
 
     const statTokens = document.getElementById('stats-total-tokens');
-    if (statTokens) statTokens.innerText = (userData.tokens || (totalTrips * 195)).toLocaleString();
+    if (statTokens) statTokens.innerText = (userData.tokens || 500).toLocaleString();
 
     const headerBadge = document.getElementById('header-driver-badge');
     if (headerBadge) {
@@ -729,7 +846,7 @@ function renderLevelsBreakdownList() {
   const container = document.getElementById('levels-list-container');
   if (!container) return;
   container.innerHTML = '';
-  const totalTrips = (userData ? userData.totalTrips : 11) || 11;
+  const totalTrips = (userData ? userData.totalTrips : 0) || 0;
   const { current } = getUserCurrentLevel(totalTrips);
 
   JUNRIDE_LEVELS.forEach(lvl => {
@@ -885,7 +1002,7 @@ function logWalletMovement(type, title, amount) {
   userData.walletLedger.unshift({
     type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
   });
-  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v32', JSON.stringify(userData));
   renderWalletLedger();
 }
 
@@ -1345,7 +1462,7 @@ function openDriverNavExternalCurrent() {
   }
 }
 
-// VALIDAR PIN DEL PASAJERO (RECUPERACIÓN BLINDADA)
+// VALIDAR PIN DEL PASAJERO
 async function validatePassengerOTP() {
   triggerHaptic(50);
   const enteredOtp = document.getElementById('driver-input-otp').value.trim();
@@ -1397,7 +1514,7 @@ async function completeActiveTripDriver() {
 
   userData.driverEarnings = (userData.driverEarnings || 0) + netEarnings;
   userData.driverTripsCount = (userData.driverTripsCount || 0) + 1;
-  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v32', JSON.stringify(userData));
   updateUIProfile();
 
   if (db && activeTripId) {
@@ -1523,7 +1640,6 @@ async function toggleAudioRecording() {
   }
 }
 
-// ESCUCHA DEL CHAT CON ALERTA AUDITIVA Y PUNTO ROJO EN EL MENÚ INFERIOR
 function listenChatMessagesRealtime() {
   if (!db || !activeTripId) return;
   db.collection('trips').doc(activeTripId).collection('messages').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
@@ -1645,7 +1761,6 @@ function listenTripsRealtime() {
       const trip = doc.data();
       const tripId = doc.id;
 
-      // RECONOCER SI ESTE CHOFER ES EL DUEÑO DE UNA CARRERA EN EJECUCIÓN
       if (trip.driverId === currentUserId && (trip.status === 'Conductor asignado' || trip.status === 'En trayecto')) {
         activeTripId = tripId;
         currentTripData = { ...trip, id: tripId };
@@ -1665,8 +1780,7 @@ function listenTripsRealtime() {
         }
       }
 
-      // SI EL PASAJERO ESTÁ ESPERANDO
-      if (activeTripId === tripId && userData.role === 'passenger') {
+      if (activeTripId === tripId && userData && userData.role === 'passenger') {
         currentTripData = trip;
 
         if (trip.status === 'Conductor asignado') {
@@ -1689,7 +1803,6 @@ function listenTripsRealtime() {
       }
     });
 
-    // PINTAR SOLICITUDES DISPONIBLES EN EL TABLERO DEL CHOFER
     if (isDriverOnline && driverList && !activeTripId) {
       driverList.innerHTML = '';
       let pendingCount = 0;
@@ -1733,4 +1846,12 @@ async function acceptTrip(tripId) {
   document.getElementById('driver-in-route-area').style.display = 'none';
 }
 
-function logout() { localStorage.removeItem('jr_user_profile_v31'); location.reload(); }
+function logout() {
+  triggerHaptic(40);
+  if (userData) {
+    userData.isRegistered = false;
+    localStorage.setItem('jr_user_profile_v32', JSON.stringify(userData));
+  }
+  localStorage.removeItem('jr_active_trip_id');
+  location.reload();
+}
