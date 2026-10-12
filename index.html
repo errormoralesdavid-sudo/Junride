@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=33">
+  <link rel="manifest" href="manifest.json?v=34">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,7 +21,7 @@
   <!-- Contenedor Flotante de Notificaciones Toast Neón -->
   <div id="toast-container"></div>
 
-  <!-- PANTALLA PRINCIPAL DE BIENVENIDA / ONBOARDING -->
+  <!-- 1. PANTALLA DE BIENVENIDA / ONBOARDING -->
   <section id="screen-welcome" class="welcome-screen-wrap animate-fade">
     <div class="welcome-hero-content">
       
@@ -57,7 +57,31 @@
     </div>
   </section>
 
-  <!-- MODAL DE REGISTRO / LOGIN -->
+  <!-- 2. PANTALLA DE SELECCIÓN DE ROL (PASAJERO VS CONDUCTOR) -->
+  <section id="screen-role-select" class="welcome-screen-wrap animate-fade" style="display:none;">
+    <div class="welcome-hero-content">
+      <h2 style="font-size:1.6rem; color:#fff; font-weight:900;">¿Cómo deseas usar JunRide?</h2>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">Selecciona tu rol principal en la plataforma. Puedes cambiarlo luego.</p>
+      
+      <div class="role-card card-neon" onclick="chooseAppRole('passenger')">
+        <div class="role-icon-box">🙋‍♂️</div>
+        <div style="text-align:left;">
+          <h3 style="color:#00ff87; font-size:1.15rem; font-weight:900;">Modo Pasajero / Cliente</h3>
+          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, puestos compartidos y mudanzas en la montaña.</p>
+        </div>
+      </div>
+
+      <div class="role-card card-neon" onclick="chooseAppRole('driver')">
+        <div class="role-icon-box"><img src="https://files.catbox.moe/wr94fi.png" style="width:36px; height:36px;" alt="Chofer"></div>
+        <div style="text-align:left;">
+          <h3 style="color:#38bdf8; font-size:1.15rem; font-weight:900;">Modo Conductor / Chofer</h3>
+          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Genera ingresos aceptando viajes con tu vehículo en tu sector.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. MODAL DE REGISTRO / LOGIN -->
   <div class="modal" id="modal-auth-form">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -65,7 +89,7 @@
         <button class="btn-close" onclick="closeAuthModal()">&times;</button>
       </div>
       
-      <p style="font-size:0.75rem; color:var(--text-muted);" id="auth-modal-desc">Ingresa tus datos para activar tu perfil de usuario y tu saldo de bienvenida.</p>
+      <p style="font-size:0.75rem; color:var(--text-muted);" id="auth-modal-desc">Ingresa tus datos para activar tu perfil de usuario.</p>
 
       <form id="auth-main-form" onsubmit="handleAuthSubmit(event)">
         <div id="auth-register-extra-fields">
@@ -82,23 +106,46 @@
         <label style="font-size:0.75rem; color:var(--text-muted);">Correo Electrónico:</label>
         <input type="email" id="auth-input-email" placeholder="Ej. usuario@correo.com" required>
 
-        <div style="background:rgba(0,255,135,0.06); border:1px solid var(--border-glow); padding:10px; border-radius:14px; margin:8px 0; font-size:0.72rem; color:#cbd5e1;">
-          📍 <strong>Ubicación:</strong> Al entrar se calibrará automáticamente tu punto en la Troncal 4 de El Junquito.
-        </div>
-
-        <button type="submit" class="btn-primary-neon" style="width:100%; padding:14px; margin-top:4px;" id="auth-submit-btn">
-          Comenzar en JunRide
+        <button type="submit" class="btn-primary-neon" style="width:100%; padding:14px; margin-top:10px;" id="auth-submit-btn">
+          Continuar
         </button>
       </form>
     </div>
   </div>
 
+  <!-- 4. MODAL DE REGISTRO DE VEHÍCULO DEL CONDUCTOR -->
+  <div class="modal" id="modal-driver-vehicle-setup">
+    <div class="modal-content card-neon animate-fade">
+      <div class="panel-header-row">
+        <h3 style="color:white; font-size:1.15rem;">🚗 Configura tu Unidad</h3>
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-muted);">Selecciona el tipo de transporte que conduces para recibir carreras adecuadas:</p>
+      
+      <div class="touch-chips-selector-vertical" id="driver-veh-setup-chips">
+        <div class="touch-chip active" onclick="selectSetupVehicleType('Moto', this)">🏍️ Moto Express</div>
+        <div class="touch-chip" onclick="selectSetupVehicleType('Carro', this)">🚗 Carro Particular</div>
+        <div class="touch-chip" onclick="selectSetupVehicleType('Colectivo', this)">🚐 Por Puesto / Van</div>
+        <div class="touch-chip" onclick="selectSetupVehicleType('Carga', this)">🚚 Mudanza / Camión de Carga</div>
+      </div>
+      <input type="hidden" id="driver-veh-setup-val" value="Moto">
+
+      <label style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">Modelo y Color del Vehículo:</label>
+      <input type="text" id="driver-veh-model-input" placeholder="Ej. Bera SBR Azul / Toyota Corolla Blanco" required>
+
+      <label style="font-size:0.75rem; color:var(--text-muted);">Número de Placa:</label>
+      <input type="text" id="driver-veh-plate-input" placeholder="Ej. AA1B23C" required>
+
+      <button type="button" class="btn-primary-neon" style="width:100%; padding:14px; margin-top:10px;" onclick="finishDriverRegistration()">
+        Activar Tablero de Conductor
+      </button>
+    </div>
+  </div>
+
   <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
 
-  <!-- INTERFAZ PRINCIPAL -->
+  <!-- 5. INTERFAZ PRINCIPAL -->
   <div id="app-main-interface" style="display:none;">
     
-    <!-- Cabecera Superior -->
     <header class="top-bar" id="main-header">
       <div class="top-bar-left">
         <div class="brand-logo-lockup" onclick="handleHeaderHomeClick()">
@@ -135,7 +182,6 @@
       <!-- Pestaña INICIO -->
       <section class="tab-content animate-fade" id="tab-inicio">
         
-        <!-- Marquesina de Alertas Viales con botón de cerrar [X] -->
         <div class="live-alerts-ticker" id="live-alerts-banner" style="display:none;">
           <div style="display:flex; align-items:center; gap:10px; flex:1; cursor:pointer;" onclick="openReportTrafficModal()">
             <span style="font-size:1.2rem;">⚠️</span>
@@ -418,7 +464,25 @@
             </div>
           </div>
 
-          <div class="tier-progress-section">
+          <!-- MÓDULO ADAPTATIVO: SI ES CHOFER MUESTRA MANTENIMIENTO, SI ES PASAJERO MUESTRA RANGO -->
+          <div id="driver-maintenance-hud" style="display:none; margin-top:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border-glow); padding:12px; border-radius:16px;">
+            <div class="panel-header-row" style="margin-bottom:6px;">
+              <span style="font-size:0.75rem; color:#38bdf8; font-weight:800;">🔧 Mantenimiento de Unidad (<span id="profile-driver-veh-type">Moto</span>)</span>
+              <span style="font-size:0.72rem; color:var(--primary); font-weight:800;" id="profile-driver-plate-tag">AA1B23C</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.72rem;">
+              <div style="background:rgba(0,0,0,0.3); padding:8px; border-radius:10px;">
+                <span style="color:var(--text-muted); display:block;">Cambio de Aceite:</span>
+                <strong style="color:#fbbf24;">Dentro de 850 km</strong>
+              </div>
+              <div style="background:rgba(0,0,0,0.3); padding:8px; border-radius:10px;">
+                <span style="color:var(--text-muted); display:block;">Nivel Gasolina:</span>
+                <strong style="color:var(--primary);">Control Activo</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="tier-progress-section" id="passenger-tier-hud">
             <div class="tier-progress-header">
               <span>Progreso de Nivel</span>
               <strong id="profile-tier-exp-text">11 / 15 Viajes para Explorador</strong>
@@ -461,7 +525,6 @@
             <span class="badge-tag-neon">$1.00 = 1K</span>
           </div>
 
-          <!-- Código de Referidos Personal Dinámico -->
           <div class="profile-menu-item" onclick="shareReferralCode()">
             <div class="profile-menu-left">
               <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
@@ -508,7 +571,6 @@
 
     </main>
 
-    <!-- Barra de Navegación Inferior -->
     <nav class="bottom-nav" id="dynamic-bottom-nav"></nav>
   </div>
 
@@ -635,7 +697,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE CHAT EN TIEMPO REAL -->
+  <!-- MODAL DE CHAT -->
   <div class="modal" id="modal-active-chat">
     <div class="modal-content card-neon animate-fade" style="height:80vh; max-height:550px; display:flex; flex-direction:column; padding:16px;">
       <div class="panel-header-row" style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
@@ -669,8 +731,8 @@
     </div>
   </div>
 
-  <!-- MODAL SELECTOR DE KILÓMETROS Y POIS -->
-  <div class="modal" id="modal-km-picker">
+  <!-- MODAL SELECTOR DE KILÓMETROS CON Z-INDEX SUPERIOR -->
+  <div class="modal" id="modal-km-picker" style="z-index: 100000 !important;">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
         <h3 style="color:white; font-size:1.1rem;" id="km-picker-modal-title">Selecciona el Kilómetro</h3>
@@ -683,7 +745,7 @@
     </div>
   </div>
 
-  <!-- MODAL APARTAR VIAJE CON SELECTORES TÁCTILES LIMPIOS -->
+  <!-- MODAL APARTAR VIAJE -->
   <div class="modal" id="modal-schedule-trip">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -730,7 +792,7 @@
     </div>
   </div>
 
-  <!-- MODAL REPORTAR ALERTA EN LA VÍA LIMPIO -->
+  <!-- MODAL REPORTAR ALERTA EN LA VÍA -->
   <div class="modal" id="modal-traffic-alert">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -812,7 +874,6 @@
     </div>
   </div>
 
-  <!-- SCRIPTS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
