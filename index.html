@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=27">
+  <link rel="manifest" href="manifest.json?v=28">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -60,7 +60,6 @@
     <!-- Pestaña INICIO (Modo Pasajero) -->
     <section class="tab-content animate-fade" id="tab-inicio">
       
-      <!-- Marquesina de Alertas Viales en Vivo -->
       <div class="live-alerts-ticker" id="live-alerts-banner" onclick="openReportTrafficModal()" style="display:none;">
         <span style="font-size:1.2rem;">⚠️</span>
         <div>
@@ -177,9 +176,9 @@
         </div>
 
         <form onsubmit="verifyPaymentReference(event)">
-          <label style="font-size:0.75rem; color:var(--text-muted);">Últimos 6 dígitos de la referencia:</label>
+          <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-ref">Últimos 6 dígitos de la referencia:</label>
           <input type="text" id="pay-ref-input" maxlength="8" placeholder="Ej. 466324" required>
-          <label style="font-size:0.75rem; color:var(--text-muted);">Monto pagado en Bs.:</label>
+          <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-amount">Monto pagado en Bs.:</label>
           <input type="number" step="0.01" id="pay-amount-input" placeholder="Ej. 1380.00" required>
           <button type="submit" class="btn-primary-neon" style="width:100%; margin-top:4px;">Acreditar Saldo a la Billetera</button>
         </form>
@@ -402,7 +401,7 @@
       </div>
       <div class="bcv-rate-pill bcv-rate-pill-dark">
         <span style="color:#a7f3d0;">Tasa BCV</span>
-        <strong id="order-bcv-val" style="color:#ffffff;">876.80 Bs.</strong>
+        <strong id="order-bcv-val">876.80 Bs.</strong>
       </div>
     </div>
 
@@ -640,10 +639,9 @@
     </div>
   </div>
 
-  <!-- Barra de Navegación Inferior -->
   <nav class="bottom-nav" id="dynamic-bottom-nav"></nav>
 
-  <!-- SCRIPTS INDISPENSABLES: LEAFLET Y FIREBASE CARGADOS ANTES DE APP.JS -->
+  <!-- LIBRERÍAS CARGADAS EN EL ORDEN CORRECTO -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
