@@ -65,7 +65,7 @@ const JUNQUITO_ALL_KMS = [
   { km: 17, name: "Km 17 (Salida del Pueblo)", lat: 10.4614, lon: -67.0880 },
   { km: 18, name: "Km 18 (Sector Los Manantiales)", lat: 10.4623, lon: -67.0955 },
   { km: 19, name: "Km 19 (Zona Turística / Fresas)", lat: 10.4638, lon: -67.1030 },
-  { km: 20, name: "Km 20 (Sector La Colina)", lat: 10.4658, lon: -67.1105 },
+  { km: 20, name: "Km 20 (Sector La Colina)", lat: 10.4660, lon: -67.1105 },
   { km: 21, name: "Km 21 (Entrada Tibroncito)", lat: 10.4680, lon: -67.1180 },
   { km: 22, name: "Km 22 (Sector Monte Alto)", lat: 10.4702, lon: -67.1255 },
   { km: 23, name: "Km 23 (El Retén / La Niebla)", lat: 10.4732, lon: -67.1330 },
@@ -81,7 +81,7 @@ const JUNQUITO_BOUNDS = [
   [10.4950, -66.9450]
 ];
 
-// INICIALIZACIÓN DEFENSIVA DE FIREBASE
+// FIREBASE DEFENSIVO
 const firebaseConfig = {
   apiKey: "AIzaSyAsBnD8C_E_o5oHzmw7bWmKrmW2JAjdcaU",
   authDomain: "geomercado-9d642.firebaseapp.com",
@@ -115,7 +115,7 @@ let currentBcvRate = parseFloat(localStorage.getItem('jr_last_bcv_rate') || '876
 let isMountainFog = false;
 let isDriverOnline = false;
 let driverGeoWatchId = null;
-let activeTripId = null;
+let activeTripId = localStorage.getItem('jr_active_trip_id') || null;
 let currentTripData = null;
 let orderMapInstance = null;
 let orderRouteLayer = null;
@@ -135,10 +135,11 @@ let selectedDestIdx = 0;
 let selectedStopIdx = 12;
 let currentKmPickerTarget = 'origin';
 
-// AUDIO RECORDER PARA NOTAS DE VOZ
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecordingAudio = false;
+let isChatModalOpen = false;
+let lastSeenMsgTimestamp = Date.now();
 
 document.addEventListener('DOMContentLoaded', () => {
   const tomorrow = new Date();
@@ -165,6 +166,7 @@ function restoreOfflineTripState() {
     try {
       const trip = JSON.parse(savedTrip);
       activeTripId = trip.id;
+      currentTripData = trip;
       document.getElementById('live-tracking-box').style.display = 'block';
       document.getElementById('live-driver-name').innerText = trip.driverName || 'Conductor en Camino';
       document.getElementById('trip-fare-val').innerText = trip.price;
@@ -197,10 +199,7 @@ function requestStartupGpsLocation() {
       const lon = pos.coords.longitude;
       const accuracy = pos.coords.accuracy;
 
-      if (accuracy > 250) {
-        console.warn("Señal GPS difusa.");
-        return;
-      }
+      if (accuracy > 250) return;
 
       if (lat >= 10.4300 && lat <= 10.4950 && lon >= -67.1950 && lon <= -66.9450) {
         const snap = snapToNearestHighway(lat, lon);
@@ -214,7 +213,7 @@ function requestStartupGpsLocation() {
 }
 
 function checkSessionAndAuth() {
-  const saved = localStorage.getItem('jr_user_profile_v30');
+  const saved = localStorage.getItem('jr_user_profile_v31');
   if (saved) {
     try {
       userData = JSON.parse(saved);
@@ -240,7 +239,7 @@ function setupDefaultUser() {
     batterySaver: false,
     walletLedger: [{ type: 'credit', title: 'Bono Inicial de Cartera', amount: 5.00, date: 'Hoy' }]
   };
-  localStorage.setItem('jr_user_profile_v30', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
 }
 
 function initAuth() {
@@ -251,9 +250,7 @@ function initAuth() {
     if (userData && currentUserId && db) {
       db.collection('users').doc(currentUserId).set(userData, { merge: true }).catch(() => {});
     }
-  }).catch(err => {
-    console.warn("Auth directo activo.");
-  });
+  }).catch(() => {});
 }
 
 function listenRoadAlertsRealtime() {
@@ -358,7 +355,7 @@ function shareReferralCode() {
 function toggleBatterySaverMode() {
   triggerHaptic();
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_v30', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -468,7 +465,7 @@ function handleAvatarFileSelected(event) {
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       userData.avatar = compressedDataUrl;
-      localStorage.setItem('jr_user_profile_v30', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
       
       if (currentUserId && db) {
         db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
@@ -499,6 +496,24 @@ function playChimeSound() {
   } catch(e) {}
 }
 
+// SONIDO DE MENSAJE NUEVO
+function playMessageNotificationSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  } catch(e) {}
+}
+
 function speakDriverAlert(text) {
   playChimeSound();
   if ('speechSynthesis' in window) {
@@ -513,7 +528,7 @@ function speakDriverAlert(text) {
 function switchDriverMode() {
   triggerHaptic();
   userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_v30', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('driver-panel');
@@ -523,7 +538,7 @@ function switchDriverMode() {
 function switchPassengerMode() {
   triggerHaptic();
   userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_v30', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('inicio');
@@ -555,6 +570,7 @@ function renderDynamicBottomNav() {
       </button>
       <button class="nav-item-btn ${currentTab === 'driver-mensajes' ? 'active' : ''}" onclick="switchTab('driver-mensajes')">
         <div class="nav-active-pill"></div>
+        <div class="nav-unread-dot" id="nav-unread-badge-driver"></div>
         <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
         <small>Mensajes</small>
       </button>
@@ -596,6 +612,13 @@ function switchTab(tabName) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
   const targetTab = document.getElementById(`tab-${tabName}`);
   if (targetTab) targetTab.style.display = 'block';
+
+  // Si entra a mensajes, limpiar el punto rojo
+  if (tabName === 'driver-mensajes') {
+    const dot = document.getElementById('nav-unread-badge-driver');
+    if (dot) dot.style.display = 'none';
+  }
+
   renderDynamicBottomNav();
   window.scrollTo(0, 0);
 }
@@ -678,7 +701,7 @@ function updateUIProfile() {
 
     renderWalletLedger();
   } catch(e) {
-    console.error("UI profile update error:", e);
+    console.error("UI profile error:", e);
   }
 }
 
@@ -842,7 +865,7 @@ function logWalletMovement(type, title, amount) {
   userData.walletLedger.unshift({
     type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
   });
-  localStorage.setItem('jr_user_profile_v30', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
   renderWalletLedger();
 }
 
@@ -1102,7 +1125,7 @@ function adjustOrderPrice(delta) {
   document.getElementById('order-fare-ves').innerText = (offeredOrderPrice * currentBcvRate).toFixed(2);
 }
 
-// CONFIRMAR PEDIDO Y ENVIAR AL RADAR
+// CONFIRMAR PEDIDO Y TRANSMITIR A FIREBASE
 async function confirmOrderTrip() {
   triggerHaptic(80);
   const payMode = document.getElementById('order-pay-mode').value;
@@ -1145,18 +1168,21 @@ async function confirmOrderTrip() {
     try {
       const docRef = await db.collection('trips').add(tripPayload);
       activeTripId = docRef.id;
+      localStorage.setItem('jr_active_trip_id', activeTripId);
       showNeonToast('success', '📡 Solicitud transmitida a todos los choferes.');
     } catch(err) {
       console.error("Error al publicar en Firebase:", err);
-      showNeonToast('warning', 'Modo offline activo.');
       activeTripId = 'offline_' + Date.now();
+      localStorage.setItem('jr_active_trip_id', activeTripId);
     }
   } else {
     activeTripId = 'offline_' + Date.now();
+    localStorage.setItem('jr_active_trip_id', activeTripId);
   }
 
   localStorage.setItem('jr_offline_active_trip', JSON.stringify({
-    id: activeTripId, price: offeredOrderPrice.toFixed(2), otp: otpCode, status: 'Buscando conductor'
+    id: activeTripId, price: offeredOrderPrice.toFixed(2), otp: otpCode, status: 'Buscando conductor',
+    pickupCoords: { lat: origPt.lat, lon: origPt.lon }
   }));
 
   document.getElementById('passenger-otp-val').innerText = otpCode;
@@ -1178,6 +1204,7 @@ async function cancelTrip(isManual = false) {
       await db.collection('trips').doc(activeTripId).delete().catch(() => {});
     }
     localStorage.removeItem('jr_offline_active_trip');
+    localStorage.removeItem('jr_active_trip_id');
     activeTripId = null;
     currentTripData = null;
 
@@ -1189,7 +1216,7 @@ async function cancelTrip(isManual = false) {
   }
 }
 
-// TOGGLE CONEXIÓN CHOFER
+// TOGGLE CONEXIÓN DEL CHOFER
 function toggleDriverStatus() {
   triggerHaptic();
   isDriverOnline = !isDriverOnline;
@@ -1252,7 +1279,7 @@ function fetchPendingTripsForDriver() {
     if (!driverList) return;
     driverList.innerHTML = '';
 
-    if (snapshot.empty) {
+    if (snapshot.empty && !activeTripId) {
       driverList.innerHTML = '<p style="font-size:0.75rem; color:#94a3b8; text-align:center;">No hay solicitudes activas en este momento.</p>';
       return;
     }
@@ -1281,29 +1308,48 @@ function renderSingleDriverTripCard(tripId, trip) {
     </li>`;
 }
 
+// ABRIR GOOGLE MAPS DIRECTAMENTE SIN BLOQUEO DE POPUPS
 function openDriverNavExternal(lat, lon) {
-  triggerHaptic();
+  triggerHaptic(40);
   const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`;
-  window.open(url, '_blank');
+  window.location.href = url;
 }
 
 function openDriverNavExternalCurrent() {
+  triggerHaptic(40);
   if (currentTripData && currentTripData.pickupCoords) {
     openDriverNavExternal(currentTripData.pickupCoords.lat, currentTripData.pickupCoords.lon);
+  } else {
+    // Si no tiene coordenadas explícitas, guiar al centro de El Junquito
+    openDriverNavExternal(10.4609, -67.0805);
   }
 }
 
-// VALIDAR PIN DEL PASAJERO EN EL TELÉFONO DEL CHOFER
+// VALIDAR PIN DEL PASAJERO
 async function validatePassengerOTP() {
   triggerHaptic(50);
   const enteredOtp = document.getElementById('driver-input-otp').value.trim();
   
+  // Si no está en memoria, recuperarlo de localStorage
+  if (!currentTripData) {
+    const saved = localStorage.getItem('jr_driver_active_trip_cache');
+    if (saved) {
+      try { currentTripData = JSON.parse(saved); } catch(e) {}
+    }
+  }
+
+  if (!activeTripId && currentTripData) {
+    activeTripId = currentTripData.id;
+  }
+
   if (!activeTripId || !currentTripData) {
-    showNeonToast('error', 'No hay carrera activa seleccionada.');
+    showNeonToast('error', 'No hay carrera activa seleccionada en este teléfono.');
     return;
   }
 
-  if (enteredOtp === currentTripData.otp.toString()) {
+  const expectedOtp = (currentTripData.otp || '').toString().trim();
+
+  if (enteredOtp === expectedOtp) {
     playChimeSound();
     speakDriverAlert("PIN correcto. Iniciando viaje hacia el destino.");
     showNeonToast('success', '✅ PIN validado. Viaje iniciado.');
@@ -1318,7 +1364,7 @@ async function validatePassengerOTP() {
     document.getElementById('driver-in-route-area').style.display = 'block';
   } else {
     triggerHaptic(150);
-    showNeonToast('error', '❌ PIN incorrecto. Pídele el código al pasajero.');
+    showNeonToast('error', `❌ PIN incorrecto (${enteredOtp}). El pasajero tiene el código en su pantalla.`);
   }
 }
 
@@ -1328,11 +1374,11 @@ async function completeActiveTripDriver() {
   playChimeSound();
 
   const fareVal = parseFloat(currentTripData ? currentTripData.price : 2.50);
-  const netEarnings = fareVal * 0.90; // 90% para el chofer, 10% JunRide
+  const netEarnings = fareVal * 0.90;
 
   userData.driverEarnings = (userData.driverEarnings || 0) + netEarnings;
   userData.driverTripsCount = (userData.driverTripsCount || 0) + 1;
-  localStorage.setItem('jr_user_profile_v30', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v31', JSON.stringify(userData));
   updateUIProfile();
 
   if (db && activeTripId) {
@@ -1345,13 +1391,15 @@ async function completeActiveTripDriver() {
   showNeonToast('success', `🏁 ¡Viaje completado! Ganaste +$${netEarnings.toFixed(2)} USD.`);
 
   document.getElementById('driver-active-trip-box').style.display = 'none';
+  localStorage.removeItem('jr_active_trip_id');
+  localStorage.removeItem('jr_driver_active_trip_cache');
   activeTripId = null;
   currentTripData = null;
   fetchPendingTripsForDriver();
 }
 
 // ==============================================================
-// SISTEMA DE CHAT EN TIEMPO REAL CON MENSAJES Y NOTAS DE VOZ
+// SISTEMA DE CHAT EN TIEMPO REAL CON BADGE ROJO Y NOTAS DE VOZ
 // ==============================================================
 function openActiveChatModal() {
   triggerHaptic();
@@ -1359,11 +1407,18 @@ function openActiveChatModal() {
     showNeonToast('warning', 'El chat se activa cuando tienes un viaje asignado en curso.');
     return;
   }
+  isChatModalOpen = true;
   document.getElementById('modal-active-chat').classList.add('active');
+  
+  // Limpiar punto rojo de mensajes al abrir el chat
+  const dot = document.getElementById('nav-unread-badge-driver');
+  if (dot) dot.style.display = 'none';
+
   listenChatMessagesRealtime();
 }
 
 function closeActiveChatModal() {
+  isChatModalOpen = false;
   document.getElementById('modal-active-chat').classList.remove('active');
 }
 
@@ -1392,7 +1447,6 @@ async function sendChatMessageText() {
   input.value = '';
 }
 
-// GRABACIÓN DE NOTAS DE VOZ DIRECTAS
 async function toggleAudioRecording() {
   triggerHaptic(50);
   const recordBtn = document.getElementById('btn-record-audio');
@@ -1436,7 +1490,6 @@ async function toggleAudioRecording() {
       showNeonToast('error', 'Permiso de micrófono requerido para enviar notas de voz.');
     }
   } else {
-    // Parar y enviar
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(track => track.stop());
@@ -1447,6 +1500,7 @@ async function toggleAudioRecording() {
   }
 }
 
+// ESCUCHA DEL CHAT CON ALERTA AUDITIVA Y PUNTO ROJO EN EL MENÚ INFERIOR
 function listenChatMessagesRealtime() {
   if (!db || !activeTripId) return;
   db.collection('trips').doc(activeTripId).collection('messages').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
@@ -1474,6 +1528,14 @@ function listenChatMessagesRealtime() {
         `;
       }
       container.appendChild(bubble);
+
+      // Si es un mensaje nuevo de la otra persona y el chat estaba cerrado
+      if (!isMe && !isChatModalOpen) {
+        const dot = document.getElementById('nav-unread-badge-driver');
+        if (dot) dot.style.display = 'block';
+        playMessageNotificationSound();
+        showNeonToast('info', `💬 Nuevo mensaje de ${msg.senderName}`);
+      }
     });
 
     container.scrollTop = container.scrollHeight;
@@ -1551,29 +1613,26 @@ function requestWeeklyPayout() {
   window.location.href = `https://wa.me/584123167126?text=${msg}`;
 }
 
-// SINCRONIZACIÓN EN TIEMPO REAL CON MANEJO DE ESTADOS Y PIN
+// SINCRONIZACIÓN AUTOMÁTICA DE ESTADO DEL CHOFER Y PASAJERO
 function listenTripsRealtime() {
   if (!db) return;
   db.collection('trips').onSnapshot(snapshot => {
     const driverList = document.getElementById('driver-requests-list');
 
-    if (isDriverOnline && driverList) {
-      driverList.innerHTML = '';
-      let pendingCount = 0;
+    snapshot.forEach(doc => {
+      const trip = doc.data();
+      const tripId = doc.id;
 
-      snapshot.forEach(doc => {
-        const trip = doc.data();
-        const tripId = doc.id;
+      // RECONOCER SI ESTE CHOFER ES EL DUEÑO DE UNA CARRERA EN EJECUCIÓN
+      if (trip.driverId === currentUserId && (trip.status === 'Conductor asignado' || trip.status === 'En trayecto')) {
+        activeTripId = tripId;
+        currentTripData = { ...trip, id: tripId };
+        localStorage.setItem('jr_active_trip_id', tripId);
+        localStorage.setItem('jr_driver_active_trip_cache', JSON.stringify(currentTripData));
 
-        if (trip.status === 'Buscando conductor') {
-          pendingCount++;
-          renderSingleDriverTripCard(tripId, trip);
-        }
-
-        // SI EL CHOFER TIENE UNA CARRERA EN CURSO
-        if (activeTripId === tripId && userData.role === 'driver') {
-          currentTripData = trip;
-          document.getElementById('driver-active-trip-box').style.display = 'block';
+        const tripBox = document.getElementById('driver-active-trip-box');
+        if (tripBox) {
+          tripBox.style.display = 'block';
           document.getElementById('driver-trip-fare-badge').innerText = `$${trip.price}`;
           document.getElementById('driver-trip-route-info').innerText = `${trip.pickup} ➔ ${trip.dropoff}`;
           
@@ -1582,20 +1641,9 @@ function listenTripsRealtime() {
             document.getElementById('driver-in-route-area').style.display = 'block';
           }
         }
-      });
-
-      if (pendingCount > 0 && !activeTripId) {
-        speakDriverAlert("Nueva carrera disponible en la montaña.");
-      } else if (!activeTripId) {
-        driverList.innerHTML = '<p style="font-size:0.75rem; color:#94a3b8; text-align:center;">Esperando nuevas solicitudes...</p>';
       }
-    }
 
-    // ACTUALIZACIÓN EN EL TELÉFONO DEL PASAJERO
-    snapshot.forEach(doc => {
-      const trip = doc.data();
-      const tripId = doc.id;
-
+      // SI EL PASAJERO ESTÁ ESPERANDO
       if (activeTripId === tripId && userData.role === 'passenger') {
         currentTripData = trip;
 
@@ -1614,14 +1662,36 @@ function listenTripsRealtime() {
           openReceiptModal();
           activeTripId = null;
           localStorage.removeItem('jr_offline_active_trip');
+          localStorage.removeItem('jr_active_trip_id');
         }
       }
     });
-  }, err => console.error("Error en listener de viajes:", err));
+
+    // PINTAR SOLICITUDES DISPONIBLES EN EL TABLERO DEL CHOFER
+    if (isDriverOnline && driverList && !activeTripId) {
+      driverList.innerHTML = '';
+      let pendingCount = 0;
+
+      snapshot.forEach(doc => {
+        const trip = doc.data();
+        if (trip.status === 'Buscando conductor') {
+          pendingCount++;
+          renderSingleDriverTripCard(doc.id, trip);
+        }
+      });
+
+      if (pendingCount === 0) {
+        driverList.innerHTML = '<p style="font-size:0.75rem; color:#94a3b8; text-align:center;">Esperando nuevas solicitudes...</p>';
+      }
+    }
+  }, err => console.error("Error en listener:", err));
 }
 
 async function acceptTrip(tripId) {
   triggerHaptic(100);
+  activeTripId = tripId;
+  localStorage.setItem('jr_active_trip_id', tripId);
+
   if (db) {
     await db.collection('trips').doc(tripId).update({
       status: 'Conductor asignado',
@@ -1631,14 +1701,14 @@ async function acceptTrip(tripId) {
     }).catch(() => {});
   }
 
-  activeTripId = tripId;
   speakDriverAlert("Carrera aceptada. Dirígete a recoger al pasajero.");
   showNeonToast('success', '✅ ¡Carrera aceptada! Dirígete al origen.');
 
-  document.getElementById('driver-requests-list').innerHTML = '';
+  const driverList = document.getElementById('driver-requests-list');
+  if (driverList) driverList.innerHTML = '';
   document.getElementById('driver-active-trip-box').style.display = 'block';
   document.getElementById('driver-otp-input-area').style.display = 'block';
   document.getElementById('driver-in-route-area').style.display = 'none';
 }
 
-function logout() { localStorage.removeItem('jr_user_profile_v30'); location.reload(); }
+function logout() { localStorage.removeItem('jr_user_profile_v31'); location.reload(); }
