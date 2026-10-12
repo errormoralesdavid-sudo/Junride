@@ -44,9 +44,6 @@ const JUNRIDE_LEVELS = [
   { id: 6, name: "Conquistador", minTrips: 80, maxTrips: 9999, icon: "https://files.catbox.moe/htwomx.png", desc: "Rango supremo de honor JunRide. Conquistador de la cima: insignia dorada en perfil, bonificación en tokens y asistencia directa 24/7." }
 ];
 
-// ==============================================================
-// COORDENADAS CALIBRADAS SOBRE EL ASFALTO REAL DE LA CARRETERA (TRONCAL 4)
-// ==============================================================
 const JUNQUITO_ALL_KMS = [
   { km: 0, name: "Km 0 (La Yaguara / Metro)", lat: 10.4768, lon: -66.9600 },
   { km: 1, name: "Km 1 (Inicio Carretera Vieja)", lat: 10.4735, lon: -66.9680 },
@@ -98,7 +95,9 @@ let db = null;
 let auth = null;
 if (typeof firebase !== 'undefined') {
   try {
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     db = firebase.firestore();
     auth = firebase.auth();
   } catch(e) {
@@ -106,7 +105,7 @@ if (typeof firebase !== 'undefined') {
   }
 }
 
-let currentUserId = '';
+let currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
 let userData = null;
 let currentTab = 'inicio';
 let selectedOrderCategory = 'Carro';
@@ -120,7 +119,6 @@ let orderMapInstance = null;
 let orderRouteLayer = null;
 let originMarker = null;
 let destMarker = null;
-let movingDriverMarker = null;
 let customOriginCoords = null;
 let hasIntermediateStop = false;
 let coSharedSeats = 1;
@@ -149,6 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
   restoreOfflineTripState();
   listenRoadAlertsRealtime();
 
+  // INICIAR ESCUCHA DE VIAJES DE INMEDIATO
+  listenTripsRealtime();
+
   const avatarInput = document.getElementById('profile-avatar-input');
   if (avatarInput) avatarInput.addEventListener('change', handleAvatarFileSelected);
 });
@@ -167,7 +168,6 @@ function restoreOfflineTripState() {
   }
 }
 
-// OBTENER LA POSICIÓN MÁS CERCANA SOBRE LA CARRETERA REAL (Troncal 4)
 function snapToNearestHighway(lat, lon) {
   let closestKm = JUNQUITO_ALL_KMS[16];
   let minDist = 999999;
@@ -185,7 +185,6 @@ function snapToNearestHighway(lat, lon) {
   return { snappedCoords: { lat: closestKm.lat, lon: closestKm.lon }, index: closestIdx, kmName: closestKm.name };
 }
 
-// INICIO AUTOMÁTICO DE GPS CON FILTRO DE PRECISIÓN SATELITAL
 function requestStartupGpsLocation() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
@@ -193,9 +192,8 @@ function requestStartupGpsLocation() {
       const lon = pos.coords.longitude;
       const accuracy = pos.coords.accuracy;
 
-      // Descartar señales inexactas (> 250 metros) causadas por antenas en las cimas
       if (accuracy > 250) {
-        console.warn("Señal GPS difusa por antena. Manteniendo punto carretero predeterminado.");
+        console.warn("Señal GPS difusa por antena.");
         return;
       }
 
@@ -211,7 +209,7 @@ function requestStartupGpsLocation() {
 }
 
 function checkSessionAndAuth() {
-  const saved = localStorage.getItem('jr_user_profile_v28');
+  const saved = localStorage.getItem('jr_user_profile_v29');
   if (saved) {
     try {
       userData = JSON.parse(saved);
@@ -237,7 +235,7 @@ function setupDefaultUser() {
     batterySaver: false,
     walletLedger: [{ type: 'credit', title: 'Bono Inicial de Cartera', amount: 5.00, date: 'Hoy' }]
   };
-  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v29', JSON.stringify(userData));
 }
 
 function initAuth() {
@@ -247,8 +245,9 @@ function initAuth() {
     if (userData && currentUserId && db) {
       db.collection('users').doc(currentUserId).set(userData, { merge: true }).catch(() => {});
     }
-    listenTripsRealtime();
-  }).catch(err => console.warn(err));
+  }).catch(err => {
+    console.warn("Auth anónimo omitido, operando en modo directo:", err);
+  });
 }
 
 function listenRoadAlertsRealtime() {
@@ -270,7 +269,6 @@ function listenRoadAlertsRealtime() {
   }, () => {});
 }
 
-// SELECTOR MODAL ESTILIZADO DE KILÓMETROS
 function openKmPickerModal(target) {
   triggerHaptic(20);
   currentKmPickerTarget = target;
@@ -354,7 +352,7 @@ function shareReferralCode() {
 function toggleBatterySaverMode() {
   triggerHaptic();
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v29', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -391,9 +389,9 @@ function copyFullBankDataForApp() {
         btn.classList.remove('copied');
       }, 2500);
     }
-    showNeonToast('success', '📋 Datos copiados al portapapeles. Listos para pegar en tu banco.');
+    showNeonToast('success', '📋 Datos copiados al portapapeles.');
   } catch(e) {
-    showNeonToast('error', 'Error al copiar datos. Intenta nuevamente.');
+    showNeonToast('error', 'Error al copiar datos.');
   }
   document.body.removeChild(tempTextArea);
 }
@@ -464,7 +462,7 @@ function handleAvatarFileSelected(event) {
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       userData.avatar = compressedDataUrl;
-      localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_v29', JSON.stringify(userData));
       
       if (currentUserId && db) {
         db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
@@ -509,7 +507,7 @@ function speakDriverAlert(text) {
 function switchDriverMode() {
   triggerHaptic();
   userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v29', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('driver-panel');
@@ -519,7 +517,7 @@ function switchDriverMode() {
 function switchPassengerMode() {
   triggerHaptic();
   userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v29', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('inicio');
@@ -838,7 +836,7 @@ function logWalletMovement(type, title, amount) {
   userData.walletLedger.unshift({
     type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
   });
-  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v29', JSON.stringify(userData));
   renderWalletLedger();
 }
 
@@ -874,22 +872,20 @@ function adjustSeats(delta) {
   calculateRouteOrder();
 }
 
-// BOTÓN MI GPS: LECTURA SATELITAL DIRECTA Y ADHERENCIA A LA CALZADA
 function useCurrentGpsLocation() {
   triggerHaptic();
   if (navigator.geolocation) {
-    showNeonToast('info', 'Calibrando satélites GPS en tiempo real...');
+    showNeonToast('info', 'Calibrando satélites GPS...');
     navigator.geolocation.getCurrentPosition(pos => {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
       const accuracy = pos.coords.accuracy;
 
       if (lat < 10.4300 || lat > 10.4950 || lon < -67.1950 || lon > -66.9450) {
-        showNeonToast('warning', 'Señal fuera del corredor de El Junquito. Toca en el mapa para fijar tu punto.');
+        showNeonToast('warning', 'Señal fuera de la montaña. Toca en el mapa para fijar tu punto.');
         return;
       }
 
-      // Adherir al punto más exacto de la carretera
       const snap = snapToNearestHighway(lat, lon);
       customOriginCoords = snap.snappedCoords;
       selectedOriginIdx = snap.index;
@@ -898,9 +894,9 @@ function useCurrentGpsLocation() {
       if (triggerEl) triggerEl.innerText = snap.kmName;
 
       calculateRouteOrder();
-      showNeonToast('success', `📍 GPS preciso fijado en: ${snap.kmName} (Precisión: ±${Math.round(accuracy)}m)`);
+      showNeonToast('success', `📍 GPS exacto: ${snap.kmName} (±${Math.round(accuracy)}m)`);
     }, err => {
-      showNeonToast('error', 'Por favor concede permiso de ubicación precisa en tu dispositivo.');
+      showNeonToast('error', 'Por favor concede permiso de ubicación precisa.');
     }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
   }
 }
@@ -965,7 +961,6 @@ function spawnNearbyVehicles(centerCoords) {
   nearbyVehiclesMarkers.forEach(m => orderMapInstance.removeLayer(m));
   nearbyVehiclesMarkers = [];
 
-  // Los vehículos aparecen escalonados sobre la misma vía principal
   const vehTypes = [
     { img: 'https://files.catbox.moe/xriwyl.png', dLat: 0.0010, dLon: 0.0025 },
     { img: 'https://files.catbox.moe/lkxyw7.png', dLat: -0.0008, dLon: -0.0020 },
@@ -1018,11 +1013,9 @@ function initOrderMap() {
   drawRouteOnMap(origPt, destPt);
 }
 
-// TRAZADO LIMPIO DIRECTO SOBRE EL EJE TRONCAL 4
 async function drawRouteOnMap(startCoords, endCoords) {
   if (orderRouteLayer && orderMapInstance) orderMapInstance.removeLayer(orderRouteLayer);
   
-  // Garantizar que la consulta viaje adherida a la carretera
   const snapStart = snapToNearestHighway(startCoords.lat, startCoords.lon).snappedCoords;
   const snapEnd = snapToNearestHighway(endCoords.lat, endCoords.lon).snappedCoords;
 
@@ -1103,12 +1096,13 @@ function adjustOrderPrice(delta) {
   document.getElementById('order-fare-ves').innerText = (offeredOrderPrice * currentBcvRate).toFixed(2);
 }
 
+// CONFIRMAR PEDIDO Y ENVIAR AL RADAR
 async function confirmOrderTrip() {
   triggerHaptic(80);
   const payMode = document.getElementById('order-pay-mode').value;
 
   if (payMode === 'cartera' && (userData.kmBalance || 0) < offeredOrderPrice) {
-    showNeonToast('error', 'Saldo insuficiente en tu cartera digital. Recarga saldo o selecciona pagar en efectivo/pago móvil al chofer.');
+    showNeonToast('error', 'Saldo insuficiente en tu cartera digital. Recarga saldo o selecciona pagar en efectivo.');
     return;
   }
 
@@ -1127,7 +1121,7 @@ async function confirmOrderTrip() {
 
   const tripPayload = {
     clientId: currentUserId,
-    clientName: userData.name || 'David',
+    clientName: userData.name || 'David Pasajero',
     clientPhone: userData.phone || '04123167126',
     service: selectedOrderCategory,
     pickup: JUNQUITO_ALL_KMS[selectedOriginIdx].name,
@@ -1138,12 +1132,19 @@ async function confirmOrderTrip() {
     price: offeredOrderPrice.toFixed(2),
     otp: otpCode,
     status: 'Buscando conductor',
-    createdAt: new Date()
+    createdAt: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
   };
 
   if (db) {
-    const docRef = await db.collection('trips').add(tripPayload).catch(() => {});
-    if (docRef) activeTripId = docRef.id;
+    try {
+      const docRef = await db.collection('trips').add(tripPayload);
+      activeTripId = docRef.id;
+      showNeonToast('success', '📡 Solicitud transmitida a todos los choferes.');
+    } catch(err) {
+      console.error("Error al publicar en Firebase:", err);
+      showNeonToast('warning', 'Modo offline: Conecta Firebase para enlazar con choferes.');
+      activeTripId = 'offline_' + Date.now();
+    }
   } else {
     activeTripId = 'offline_' + Date.now();
   }
@@ -1182,7 +1183,7 @@ async function cancelTrip(isManual = false) {
   }
 }
 
-// TRANSMISIÓN CONTINUA DE GPS DEL CHOFER HACIA LA BASE DE DATOS
+// TOGGLE CONEXIÓN DEL CHOFER CON REFRESCO INMEDIATO DE VIAJES
 function toggleDriverStatus() {
   triggerHaptic();
   isDriverOnline = !isDriverOnline;
@@ -1194,12 +1195,14 @@ function toggleDriverStatus() {
     if (statusImg) statusImg.src = "https://files.catbox.moe/wboolc.png";
     if (statusBtn) statusBtn.classList.add('online');
     if (statusText) {
-      statusText.innerText = "🟢 Conectado con Voz y GPS Satelital";
+      statusText.innerText = "🟢 Conectado con Voz (Esperando carreras)";
       statusText.style.color = "#00ff87";
     }
-    speakDriverAlert("Modo chofer activado. Transmitiendo ubicación satelital.");
+    speakDriverAlert("Modo chofer activado. Buscando pasajeros.");
 
-    // Iniciar rastreo continuo en tiempo real
+    // REFRESCAR INMEDIATAMENTE LA LISTA DE VIAJES ACTIVOS
+    fetchPendingTripsForDriver();
+
     if (navigator.geolocation) {
       driverGeoWatchId = navigator.geolocation.watchPosition(pos => {
         const snap = snapToNearestHighway(pos.coords.latitude, pos.coords.longitude);
@@ -1224,6 +1227,9 @@ function toggleDriverStatus() {
     }
     speakDriverAlert("Modo chofer desconectado.");
 
+    const driverList = document.getElementById('driver-requests-list');
+    if (driverList) driverList.innerHTML = '';
+
     if (driverGeoWatchId) {
       navigator.geolocation.clearWatch(driverGeoWatchId);
       driverGeoWatchId = null;
@@ -1234,7 +1240,43 @@ function toggleDriverStatus() {
   }
 }
 
-// BOTÓN PARA QUE EL CHOFER ABRA GOOGLE MAPS / WAZE DIRECTO A LA PUERTA DEL PASAJERO
+// CONSULTA DIRECTA DE VIAJES PENDIENTES
+function fetchPendingTripsForDriver() {
+  if (!db) return;
+  db.collection('trips').where('status', '==', 'Buscando conductor').get().then(snapshot => {
+    const driverList = document.getElementById('driver-requests-list');
+    if (!driverList) return;
+    driverList.innerHTML = '';
+
+    if (snapshot.empty) {
+      driverList.innerHTML = '<p style="font-size:0.75rem; color:#94a3b8; text-align:center;">No hay solicitudes activas en este momento.</p>';
+      return;
+    }
+
+    snapshot.forEach(doc => {
+      renderSingleDriverTripCard(doc.id, doc.data());
+    });
+  }).catch(err => console.error("Error al consultar viajes:", err));
+}
+
+function renderSingleDriverTripCard(tripId, trip) {
+  const driverList = document.getElementById('driver-requests-list');
+  if (!driverList) return;
+
+  const pLat = trip.pickupCoords ? trip.pickupCoords.lat : 10.4614;
+  const pLon = trip.pickupCoords ? trip.pickupCoords.lon : -67.0805;
+
+  driverList.innerHTML += `
+    <li style="display:flex; flex-direction:column; gap:8px; padding:14px; background:rgba(255,255,255,0.03); border-radius:16px; border:1px solid var(--border-glow); margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:#00ff87; font-size:1rem;">${trip.service} ($${trip.price})</strong>
+        <button onclick="acceptTrip('${tripId}')" class="btn-primary-neon btn-sm">Aceptar Carrera</button>
+      </div>
+      <p style="font-size:0.78rem; color:#cbd5e1;">👤 <strong>${trip.clientName || 'Pasajero'}</strong>: ${trip.pickup} ➔ ${trip.dropoff}</p>
+      <button class="btn-sm btn-secondary-dim" style="width:100%; font-size:0.72rem;" onclick="openDriverNavExternal(${pLat}, ${pLon})">🗺️ Ver Ubicación en Google Maps</button>
+    </li>`;
+}
+
 function openDriverNavExternal(lat, lon) {
   triggerHaptic();
   const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`;
@@ -1312,33 +1354,38 @@ function requestWeeklyPayout() {
   window.location.href = `https://wa.me/584123167126?text=${msg}`;
 }
 
-// SINCRONIZACIÓN EN TIEMPO REAL: EL CHOFER VE EL PUNTO EXACTO Y EL PASAJERO VE EL CARRO ACERCÁNDOSE
+// SINCRONIZACIÓN CONTINUA EN TIEMPO REAL
 function listenTripsRealtime() {
   if (!db) return;
   db.collection('trips').onSnapshot(snapshot => {
     const driverList = document.getElementById('driver-requests-list');
     const historyList = document.getElementById('history-list');
-    if (driverList) driverList.innerHTML = '';
-    if (historyList) historyList.innerHTML = '';
 
+    if (isDriverOnline && driverList) {
+      driverList.innerHTML = '';
+      let pendingCount = 0;
+
+      snapshot.forEach(doc => {
+        const trip = doc.data();
+        const tripId = doc.id;
+
+        if (trip.status === 'Buscando conductor') {
+          pendingCount++;
+          renderSingleDriverTripCard(tripId, trip);
+        }
+      });
+
+      if (pendingCount > 0) {
+        speakDriverAlert("Nueva carrera disponible en la montaña.");
+      } else {
+        driverList.innerHTML = '<p style="font-size:0.75rem; color:#94a3b8; text-align:center;">Esperando nuevas solicitudes...</p>';
+      }
+    }
+
+    // SI EL PASAJERO ESTÁ ESPERANDO, VER CUÁNDO ACEPTA EL CHOFER
     snapshot.forEach(doc => {
       const trip = doc.data();
       const tripId = doc.id;
-
-      if (isDriverOnline && trip.status === 'Buscando conductor' && driverList) {
-        const pLat = trip.pickupCoords ? trip.pickupCoords.lat : 10.4614;
-        const pLon = trip.pickupCoords ? trip.pickupCoords.lon : -67.0805;
-
-        driverList.innerHTML += `
-          <li style="display:flex; flex-direction:column; gap:8px; padding:14px; background:rgba(255,255,255,0.03); border-radius:16px; border:1px solid var(--border-card);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong>${trip.service} ($${trip.price})</strong>
-              <button onclick="acceptTrip('${tripId}')" class="btn-primary-neon btn-sm">Aceptar Carrera</button>
-            </div>
-            <p style="font-size:0.75rem; color:#94a3b8;">${trip.pickup} ➔ ${trip.dropoff}</p>
-            <button class="btn-sm btn-secondary-dim" style="width:100%; font-size:0.72rem;" onclick="openDriverNavExternal(${pLat}, ${pLon})">🗺️ Ver Destino en Google Maps</button>
-          </li>`;
-      }
 
       if (activeTripId === tripId && userData.role === 'passenger') {
         currentTripData = trip;
@@ -1347,6 +1394,7 @@ function listenTripsRealtime() {
           document.getElementById('live-tracking-box').style.display = 'block';
           document.getElementById('live-driver-name').innerText = trip.driverName || 'Conductor Asignado';
           document.getElementById('trip-fare-val').innerText = trip.price;
+          speakDriverAlert("Un conductor ha tomado tu viaje. Va en camino.");
           
           localStorage.setItem('jr_offline_active_trip', JSON.stringify({
             id: tripId, driverName: trip.driverName, price: trip.price, otp: trip.otp
@@ -1354,7 +1402,7 @@ function listenTripsRealtime() {
         }
       }
     });
-  }, () => {});
+  }, err => console.error("Error en listener de viajes:", err));
 }
 
 async function acceptTrip(tripId) {
@@ -1362,12 +1410,12 @@ async function acceptTrip(tripId) {
   if (db) {
     await db.collection('trips').doc(tripId).update({
       status: 'Conductor asignado',
-      driverName: 'David Conductor',
-      driverPhone: '04123167126'
+      driverName: userData.name ? `${userData.name} Conductor` : 'David Conductor',
+      driverPhone: userData.phone || '04123167126'
     }).catch(() => {});
   }
   speakDriverAlert("Carrera aceptada. Navegando al punto del pasajero.");
   showNeonToast('success', '✅ ¡Carrera aceptada con éxito!');
 }
 
-function logout() { localStorage.removeItem('jr_user_profile_v28'); location.reload(); }
+function logout() { localStorage.removeItem('jr_user_profile_v29'); location.reload(); }
