@@ -5,7 +5,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// SISTEMA TOAST NEÓN NATIVO (Reemplazo moderno de window.alert)
+// SISTEMA TOAST NEÓN NATIVO
 function showNeonToast(type, message, duration = 3200) {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -44,36 +44,39 @@ const JUNRIDE_LEVELS = [
   { id: 6, name: "Conquistador", minTrips: 80, maxTrips: 9999, icon: "https://files.catbox.moe/htwomx.png", desc: "Rango supremo de honor JunRide. Conquistador de la cima: insignia dorada en perfil, bonificación en tokens y asistencia directa 24/7." }
 ];
 
+// ==============================================================
+// COORDENADAS CALIBRADAS SOBRE EL ASFALTO REAL DE LA CARRETERA (TRONCAL 4)
+// ==============================================================
 const JUNQUITO_ALL_KMS = [
   { km: 0, name: "Km 0 (La Yaguara / Metro)", lat: 10.4768, lon: -66.9600 },
-  { km: 1, name: "Km 1 (Inicio Carretera Vieja)", lat: 10.4740, lon: -66.9685 },
-  { km: 2, name: "Km 2 (Sector El Samán)", lat: 10.4705, lon: -66.9760 },
-  { km: 3, name: "Km 3 (Sector Los Pinos)", lat: 10.4680, lon: -66.9825 },
-  { km: 4, name: "Km 4 (El Amparo / Mirador)", lat: 10.4655, lon: -66.9890 },
-  { km: 5, name: "Km 5 (Curva Los Caobos)", lat: 10.4640, lon: -66.9960 },
-  { km: 6, name: "Km 6 (Sector La Roca)", lat: 10.4625, lon: -67.0035 },
-  { km: 7, name: "Km 7 (Entrada Carapita Alta)", lat: 10.4620, lon: -67.0110 },
-  { km: 8, name: "Km 8 (El Junquito Bajo)", lat: 10.4615, lon: -67.0190 },
-  { km: 9, name: "Km 9 (Sector El Naranjal)", lat: 10.4610, lon: -67.0265 },
-  { km: 10, name: "Km 10 (Curva El Limón)", lat: 10.4612, lon: -67.0340 },
-  { km: 11, name: "Km 11 (Sector Los Olivos)", lat: 10.4615, lon: -67.0415 },
-  { km: 12, name: "Km 12 (Panadería La Parada)", lat: 10.4620, lon: -67.0490 },
-  { km: 13, name: "Km 13 (Sector El Café)", lat: 10.4618, lon: -67.0565 },
-  { km: 14, name: "Km 14 (Curva La Cabaña)", lat: 10.4615, lon: -67.0640 },
-  { km: 15, name: "Km 15 (Entrada La Loma)", lat: 10.4612, lon: -67.0715 },
-  { km: 16, name: "Km 16 (Pueblo / Plaza Bolívar)", lat: 10.4610, lon: -67.0800 },
-  { km: 17, name: "Km 17 (Salida del Pueblo)", lat: 10.4615, lon: -67.0875 },
-  { km: 18, name: "Km 18 (Sector Los Manantiales)", lat: 10.4625, lon: -67.0950 },
-  { km: 19, name: "Km 19 (Zona Turística / Fresas)", lat: 10.4640, lon: -67.1025 },
-  { km: 20, name: "Km 20 (Sector La Colina)", lat: 10.4660, lon: -67.1100 },
-  { km: 21, name: "Km 21 (Entrada Tibroncito)", lat: 10.4680, lon: -67.1175 },
-  { km: 22, name: "Km 22 (Sector Monte Alto)", lat: 10.4705, lon: -67.1250 },
-  { km: 23, name: "Km 23 (El Retén / La Niebla)", lat: 10.4735, lon: -67.1325 },
-  { km: 24, name: "Km 24 (Bosque Nublado)", lat: 10.4710, lon: -67.1400 },
-  { km: 25, name: "Km 25 (Sector El Parador)", lat: 10.4670, lon: -67.1480 },
-  { km: 26, name: "Km 26 (Paso de Montaña)", lat: 10.4630, lon: -67.1560 },
-  { km: 27, name: "Km 27 (Curva Los Sauces)", lat: 10.4590, lon: -67.1650 },
-  { km: 28, name: "Km 28 (Cruce Colonia Tovar)", lat: 10.4550, lon: -67.1740 }
+  { km: 1, name: "Km 1 (Inicio Carretera Vieja)", lat: 10.4735, lon: -66.9680 },
+  { km: 2, name: "Km 2 (Sector El Samán)", lat: 10.4705, lon: -66.9750 },
+  { km: 3, name: "Km 3 (Sector Los Pinos)", lat: 10.4678, lon: -66.9820 },
+  { km: 4, name: "Km 4 (El Amparo / Mirador)", lat: 10.4652, lon: -66.9890 },
+  { km: 5, name: "Km 5 (Curva Los Caobos)", lat: 10.4638, lon: -66.9965 },
+  { km: 6, name: "Km 6 (Sector La Roca)", lat: 10.4622, lon: -67.0040 },
+  { km: 7, name: "Km 7 (Entrada Carapita Alta)", lat: 10.4618, lon: -67.0115 },
+  { km: 8, name: "Km 8 (El Junquito Bajo)", lat: 10.4612, lon: -67.0195 },
+  { km: 9, name: "Km 9 (Sector El Naranjal)", lat: 10.4608, lon: -67.0270 },
+  { km: 10, name: "Km 10 (Curva El Limón)", lat: 10.4610, lon: -67.0345 },
+  { km: 11, name: "Km 11 (Sector Los Olivos)", lat: 10.4614, lon: -67.0420 },
+  { km: 12, name: "Km 12 (Panadería La Parada)", lat: 10.4618, lon: -67.0495 },
+  { km: 13, name: "Km 13 (Sector El Café)", lat: 10.4616, lon: -67.0570 },
+  { km: 14, name: "Km 14 (Curva La Cabaña)", lat: 10.4613, lon: -67.0645 },
+  { km: 15, name: "Km 15 (Entrada La Loma)", lat: 10.4611, lon: -67.0720 },
+  { km: 16, name: "Km 16 (Pueblo / Plaza Bolívar)", lat: 10.4609, lon: -67.0805 },
+  { km: 17, name: "Km 17 (Salida del Pueblo)", lat: 10.4614, lon: -67.0880 },
+  { km: 18, name: "Km 18 (Sector Los Manantiales)", lat: 10.4623, lon: -67.0955 },
+  { km: 19, name: "Km 19 (Zona Turística / Fresas)", lat: 10.4638, lon: -67.1030 },
+  { km: 20, name: "Km 20 (Sector La Colina)", lat: 10.4658, lon: -67.1105 },
+  { km: 21, name: "Km 21 (Entrada Tibroncito)", lat: 10.4678, lon: -67.1180 },
+  { km: 22, name: "Km 22 (Sector Monte Alto)", lat: 10.4702, lon: -67.1255 },
+  { km: 23, name: "Km 23 (El Retén / La Niebla)", lat: 10.4732, lon: -67.1330 },
+  { km: 24, name: "Km 24 (Bosque Nublado)", lat: 10.4708, lon: -67.1405 },
+  { km: 25, name: "Km 25 (Sector El Parador)", lat: 10.4668, lon: -67.1485 },
+  { km: 26, name: "Km 26 (Paso de Montaña)", lat: 10.4628, lon: -67.1565 },
+  { km: 27, name: "Km 27 (Curva Los Sauces)", lat: 10.4588, lon: -67.1655 },
+  { km: 28, name: "Km 28 (Cruce Colonia Tovar)", lat: 10.4548, lon: -67.1745 }
 ];
 
 const JUNQUITO_BOUNDS = [
@@ -110,12 +113,14 @@ let selectedOrderCategory = 'Carro';
 let currentBcvRate = parseFloat(localStorage.getItem('jr_last_bcv_rate') || '876.80');
 let isMountainFog = false;
 let isDriverOnline = false;
+let driverGeoWatchId = null;
 let activeTripId = null;
 let currentTripData = null;
 let orderMapInstance = null;
 let orderRouteLayer = null;
 let originMarker = null;
 let destMarker = null;
+let movingDriverMarker = null;
 let customOriginCoords = null;
 let hasIntermediateStop = false;
 let coSharedSeats = 1;
@@ -162,21 +167,51 @@ function restoreOfflineTripState() {
   }
 }
 
+// OBTENER LA POSICIÓN MÁS CERCANA SOBRE LA CARRETERA REAL (Troncal 4)
+function snapToNearestHighway(lat, lon) {
+  let closestKm = JUNQUITO_ALL_KMS[16];
+  let minDist = 999999;
+  let closestIdx = 16;
+
+  JUNQUITO_ALL_KMS.forEach((pt, idx) => {
+    let d = Math.hypot(pt.lat - lat, pt.lon - lon);
+    if (d < minDist) {
+      minDist = d;
+      closestKm = pt;
+      closestIdx = idx;
+    }
+  });
+
+  return { snappedCoords: { lat: closestKm.lat, lon: closestKm.lon }, index: closestIdx, kmName: closestKm.name };
+}
+
+// INICIO AUTOMÁTICO DE GPS CON FILTRO DE PRECISIÓN SATELITAL
 function requestStartupGpsLocation() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
-      if (lat >= 10.4300 && lat <= 10.4950 && lon >= -67.1950 && lon <= -66.9450) {
-        customOriginCoords = { lat, lon };
-        findAndSelectClosestKm(lat, lon, false);
+      const accuracy = pos.coords.accuracy;
+
+      // Descartar señales inexactas (> 250 metros) causadas por antenas en las cimas
+      if (accuracy > 250) {
+        console.warn("Señal GPS difusa por antena. Manteniendo punto carretero predeterminado.");
+        return;
       }
-    }, err => {}, { enableHighAccuracy: true, timeout: 8000 });
+
+      if (lat >= 10.4300 && lat <= 10.4950 && lon >= -67.1950 && lon <= -66.9450) {
+        const snap = snapToNearestHighway(lat, lon);
+        customOriginCoords = snap.snappedCoords;
+        selectedOriginIdx = snap.index;
+        const triggerEl = document.getElementById('trigger-origin-name');
+        if (triggerEl) triggerEl.innerText = snap.kmName;
+      }
+    }, err => {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   }
 }
 
 function checkSessionAndAuth() {
-  const saved = localStorage.getItem('jr_user_profile_v27');
+  const saved = localStorage.getItem('jr_user_profile_v28');
   if (saved) {
     try {
       userData = JSON.parse(saved);
@@ -187,7 +222,6 @@ function checkSessionAndAuth() {
     setupDefaultUser();
   }
 
-  // SIEMPRE ARRANCAR CON ROL PASAJERO EN INICIO PARA QUE LA BARRA ESTÉ VISIBLE
   if (!userData.role) userData.role = 'passenger';
 
   updateUIProfile();
@@ -203,7 +237,7 @@ function setupDefaultUser() {
     batterySaver: false,
     walletLedger: [{ type: 'credit', title: 'Bono Inicial de Cartera', amount: 5.00, date: 'Hoy' }]
   };
-  localStorage.setItem('jr_user_profile_v27', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
 }
 
 function initAuth() {
@@ -273,7 +307,7 @@ function selectKmItem(idx) {
   triggerHaptic(30);
   if (currentKmPickerTarget === 'origin') {
     selectedOriginIdx = idx;
-    customOriginCoords = null;
+    customOriginCoords = { lat: JUNQUITO_ALL_KMS[idx].lat, lon: JUNQUITO_ALL_KMS[idx].lon };
     document.getElementById('trigger-origin-name').innerText = JUNQUITO_ALL_KMS[idx].name;
   } else if (currentKmPickerTarget === 'destination') {
     selectedDestIdx = idx;
@@ -320,7 +354,7 @@ function shareReferralCode() {
 function toggleBatterySaverMode() {
   triggerHaptic();
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_v27', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -337,7 +371,6 @@ function applyBatterySaverUI() {
   }
 }
 
-// COPIADO BANCARIO CON DOBLE RESPALDO (100% EFECTIVO EN ANDROID)
 function copyFullBankDataForApp() {
   triggerHaptic(50);
   playChimeSound();
@@ -431,7 +464,7 @@ function handleAvatarFileSelected(event) {
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       userData.avatar = compressedDataUrl;
-      localStorage.setItem('jr_user_profile_v27', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
       
       if (currentUserId && db) {
         db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
@@ -476,7 +509,7 @@ function speakDriverAlert(text) {
 function switchDriverMode() {
   triggerHaptic();
   userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_v27', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('driver-panel');
@@ -486,7 +519,7 @@ function switchDriverMode() {
 function switchPassengerMode() {
   triggerHaptic();
   userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_v27', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('inicio');
@@ -499,7 +532,6 @@ function handleHeaderHomeClick() {
   else switchTab('inicio');
 }
 
-// RENDERIZADO GARANTIZADO DE LA BARRA INFERIOR
 function renderDynamicBottomNav() {
   const navContainer = document.getElementById('dynamic-bottom-nav');
   if (!navContainer) return;
@@ -806,7 +838,7 @@ function logWalletMovement(type, title, amount) {
   userData.walletLedger.unshift({
     type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
   });
-  localStorage.setItem('jr_user_profile_v27', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v28', JSON.stringify(userData));
   renderWalletLedger();
 }
 
@@ -842,41 +874,34 @@ function adjustSeats(delta) {
   calculateRouteOrder();
 }
 
+// BOTÓN MI GPS: LECTURA SATELITAL DIRECTA Y ADHERENCIA A LA CALZADA
 function useCurrentGpsLocation() {
   triggerHaptic();
   if (navigator.geolocation) {
+    showNeonToast('info', 'Calibrando satélites GPS en tiempo real...');
     navigator.geolocation.getCurrentPosition(pos => {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
-      
+      const accuracy = pos.coords.accuracy;
+
       if (lat < 10.4300 || lat > 10.4950 || lon < -67.1950 || lon > -66.9450) {
-        showNeonToast('warning', 'Señal GPS fuera de la montaña. Toca directamente en el mapa para fijar tu punto.');
+        showNeonToast('warning', 'Señal fuera del corredor de El Junquito. Toca en el mapa para fijar tu punto.');
         return;
       }
 
-      customOriginCoords = { lat, lon };
-      findAndSelectClosestKm(lat, lon, true);
+      // Adherir al punto más exacto de la carretera
+      const snap = snapToNearestHighway(lat, lon);
+      customOriginCoords = snap.snappedCoords;
+      selectedOriginIdx = snap.index;
+
+      const triggerEl = document.getElementById('trigger-origin-name');
+      if (triggerEl) triggerEl.innerText = snap.kmName;
+
+      calculateRouteOrder();
+      showNeonToast('success', `📍 GPS preciso fijado en: ${snap.kmName} (Precisión: ±${Math.round(accuracy)}m)`);
     }, err => {
-      showNeonToast('error', 'Por favor concede permisos de ubicación en tu navegador.');
-    }, { enableHighAccuracy: true, timeout: 10000 });
-  }
-}
-
-function findAndSelectClosestKm(lat, lon, showAlert = true) {
-  let closestIdx = 16;
-  let minDist = 999999;
-  JUNQUITO_ALL_KMS.forEach((pt, idx) => {
-    let d = Math.hypot(pt.lat - lat, pt.lon - lon);
-    if (d < minDist) { minDist = d; closestIdx = idx; }
-  });
-
-  selectedOriginIdx = closestIdx;
-  const triggerEl = document.getElementById('trigger-origin-name');
-  if (triggerEl) triggerEl.innerText = JUNQUITO_ALL_KMS[closestIdx].name;
-
-  calculateRouteOrder();
-  if (showAlert) {
-    showNeonToast('success', `📍 Ubicado cerca de: ${JUNQUITO_ALL_KMS[closestIdx].name}`);
+      showNeonToast('error', 'Por favor concede permiso de ubicación precisa en tu dispositivo.');
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
   }
 }
 
@@ -940,18 +965,19 @@ function spawnNearbyVehicles(centerCoords) {
   nearbyVehiclesMarkers.forEach(m => orderMapInstance.removeLayer(m));
   nearbyVehiclesMarkers = [];
 
+  // Los vehículos aparecen escalonados sobre la misma vía principal
   const vehTypes = [
-    { img: 'https://files.catbox.moe/xriwyl.png', dLat: 0.0015, dLon: 0.002 },
-    { img: 'https://files.catbox.moe/lkxyw7.png', dLat: -0.0012, dLon: 0.0018 },
-    { img: 'https://files.catbox.moe/w6c0q9.png', dLat: 0.0010, dLon: -0.0015 }
+    { img: 'https://files.catbox.moe/xriwyl.png', dLat: 0.0010, dLon: 0.0025 },
+    { img: 'https://files.catbox.moe/lkxyw7.png', dLat: -0.0008, dLon: -0.0020 },
+    { img: 'https://files.catbox.moe/w6c0q9.png', dLat: 0.0015, dLon: -0.0035 }
   ];
 
   vehTypes.forEach(v => {
     let vIcon = L.divIcon({
       className: 'nearby-veh-wrapper',
       html: `<div class="nearby-veh-marker"><img src="${v.img}" alt="Vehículo Cercano"></div>`,
-      iconSize: [32, 32],
-      iconAnchor: [16, 16]
+      iconSize: [34, 34],
+      iconAnchor: [17, 17]
     });
     let marker = L.marker([centerCoords.lat + v.dLat, centerCoords.lon + v.dLon], { icon: vIcon }).addTo(orderMapInstance);
     nearbyVehiclesMarkers.push(marker);
@@ -977,8 +1003,12 @@ function initOrderMap() {
   }).addTo(orderMapInstance);
 
   orderMapInstance.on('click', function(e) {
-    customOriginCoords = { lat: e.latlng.lat, lon: e.latlng.lng };
-    findAndSelectClosestKm(e.latlng.lat, e.latlng.lng, false);
+    const snap = snapToNearestHighway(e.latlng.lat, e.latlng.lng);
+    customOriginCoords = snap.snappedCoords;
+    selectedOriginIdx = snap.index;
+    const triggerEl = document.getElementById('trigger-origin-name');
+    if (triggerEl) triggerEl.innerText = snap.kmName;
+    calculateRouteOrder();
   });
 
   originMarker = L.marker([origPt.lat, origPt.lon], { icon: createNeonPinIcon('Origen') }).addTo(orderMapInstance);
@@ -988,9 +1018,15 @@ function initOrderMap() {
   drawRouteOnMap(origPt, destPt);
 }
 
+// TRAZADO LIMPIO DIRECTO SOBRE EL EJE TRONCAL 4
 async function drawRouteOnMap(startCoords, endCoords) {
   if (orderRouteLayer && orderMapInstance) orderMapInstance.removeLayer(orderRouteLayer);
-  const url = `https://router.project-osrm.org/route/v1/driving/${startCoords.lon},${startCoords.lat};${endCoords.lon},${endCoords.lat}?overview=full&geometries=geojson`;
+  
+  // Garantizar que la consulta viaje adherida a la carretera
+  const snapStart = snapToNearestHighway(startCoords.lat, startCoords.lon).snappedCoords;
+  const snapEnd = snapToNearestHighway(endCoords.lat, endCoords.lon).snappedCoords;
+
+  const url = `https://router.project-osrm.org/route/v1/driving/${snapStart.lon},${snapStart.lat};${snapEnd.lon},${snapEnd.lat}?overview=full&geometries=geojson`;
   
   try {
     const res = await fetch(url);
@@ -1006,9 +1042,9 @@ async function drawRouteOnMap(startCoords, endCoords) {
     }
   } catch(e) {}
 
-  orderRouteLayer = L.polyline([[startCoords.lat, startCoords.lon], [endCoords.lat, endCoords.lon]], { color: '#00ff87', weight: 4, dashArray: '6, 6' }).addTo(orderMapInstance);
-  if (originMarker) originMarker.setLatLng([startCoords.lat, startCoords.lon]);
-  if (destMarker) destMarker.setLatLng([endCoords.lat, endCoords.lon]);
+  orderRouteLayer = L.polyline([[snapStart.lat, snapStart.lon], [snapEnd.lat, snapEnd.lon]], { color: '#00ff87', weight: 4, dashArray: '6, 6' }).addTo(orderMapInstance);
+  if (originMarker) originMarker.setLatLng([snapStart.lat, snapStart.lon]);
+  if (destMarker) destMarker.setLatLng([snapEnd.lat, snapEnd.lon]);
 }
 
 function calculateRouteOrder() {
@@ -1095,7 +1131,9 @@ async function confirmOrderTrip() {
     clientPhone: userData.phone || '04123167126',
     service: selectedOrderCategory,
     pickup: JUNQUITO_ALL_KMS[selectedOriginIdx].name,
+    pickupCoords: { lat: origPt.lat, lon: origPt.lon },
     dropoff: destPt.name,
+    dropoffCoords: { lat: destPt.lat, lon: destPt.lon },
     paymentMode: payMode,
     price: offeredOrderPrice.toFixed(2),
     otp: otpCode,
@@ -1144,6 +1182,7 @@ async function cancelTrip(isManual = false) {
   }
 }
 
+// TRANSMISIÓN CONTINUA DE GPS DEL CHOFER HACIA LA BASE DE DATOS
 function toggleDriverStatus() {
   triggerHaptic();
   isDriverOnline = !isDriverOnline;
@@ -1155,10 +1194,27 @@ function toggleDriverStatus() {
     if (statusImg) statusImg.src = "https://files.catbox.moe/wboolc.png";
     if (statusBtn) statusBtn.classList.add('online');
     if (statusText) {
-      statusText.innerText = "🟢 Conectado con Voz (Esperando carreras)";
+      statusText.innerText = "🟢 Conectado con Voz y GPS Satelital";
       statusText.style.color = "#00ff87";
     }
-    speakDriverAlert("Modo chofer activado. Conectado a JunRide.");
+    speakDriverAlert("Modo chofer activado. Transmitiendo ubicación satelital.");
+
+    // Iniciar rastreo continuo en tiempo real
+    if (navigator.geolocation) {
+      driverGeoWatchId = navigator.geolocation.watchPosition(pos => {
+        const snap = snapToNearestHighway(pos.coords.latitude, pos.coords.longitude);
+        if (db && currentUserId) {
+          db.collection('drivers_online').doc(currentUserId).set({
+            name: userData.name || 'David Conductor',
+            lat: snap.snappedCoords.lat,
+            lon: snap.snappedCoords.lon,
+            heading: pos.coords.heading || 0,
+            updatedAt: new Date()
+          }, { merge: true }).catch(() => {});
+        }
+      }, err => {}, { enableHighAccuracy: true, maximumAge: 3000, timeout: 8000 });
+    }
+
   } else {
     if (statusImg) statusImg.src = "https://files.catbox.moe/qi6nhs.png";
     if (statusBtn) statusBtn.classList.remove('online');
@@ -1167,7 +1223,22 @@ function toggleDriverStatus() {
       statusText.style.color = "#ef4444";
     }
     speakDriverAlert("Modo chofer desconectado.");
+
+    if (driverGeoWatchId) {
+      navigator.geolocation.clearWatch(driverGeoWatchId);
+      driverGeoWatchId = null;
+    }
+    if (db && currentUserId) {
+      db.collection('drivers_online').doc(currentUserId).delete().catch(() => {});
+    }
   }
+}
+
+// BOTÓN PARA QUE EL CHOFER ABRA GOOGLE MAPS / WAZE DIRECTO A LA PUERTA DEL PASAJERO
+function openDriverNavExternal(lat, lon) {
+  triggerHaptic();
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`;
+  window.open(url, '_blank');
 }
 
 function toggleMountainWeather() {
@@ -1241,6 +1312,7 @@ function requestWeeklyPayout() {
   window.location.href = `https://wa.me/584123167126?text=${msg}`;
 }
 
+// SINCRONIZACIÓN EN TIEMPO REAL: EL CHOFER VE EL PUNTO EXACTO Y EL PASAJERO VE EL CARRO ACERCÁNDOSE
 function listenTripsRealtime() {
   if (!db) return;
   db.collection('trips').onSnapshot(snapshot => {
@@ -1254,10 +1326,17 @@ function listenTripsRealtime() {
       const tripId = doc.id;
 
       if (isDriverOnline && trip.status === 'Buscando conductor' && driverList) {
+        const pLat = trip.pickupCoords ? trip.pickupCoords.lat : 10.4614;
+        const pLon = trip.pickupCoords ? trip.pickupCoords.lon : -67.0805;
+
         driverList.innerHTML += `
-          <li style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:rgba(255,255,255,0.03); border-radius:14px; border:1px solid var(--border-card);">
-            <div><strong>${trip.service} ($${trip.price})</strong><p style="font-size:0.75rem; color:#94a3b8;">${trip.pickup} ➔ ${trip.dropoff}</p></div>
-            <button onclick="acceptTrip('${tripId}')" class="btn-primary-neon btn-sm">Aceptar</button>
+          <li style="display:flex; flex-direction:column; gap:8px; padding:14px; background:rgba(255,255,255,0.03); border-radius:16px; border:1px solid var(--border-card);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>${trip.service} ($${trip.price})</strong>
+              <button onclick="acceptTrip('${tripId}')" class="btn-primary-neon btn-sm">Aceptar Carrera</button>
+            </div>
+            <p style="font-size:0.75rem; color:#94a3b8;">${trip.pickup} ➔ ${trip.dropoff}</p>
+            <button class="btn-sm btn-secondary-dim" style="width:100%; font-size:0.72rem;" onclick="openDriverNavExternal(${pLat}, ${pLon})">🗺️ Ver Destino en Google Maps</button>
           </li>`;
       }
 
@@ -1287,8 +1366,8 @@ async function acceptTrip(tripId) {
       driverPhone: '04123167126'
     }).catch(() => {});
   }
-  speakDriverAlert("Carrera aceptada. Dirígete al origen.");
+  speakDriverAlert("Carrera aceptada. Navegando al punto del pasajero.");
   showNeonToast('success', '✅ ¡Carrera aceptada con éxito!');
 }
 
-function logout() { localStorage.removeItem('jr_user_profile_v27'); location.reload(); }
+function logout() { localStorage.removeItem('jr_user_profile_v28'); location.reload(); }
