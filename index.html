@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=31">
+  <link rel="manifest" href="manifest.json?v=32">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,413 +21,498 @@
   <!-- Contenedor Flotante de Notificaciones Toast Neón -->
   <div id="toast-container"></div>
 
+  <!-- ============================================================== -->
+  <!-- PANTALLA PRINCIPAL DE BIENVENIDA / REGISTRO (WELCOME ONBOARDING) -->
+  <!-- ============================================================== -->
+  <section id="screen-welcome" class="welcome-screen-wrap animate-fade">
+    <div class="welcome-hero-content">
+      
+      <!-- Logo Flotante Neón con Animación 3D -->
+      <div class="welcome-logo-container">
+        <div class="welcome-logo-halo"></div>
+        <img src="https://files.catbox.moe/oh53r9.png" alt="Logo JunRide" class="welcome-floating-logo">
+      </div>
+
+      <div class="welcome-brand-text">
+        <h1 class="welcome-title"><span class="part-jun">Jun</span><span class="part-ride">Ride</span></h1>
+        <p class="welcome-subtitle">Movilidad Inteligente en El Junquito</p>
+        <span class="welcome-tagline">Seguridad satelital • Conexión de montaña • Sin pérdidas</span>
+      </div>
+
+      <!-- Botón de Descargar App PWA (Visible si el dispositivo no la tiene instalada) -->
+      <div id="welcome-install-pwa-box" class="welcome-install-banner" style="display:none;" onclick="triggerPwaInstallPrompt()">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="#00ff87"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+        <div>
+          <strong>Descargar e Instalar JunRide</strong>
+          <small>Acceso directo rápido y sin conexión</small>
+        </div>
+      </div>
+
+      <!-- Botones de Acción Principal -->
+      <div class="welcome-action-buttons">
+        <button class="btn-primary-neon btn-welcome-main" onclick="openAuthModal('register')">
+          Crear Cuenta Nueva
+        </button>
+        <button class="btn-secondary-dim btn-welcome-main" onclick="openAuthModal('login')">
+          Ya tengo una cuenta
+        </button>
+      </div>
+
+      <small class="welcome-footer-note">⚡ Traslados y colectivos seguros desde el Km 0 hasta el Km 28</small>
+    </div>
+  </section>
+
+  <!-- MODAL DE REGISTRO E INICIO DE SESIÓN -->
+  <div class="modal" id="modal-auth-form">
+    <div class="modal-content card-neon animate-fade">
+      <div class="panel-header-row">
+        <h3 style="color:white; font-size:1.15rem;" id="auth-modal-title">Crear Cuenta JunRide</h3>
+        <button class="btn-close" onclick="closeAuthModal()">&times;</button>
+      </div>
+      
+      <p style="font-size:0.75rem; color:var(--text-muted);" id="auth-modal-desc">Ingresa tus datos para activar tu perfil de usuario y tu saldo de bienvenida.</p>
+
+      <form id="auth-main-form" onsubmit="handleAuthSubmit(event)">
+        <div id="auth-register-extra-fields">
+          <label style="font-size:0.75rem; color:var(--text-muted);">Nombre:</label>
+          <input type="text" id="auth-input-name" placeholder="Ej. David">
+
+          <label style="font-size:0.75rem; color:var(--text-muted);">Apellido:</label>
+          <input type="text" id="auth-input-lastname" placeholder="Ej. Morales">
+        </div>
+
+        <label style="font-size:0.75rem; color:var(--text-muted);">Teléfono Móvil (WhatsApp):</label>
+        <input type="tel" id="auth-input-phone" placeholder="Ej. 04123167126" required>
+
+        <label style="font-size:0.75rem; color:var(--text-muted);">Correo Electrónico:</label>
+        <input type="email" id="auth-input-email" placeholder="Ej. usuario@correo.com" required>
+
+        <div style="background:rgba(0,255,135,0.06); border:1px solid var(--border-glow); padding:10px; border-radius:14px; margin:8px 0; font-size:0.72rem; color:#cbd5e1;">
+          📍 <strong>Nota:</strong> Al entrar se activará el GPS satelital para calibrar automáticamente tu punto en la montaña.
+        </div>
+
+        <button type="submit" class="btn-primary-neon" style="width:100%; padding:14px; margin-top:4px;" id="auth-submit-btn">
+          Comenzar en JunRide
+        </button>
+      </form>
+    </div>
+  </div>
+
   <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
 
-  <!-- Cabecera Superior -->
-  <header class="top-bar" id="main-header">
-    <div class="top-bar-left">
-      <div class="brand-logo-lockup" onclick="handleHeaderHomeClick()">
-        <img class="brand-logo-img" src="https://files.catbox.moe/oh53r9.png" alt="Logo JunRide">
-        <span class="brand-name">
-          <span class="part-jun">Jun</span><span class="part-ride">Ride</span>
-        </span>
-      </div>
-
-      <div class="driver-badge-header" id="header-driver-badge" onclick="switchPassengerMode()" title="Modo Chofer Activo">
-        <img src="https://files.catbox.moe/wr94fi.png" alt="Chofer Activo">
-        <span>Chofer</span>
-      </div>
-    </div>
+  <!-- ============================================================== -->
+  <!-- APLICACIÓN PRINCIPAL (VISIBLE SOLO CUANDO HAY SESIÓN INICIADA) -->
+  <!-- ============================================================== -->
+  <div id="app-main-interface" style="display:none;">
     
-    <div class="top-bar-right">
-      <div class="btn-icon-top btn-sos-top" onclick="triggerPanicSOS()" title="Botón de Pánico SOS">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-      </div>
+    <!-- Cabecera Superior -->
+    <header class="top-bar" id="main-header">
+      <div class="top-bar-left">
+        <div class="brand-logo-lockup" onclick="handleHeaderHomeClick()">
+          <img class="brand-logo-img" src="https://files.catbox.moe/oh53r9.png" alt="Logo JunRide">
+          <span class="brand-name">
+            <span class="part-jun">Jun</span><span class="part-ride">Ride</span>
+          </span>
+        </div>
 
-      <div class="bcv-rate-pill" onclick="fetchBCVRate(true)" title="Tasa oficial del BCV">
-        <span>Tasa BCV</span>
-        <strong id="bcv-rate-val">876.80 Bs.</strong>
+        <div class="driver-badge-header" id="header-driver-badge" onclick="switchPassengerMode()" title="Modo Chofer Activo">
+          <img src="https://files.catbox.moe/wr94fi.png" alt="Chofer Activo">
+          <span>Chofer</span>
+        </div>
       </div>
       
-      <div class="btn-icon-top" id="btn-weather-toggle" onclick="toggleMountainWeather()" title="Modo Neblina (+15%)">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
-      </div>
-    </div>
-  </header>
+      <div class="top-bar-right">
+        <div class="btn-icon-top btn-sos-top" onclick="triggerPanicSOS()" title="Botón de Pánico SOS">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
 
-  <main class="content-app" id="main-app-content">
-
-    <!-- Pestaña INICIO (Modo Pasajero) -->
-    <section class="tab-content animate-fade" id="tab-inicio">
-      
-      <!-- Marquesina de Alertas Viales en Vivo -->
-      <div class="live-alerts-ticker" id="live-alerts-banner" onclick="openReportTrafficModal()" style="display:none;">
-        <span style="font-size:1.2rem;">⚠️</span>
-        <div>
-          <strong id="alert-banner-title">Alerta Comunitaria en la Vía</strong>
-          <p id="alert-banner-desc">Precaución en la carretera de la montaña.</p>
-        </div>
-      </div>
-
-      <div class="search-bar-neon" onclick="openRideOrderScreen('Carro')">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        <span>¿A qué punto de la montaña vas hoy?</span>
-      </div>
-
-      <div class="services-3d-grid">
-        <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Carro')">
-          <div class="service-img-wrap"><img src="https://files.catbox.moe/lkxyw7.png" alt="Carro"></div>
-          <span class="service-title">Carro</span>
-        </div>
-        <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Moto')">
-          <div class="service-img-wrap"><img src="https://files.catbox.moe/xriwyl.png" alt="Moto"></div>
-          <span class="service-title">Moto</span>
-        </div>
-        <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Colectivo')">
-          <div class="service-img-wrap"><img src="https://files.catbox.moe/w6c0q9.png" alt="Por Puesto"></div>
-          <span class="service-title">Por Puesto</span>
-        </div>
-        <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Carga')">
-          <div class="service-img-wrap"><img src="https://files.catbox.moe/bjsczm.png" alt="Mudanzas"></div>
-          <span class="service-title">Mudanzas</span>
-        </div>
-      </div>
-
-      <div class="flyers-carousel-wrap">
-        <div class="flyer-graphic-card" onclick="openScheduleTripModal()" title="Aparta tu Viaje de Madrugada">
-          <img src="https://files.catbox.moe/6njpmq.png" alt="Aparta tu Viaje">
-        </div>
-        <div class="flyer-graphic-card" onclick="openReportTrafficModal()" title="Alertas en la Vía en Vivo">
-          <img src="https://files.catbox.moe/5u8428.png" alt="Alerta en la Vía">
-        </div>
-      </div>
-
-      <div class="driver-mode-cta card-neon" onclick="switchDriverMode()">
-        <img src="https://files.catbox.moe/wr94fi.png" alt="Icono Conductor">
-        <span>CAMBIAR AL MODO CONDUCTOR</span>
-      </div>
-
-      <div class="wallet-banner card-neon" onclick="switchTab('recargas')">
-        <div>
-          <span style="font-size:0.75rem; color:var(--text-muted);">Billetera (Saldo Disponible)</span>
-          <div class="wallet-balance-num" id="ui-km-balance">$5.00</div>
-        </div>
-        <button class="btn-primary-neon btn-sm">Recargar</button>
-      </div>
-
-      <!-- SEGUIMIENTO DE VIAJE ACTIVO PARA EL PASAJERO -->
-      <div class="card-neon" id="live-tracking-box" style="display:none; padding:18px; margin-bottom:14px;">
-        <div class="panel-header-row">
-          <h4 style="color:var(--primary);" id="passenger-trip-status-title">🛰️ Conductor Asignado</h4>
-          <button class="btn-sm btn-secondary-dim" onclick="cancelTrip(true)">Cancelar</button>
-        </div>
-        <div style="background:rgba(0,255,135,0.08); padding:12px; border-radius:14px; margin:10px 0;">
-          <strong id="live-driver-name" style="color:white; font-size:0.95rem;">Conductor en camino</strong>
-          <p style="font-size:0.75rem; color:var(--primary); margin-top:2px;">Tarifa acordada: $<span id="trip-fare-val">0.00</span></p>
+        <div class="bcv-rate-pill" onclick="fetchBCVRate(true)" title="Tasa oficial del BCV">
+          <span>Tasa BCV</span>
+          <strong id="bcv-rate-val">876.80 Bs.</strong>
         </div>
         
-        <div style="background:rgba(0,255,135,0.12); border:2px dashed var(--primary); padding:12px; border-radius:14px; text-align:center;">
-          <span style="font-size:0.72rem; color:var(--text-muted);">DALE ESTE PIN AL CHOFER AL SUBIRTE:</span>
-          <div style="font-size:2.2rem; font-weight:900; letter-spacing:8px; color:var(--primary);" id="passenger-otp-val">0000</div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:10px;">
-          <button class="btn-primary-neon btn-sm" onclick="openActiveChatModal()">💬 Abrir Chat y Voz</button>
-          <button class="btn-sm btn-secondary-dim" onclick="shareLiveTripStatus()">📲 Compartir Viaje</button>
+        <div class="btn-icon-top" id="btn-weather-toggle" onclick="toggleMountainWeather()" title="Modo Neblina (+15%)">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
         </div>
       </div>
-    </section>
+    </header>
 
-    <!-- Pestaña RECARGAS -->
-    <section class="tab-content animate-fade" id="tab-recargas" style="display:none;">
-      <div class="card-neon" style="display:flex; align-items:center; justify-content:space-between; padding:20px; margin-bottom:14px; background:linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(15,23,42,0.95) 100%); border:1.5px solid var(--primary); box-shadow:0 0 24px rgba(0,255,135,0.18);">
-        <div style="display:flex; align-items:center; gap:16px;">
-          <div style="width:68px; height:68px; border-radius:18px; background:rgba(0,255,135,0.08); border:1px solid var(--border-glow); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <img src="https://files.catbox.moe/r7k3mk.png" style="width:54px; height:54px; object-fit:contain; filter:drop-shadow(0 0 10px var(--primary-glow));" alt="Cartera">
-          </div>
+    <main class="content-app" id="main-app-content">
+
+      <!-- Pestaña INICIO (Modo Pasajero) -->
+      <section class="tab-content animate-fade" id="tab-inicio">
+        
+        <div class="live-alerts-ticker" id="live-alerts-banner" onclick="openReportTrafficModal()" style="display:none;">
+          <span style="font-size:1.2rem;">⚠️</span>
           <div>
-            <h3 style="color:white; font-size:1.08rem; font-weight:800;">Cartera Digital</h3>
-            <span style="font-size:0.75rem; color:var(--text-muted);">Saldo activo para tus viajes</span>
-            <div style="font-size:2rem; font-weight:900; color:var(--primary); line-height:1.1; margin-top:4px;" id="recarga-km-val">$5.00</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card-neon" style="padding:18px; margin-top:12px;">
-        <div class="panel-header-row" style="margin-bottom:8px;">
-          <h4 style="color:white; font-size:0.95rem;">🏦 Selecciona tu Método de Pago:</h4>
-          <button type="button" class="copy-chip-btn" id="btn-copy-full-bank" onclick="copyFullBankDataForApp()">📋 Copiar Todo para Banco</button>
-        </div>
-        
-        <div class="recharge-method-selector">
-          <div class="recharge-brand-card active" id="btn-pay-bdv" onclick="selectRechargeMethod('bdv')">
-            <img class="recharge-brand-logo" src="https://files.catbox.moe/m27j7r.png" alt="Banco de Venezuela">
-            <strong>B. de Venezuela</strong>
-          </div>
-          <div class="recharge-brand-card" id="btn-pay-zinli" onclick="selectRechargeMethod('zinli')">
-            <img class="recharge-brand-logo" src="https://files.catbox.moe/24w3zq.png" alt="Zinli">
-            <strong>Zinli</strong>
-          </div>
-          <div class="recharge-brand-card" id="btn-pay-binance" onclick="selectRechargeMethod('binance')">
-            <img class="recharge-brand-logo" src="https://files.catbox.moe/0amryl.png" alt="Binance Pay">
-            <strong>Binance Pay</strong>
+            <strong id="alert-banner-title">Alerta Comunitaria en la Vía</strong>
+            <p id="alert-banner-desc">Precaución en la carretera de la montaña.</p>
           </div>
         </div>
 
-        <div class="pay-details-neon-card" id="pay-details-box">
-          <img class="pay-corner-logo" id="pay-current-logo" src="https://files.catbox.moe/m27j7r.png" alt="Logo Método">
-          <h5 id="pay-method-title" style="color:var(--primary); font-size:0.85rem; margin-bottom:8px;">Pago Móvil BDV</h5>
-          <div id="pay-fields-container"></div>
+        <div class="search-bar-neon" onclick="openRideOrderScreen('Carro')">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          <span>¿A qué punto de la montaña vas hoy?</span>
         </div>
 
-        <form onsubmit="verifyPaymentReference(event)">
-          <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-ref">Últimos 6 dígitos de la referencia:</label>
-          <input type="text" id="pay-ref-input" maxlength="8" placeholder="Ej. 466324" required>
-          <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-amount">Monto pagado en Bs.:</label>
-          <input type="number" step="0.01" id="pay-amount-input" placeholder="Ej. 1380.00" required>
-          <button type="submit" class="btn-primary-neon" style="width:100%; margin-top:4px;">Acreditar Saldo a la Billetera</button>
-        </form>
-      </div>
-
-      <div class="card-flat" style="padding:18px; margin-top:12px;">
-        <h4 style="color:white;">📜 Movimientos de Cuenta:</h4>
-        <div id="wallet-ledger-list" style="margin-top:10px;"></div>
-      </div>
-    </section>
-
-    <!-- Pestaña HISTORIAL -->
-    <section class="tab-content animate-fade" id="tab-historial" style="display:none;">
-      <div class="card-neon" style="padding:20px;">
-        <h3 style="color:white;">Historial de Carreras</h3>
-        <ul id="history-list" style="list-style:none; margin-top:12px; display:flex; flex-direction:column; gap:8px;"></ul>
-      </div>
-    </section>
-
-    <!-- Pestaña CONDUCTOR - TABLERO -->
-    <section class="tab-content animate-fade" id="tab-driver-panel" style="display:none;">
-      <div class="card-neon" style="padding:20px;">
-        <div class="panel-header-row">
-          <h3 style="color:white;">Tablero Conductor</h3>
-          <button class="btn-sm btn-secondary-dim" onclick="switchPassengerMode()">Salir a Pasajero</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.03); padding:16px; border-radius:18px; margin:14px 0; text-align:center;">
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">ESTADO DE CONEXIÓN & VOZ GPS:</span>
-          
-          <div class="driver-toggle-image-btn" id="btn-driver-status-img" onclick="toggleDriverStatus()">
-            <img id="img-driver-toggle-state" src="https://files.catbox.moe/qi6nhs.png" alt="Estado Conductor">
+        <div class="services-3d-grid">
+          <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Carro')">
+            <div class="service-img-wrap"><img src="https://files.catbox.moe/lkxyw7.png" alt="Carro"></div>
+            <span class="service-title">Carro</span>
           </div>
-          
-          <small id="driver-status-text" style="color:#ef4444; font-size:0.75rem; font-weight:800;">🔴 Desconectado (Toca el botón para conectarte)</small>
+          <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Moto')">
+            <div class="service-img-wrap"><img src="https://files.catbox.moe/xriwyl.png" alt="Moto"></div>
+            <span class="service-title">Moto</span>
+          </div>
+          <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Colectivo')">
+            <div class="service-img-wrap"><img src="https://files.catbox.moe/w6c0q9.png" alt="Por Puesto"></div>
+            <span class="service-title">Por Puesto</span>
+          </div>
+          <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Carga')">
+            <div class="service-img-wrap"><img src="https://files.catbox.moe/bjsczm.png" alt="Mudanzas"></div>
+            <span class="service-title">Mudanzas</span>
+          </div>
         </div>
 
-        <!-- PANEL DE VIAJE EN CURSO PARA EL CONDUCTOR -->
-        <div id="driver-active-trip-box" style="display:none; background:rgba(0,255,135,0.06); border:1.5px solid var(--primary); border-radius:18px; padding:16px; margin-bottom:14px;">
+        <div class="flyers-carousel-wrap">
+          <div class="flyer-graphic-card" onclick="openScheduleTripModal()" title="Aparta tu Viaje de Madrugada">
+            <img src="https://files.catbox.moe/6njpmq.png" alt="Aparta tu Viaje">
+          </div>
+          <div class="flyer-graphic-card" onclick="openReportTrafficModal()" title="Alertas en la Vía en Vivo">
+            <img src="https://files.catbox.moe/5u8428.png" alt="Alerta en la Vía">
+          </div>
+        </div>
+
+        <div class="driver-mode-cta card-neon" onclick="switchDriverMode()">
+          <img src="https://files.catbox.moe/wr94fi.png" alt="Icono Conductor">
+          <span>CAMBIAR AL MODO CONDUCTOR</span>
+        </div>
+
+        <div class="wallet-banner card-neon" onclick="switchTab('recargas')">
+          <div>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Billetera (Saldo Disponible)</span>
+            <div class="wallet-balance-num" id="ui-km-balance">$5.00</div>
+          </div>
+          <button class="btn-primary-neon btn-sm">Recargar</button>
+        </div>
+
+        <!-- SEGUIMIENTO DE VIAJE ACTIVO -->
+        <div class="card-neon" id="live-tracking-box" style="display:none; padding:18px; margin-bottom:14px;">
           <div class="panel-header-row">
-            <span style="font-size:0.8rem; font-weight:800; color:var(--primary);">🚕 VIAJE EN EJECUCIÓN</span>
-            <span style="font-size:0.85rem; font-weight:900; color:#fff;" id="driver-trip-fare-badge">$0.00</span>
+            <h4 style="color:var(--primary);" id="passenger-trip-status-title">🛰️ Conductor Asignado</h4>
+            <button class="btn-sm btn-secondary-dim" onclick="cancelTrip(true)">Cancelar</button>
+          </div>
+          <div style="background:rgba(0,255,135,0.08); padding:12px; border-radius:14px; margin:10px 0;">
+            <strong id="live-driver-name" style="color:white; font-size:0.95rem;">Conductor en camino</strong>
+            <p style="font-size:0.75rem; color:var(--primary); margin-top:2px;">Tarifa acordada: $<span id="trip-fare-val">0.00</span></p>
           </div>
           
-          <p style="font-size:0.8rem; color:#fff; margin:6px 0;" id="driver-trip-route-info">Origen ➔ Destino</p>
-          
-          <div id="driver-otp-input-area" style="margin:10px 0; background:rgba(0,0,0,0.4); padding:10px; border-radius:14px; text-align:center;">
-            <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:4px;">Pide el PIN de 4 dígitos al pasajero:</label>
-            <div style="display:flex; justify-content:center; gap:8px;">
-              <input type="number" id="driver-input-otp" placeholder="Ej. 8196" maxlength="4" style="max-width:140px; text-align:center; font-size:1.4rem; font-weight:900; letter-spacing:4px; margin:0;">
-              <button class="btn-primary-neon btn-sm" onclick="validatePassengerOTP()">Validar</button>
+          <div style="background:rgba(0,255,135,0.12); border:2px dashed var(--primary); padding:12px; border-radius:14px; text-align:center;">
+            <span style="font-size:0.72rem; color:var(--text-muted);">DALE ESTE PIN AL CHOFER AL SUBIRTE:</span>
+            <div style="font-size:2.2rem; font-weight:900; letter-spacing:8px; color:var(--primary);" id="passenger-otp-val">0000</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:10px;">
+            <button class="btn-primary-neon btn-sm" onclick="openActiveChatModal()">💬 Abrir Chat y Voz</button>
+            <button class="btn-sm btn-secondary-dim" onclick="shareLiveTripStatus()">📲 Compartir Viaje</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pestaña RECARGAS -->
+      <section class="tab-content animate-fade" id="tab-recargas" style="display:none;">
+        <div class="card-neon" style="display:flex; align-items:center; justify-content:space-between; padding:20px; margin-bottom:14px; background:linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(15,23,42,0.95) 100%); border:1.5px solid var(--primary); box-shadow:0 0 24px rgba(0,255,135,0.18);">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:68px; height:68px; border-radius:18px; background:rgba(0,255,135,0.08); border:1px solid var(--border-glow); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <img src="https://files.catbox.moe/r7k3mk.png" style="width:54px; height:54px; object-fit:contain; filter:drop-shadow(0 0 10px var(--primary-glow));" alt="Cartera">
             </div>
-          </div>
-
-          <div id="driver-in-route-area" style="display:none; margin:10px 0;">
-            <div style="background:rgba(0,255,135,0.15); color:var(--primary); padding:8px; border-radius:12px; text-align:center; font-weight:800; font-size:0.8rem;">
-              🟢 En trayecto hacia el destino
-            </div>
-            <button class="btn-primary-neon" style="width:100%; margin-top:8px; padding:12px;" onclick="completeActiveTripDriver()">🏁 FINALIZAR VIAJE Y COBRAR</button>
-          </div>
-
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:8px;">
-            <button class="btn-sm btn-secondary-dim" onclick="openActiveChatModal()">💬 Chat y Notas</button>
-            <button class="btn-sm btn-secondary-dim" id="btn-driver-ext-map" onclick="openDriverNavExternalCurrent()">🗺️ Abrir Maps</button>
-          </div>
-        </div>
-
-        <h4 style="margin-top:14px; color:white;">Solicitudes de Carreras en Vivo:</h4>
-        <ul id="driver-requests-list" style="list-style:none; margin-top:10px; display:flex; flex-direction:column; gap:8px;"></ul>
-      </div>
-    </section>
-
-    <!-- Pestaña CONDUCTOR - GANANCIAS -->
-    <section class="tab-content animate-fade" id="tab-driver-ganancias" style="display:none;">
-      <div class="driver-earnings-hero">
-        <div style="display:flex; align-items:center; gap:14px;">
-          <div class="driver-wallet-logo-wrap">
-            <img src="https://files.catbox.moe/r7k3mk.png" alt="Cartera del Conductor">
-          </div>
-          <div>
-            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:800;">Ganancias Netas</span>
-            <div style="font-size:2rem; font-weight:900; color:var(--primary);" id="driver-total-earnings-val">$0.00</div>
-          </div>
-        </div>
-        <button class="btn-primary-neon btn-sm" onclick="requestWeeklyPayout()">Cobrar</button>
-      </div>
-
-      <div class="card-neon" style="padding:18px; margin-bottom:12px;">
-        <h4 style="color:white; margin-bottom:8px;">Resumen Semanal de Actividad</h4>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; text-align:center;">
-          <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:14px;">
-            <span style="font-size:0.7rem; color:var(--text-muted);">Viajes Realizados</span>
-            <h4 style="font-size:1.3rem; color:#fff;" id="driver-trips-count-val">0</h4>
-          </div>
-          <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:14px;">
-            <span style="font-size:0.7rem; color:var(--text-muted);">Comisión App (10%)</span>
-            <h4 style="font-size:1.3rem; color:#a78bfa;" id="driver-commission-fee-val">$0.00</h4>
-          </div>
-        </div>
-      </div>
-
-      <div class="card-flat" style="padding:18px;">
-        <h4 style="color:white; margin-bottom:8px;">Registro Detallado de Viajes</h4>
-        <div id="driver-completed-rides-list">
-          <p style="font-size:0.78rem; color:var(--text-muted);">Aún no has completado carreras en este turno.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Pestaña CONDUCTOR - MENSAJES -->
-    <section class="tab-content animate-fade" id="tab-driver-mensajes" style="display:none;">
-      <div class="card-neon" style="padding:20px;">
-        <div class="panel-header-row" style="margin-bottom:12px; align-items:center;">
-          <div>
-            <h3 style="color:white; font-size:1.2rem; font-weight:900; letter-spacing:-0.3px;">Centro de Mensajes</h3>
-            <span style="font-size:0.75rem; color:var(--primary); font-weight:800;">Coordinación de Ruta Activa</span>
-          </div>
-          <div style="width:54px; height:54px; display:flex; align-items:center; justify-content:center; background:rgba(0,255,135,0.08); border:1.5px solid var(--primary); border-radius:18px; box-shadow:0 0 18px var(--primary-glow);">
-            <img src="https://files.catbox.moe/w75pvv.png" style="width:40px; height:40px; object-fit:contain;" alt="Logo Chat">
-          </div>
-        </div>
-
-        <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">Comunícate con el pasajero de tu carrera activa o asistencia vial:</p>
-        
-        <div class="chat-user-item card-flat" style="padding:12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="openActiveChatModal()">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:44px; height:44px; border-radius:50%; background:rgba(0,255,135,0.12); border:1.5px solid var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">💬</div>
             <div>
-              <strong style="font-size:0.88rem; color:#fff;" id="chat-hub-passenger-name">Chat de Carrera Activa</strong>
-              <p style="font-size:0.72rem; color:var(--text-muted);">Mensajes y notas de voz en directo</p>
+              <h3 style="color:white; font-size:1.08rem; font-weight:800;">Cartera Digital</h3>
+              <span style="font-size:0.75rem; color:var(--text-muted);">Saldo activo para tus viajes</span>
+              <div style="font-size:2rem; font-weight:900; color:var(--primary); line-height:1.1; margin-top:4px;" id="recarga-km-val">$5.00</div>
             </div>
           </div>
-          <span class="badge-tag-neon">En Vivo</span>
         </div>
-      </div>
-    </section>
 
-    <!-- Pestaña PERFIL -->
-    <section class="tab-content animate-fade" id="tab-perfil" style="display:none;">
-      <div class="profile-header-card">
-        <div class="profile-user-row">
-          <div class="profile-avatar-wrap" onclick="triggerAvatarUpload()" title="Toca para cambiar tu foto de perfil">
-            <img id="profile-avatar-img" src="https://files.catbox.moe/oh53r9.png" alt="Avatar">
-            <div class="avatar-edit-overlay">FOTO</div>
+        <div class="card-neon" style="padding:18px; margin-top:12px;">
+          <div class="panel-header-row" style="margin-bottom:8px;">
+            <h4 style="color:white; font-size:0.95rem;">🏦 Selecciona tu Método de Pago:</h4>
+            <button type="button" class="copy-chip-btn" id="btn-copy-full-bank" onclick="copyFullBankDataForApp()">📋 Copiar Todo para Banco</button>
           </div>
           
-          <div class="profile-name-box">
-            <h2 id="profile-fullname">David Morales</h2>
-            <div class="profile-rank-subtitle" id="profile-tier-name">Senderista (Nivel 2)</div>
+          <div class="recharge-method-selector">
+            <div class="recharge-brand-card active" id="btn-pay-bdv" onclick="selectRechargeMethod('bdv')">
+              <img class="recharge-brand-logo" src="https://files.catbox.moe/m27j7r.png" alt="Banco de Venezuela">
+              <strong>B. de Venezuela</strong>
+            </div>
+            <div class="recharge-brand-card" id="btn-pay-zinli" onclick="selectRechargeMethod('zinli')">
+              <img class="recharge-brand-logo" src="https://files.catbox.moe/24w3zq.png" alt="Zinli">
+              <strong>Zinli</strong>
+            </div>
+            <div class="recharge-brand-card" id="btn-pay-binance" onclick="selectRechargeMethod('binance')">
+              <img class="recharge-brand-logo" src="https://files.catbox.moe/0amryl.png" alt="Binance Pay">
+              <strong>Binance Pay</strong>
+            </div>
           </div>
 
-          <div class="profile-tier-badge-right" onclick="openLevelsModal()" title="Toca para ver tu rango">
-            <img id="profile-tier-icon-right" src="https://files.catbox.moe/hpp6uj.png" alt="Trofeo Nivel">
+          <div class="pay-details-neon-card" id="pay-details-box">
+            <img class="pay-corner-logo" id="pay-current-logo" src="https://files.catbox.moe/m27j7r.png" alt="Logo Método">
+            <h5 id="pay-method-title" style="color:var(--primary); font-size:0.85rem; margin-bottom:8px;">Pago Móvil BDV</h5>
+            <div id="pay-fields-container"></div>
+          </div>
+
+          <form onsubmit="verifyPaymentReference(event)">
+            <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-ref">Últimos 6 dígitos de la referencia:</label>
+            <input type="text" id="pay-ref-input" maxlength="8" placeholder="Ej. 466324" required>
+            <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-amount">Monto pagado en Bs.:</label>
+            <input type="number" step="0.01" id="pay-amount-input" placeholder="Ej. 1380.00" required>
+            <button type="submit" class="btn-primary-neon" style="width:100%; margin-top:4px;">Acreditar Saldo a la Billetera</button>
+          </form>
+        </div>
+
+        <div class="card-flat" style="padding:18px; margin-top:12px;">
+          <h4 style="color:white;">📜 Movimientos de Cuenta:</h4>
+          <div id="wallet-ledger-list" style="margin-top:10px;"></div>
+        </div>
+      </section>
+
+      <!-- Pestaña HISTORIAL -->
+      <section class="tab-content animate-fade" id="tab-historial" style="display:none;">
+        <div class="card-neon" style="padding:20px;">
+          <h3 style="color:white;">Historial de Carreras</h3>
+          <ul id="history-list" style="list-style:none; margin-top:12px; display:flex; flex-direction:column; gap:8px;"></ul>
+        </div>
+      </section>
+
+      <!-- Pestaña CONDUCTOR - TABLERO -->
+      <section class="tab-content animate-fade" id="tab-driver-panel" style="display:none;">
+        <div class="card-neon" style="padding:20px;">
+          <div class="panel-header-row">
+            <h3 style="color:white;">Tablero Conductor</h3>
+            <button class="btn-sm btn-secondary-dim" onclick="switchPassengerMode()">Salir a Pasajero</button>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.03); padding:16px; border-radius:18px; margin:14px 0; text-align:center;">
+            <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">ESTADO DE CONEXIÓN & VOZ GPS:</span>
+            
+            <div class="driver-toggle-image-btn" id="btn-driver-status-img" onclick="toggleDriverStatus()">
+              <img id="img-driver-toggle-state" src="https://files.catbox.moe/qi6nhs.png" alt="Estado Conductor">
+            </div>
+            
+            <small id="driver-status-text" style="color:#ef4444; font-size:0.75rem; font-weight:800;">🔴 Desconectado (Toca el botón para conectarte)</small>
+          </div>
+
+          <!-- PANEL DE VIAJE EN CURSO PARA EL CONDUCTOR -->
+          <div id="driver-active-trip-box" style="display:none; background:rgba(0,255,135,0.06); border:1.5px solid var(--primary); border-radius:18px; padding:16px; margin-bottom:14px;">
+            <div class="panel-header-row">
+              <span style="font-size:0.8rem; font-weight:800; color:var(--primary);">🚕 VIAJE EN EJECUCIÓN</span>
+              <span style="font-size:0.85rem; font-weight:900; color:#fff;" id="driver-trip-fare-badge">$0.00</span>
+            </div>
+            
+            <p style="font-size:0.8rem; color:#fff; margin:6px 0;" id="driver-trip-route-info">Origen ➔ Destino</p>
+            
+            <div id="driver-otp-input-area" style="margin:10px 0; background:rgba(0,0,0,0.4); padding:10px; border-radius:14px; text-align:center;">
+              <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:4px;">Pide el PIN de 4 dígitos al pasajero:</label>
+              <div style="display:flex; justify-content:center; gap:8px;">
+                <input type="number" id="driver-input-otp" placeholder="Ej. 8196" maxlength="4" style="max-width:140px; text-align:center; font-size:1.4rem; font-weight:900; letter-spacing:4px; margin:0;">
+                <button class="btn-primary-neon btn-sm" onclick="validatePassengerOTP()">Validar</button>
+              </div>
+            </div>
+
+            <div id="driver-in-route-area" style="display:none; margin:10px 0;">
+              <div style="background:rgba(0,255,135,0.15); color:var(--primary); padding:8px; border-radius:12px; text-align:center; font-weight:800; font-size:0.8rem;">
+                🟢 En trayecto hacia el destino
+              </div>
+              <button class="btn-primary-neon" style="width:100%; margin-top:8px; padding:12px;" onclick="completeActiveTripDriver()">🏁 FINALIZAR VIAJE Y COBRAR</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:8px;">
+              <button class="btn-sm btn-secondary-dim" onclick="openActiveChatModal()">💬 Chat y Notas</button>
+              <button class="btn-sm btn-secondary-dim" id="btn-driver-ext-map" onclick="openDriverNavExternalCurrent()">🗺️ Abrir Maps</button>
+            </div>
+          </div>
+
+          <h4 style="margin-top:14px; color:white;">Solicitudes de Carreras en Vivo:</h4>
+          <ul id="driver-requests-list" style="list-style:none; margin-top:10px; display:flex; flex-direction:column; gap:8px;"></ul>
+        </div>
+      </section>
+
+      <!-- Pestaña CONDUCTOR - GANANCIAS -->
+      <section class="tab-content animate-fade" id="tab-driver-ganancias" style="display:none;">
+        <div class="driver-earnings-hero">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div class="driver-wallet-logo-wrap">
+              <img src="https://files.catbox.moe/r7k3mk.png" alt="Cartera del Conductor">
+            </div>
+            <div>
+              <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:800;">Ganancias Netas</span>
+              <div style="font-size:2rem; font-weight:900; color:var(--primary);" id="driver-total-earnings-val">$0.00</div>
+            </div>
+          </div>
+          <button class="btn-primary-neon btn-sm" onclick="requestWeeklyPayout()">Cobrar</button>
+        </div>
+
+        <div class="card-neon" style="padding:18px; margin-bottom:12px;">
+          <h4 style="color:white; margin-bottom:8px;">Resumen Semanal de Actividad</h4>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; text-align:center;">
+            <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:14px;">
+              <span style="font-size:0.7rem; color:var(--text-muted);">Viajes Realizados</span>
+              <h4 style="font-size:1.3rem; color:#fff;" id="driver-trips-count-val">0</h4>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:14px;">
+              <span style="font-size:0.7rem; color:var(--text-muted);">Comisión App (10%)</span>
+              <h4 style="font-size:1.3rem; color:#a78bfa;" id="driver-commission-fee-val">$0.00</h4>
+            </div>
           </div>
         </div>
 
-        <div class="tier-progress-section">
-          <div class="tier-progress-header">
-            <span>Progreso de Nivel</span>
-            <strong id="profile-tier-exp-text">11 / 15 Viajes para Explorador</strong>
+        <div class="card-flat" style="padding:18px;">
+          <h4 style="color:white; margin-bottom:8px;">Registro Detallado de Viajes</h4>
+          <div id="driver-completed-rides-list">
+            <p style="font-size:0.78rem; color:var(--text-muted);">Aún no has completado carreras en este turno.</p>
           </div>
-          <div class="tier-bar-track">
-            <div class="tier-bar-fill" id="profile-tier-progress-bar" style="width: 73%;"></div>
+        </div>
+      </section>
+
+      <!-- Pestaña CONDUCTOR - MENSAJES -->
+      <section class="tab-content animate-fade" id="tab-driver-mensajes" style="display:none;">
+        <div class="card-neon" style="padding:20px;">
+          <div class="panel-header-row" style="margin-bottom:12px; align-items:center;">
+            <div>
+              <h3 style="color:white; font-size:1.2rem; font-weight:900; letter-spacing:-0.3px;">Centro de Mensajes</h3>
+              <span style="font-size:0.75rem; color:var(--primary); font-weight:800;">Coordinación de Ruta Activa</span>
+            </div>
+            <div style="width:54px; height:54px; display:flex; align-items:center; justify-content:center; background:rgba(0,255,135,0.08); border:1.5px solid var(--primary); border-radius:18px; box-shadow:0 0 18px var(--primary-glow);">
+              <img src="https://files.catbox.moe/w75pvv.png" style="width:40px; height:40px; object-fit:contain;" alt="Logo Chat">
+            </div>
+          </div>
+
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">Comunícate con el pasajero de tu carrera activa o asistencia vial:</p>
+          
+          <div class="chat-user-item card-flat" style="padding:12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="openActiveChatModal()">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:44px; height:44px; border-radius:50%; background:rgba(0,255,135,0.12); border:1.5px solid var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">💬</div>
+              <div>
+                <strong style="font-size:0.88rem; color:#fff;" id="chat-hub-passenger-name">Chat de Carrera Activa</strong>
+                <p style="font-size:0.72rem; color:var(--text-muted);">Mensajes y notas de voz en directo</p>
+              </div>
+            </div>
+            <span class="badge-tag-neon">En Vivo</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pestaña PERFIL -->
+      <section class="tab-content animate-fade" id="tab-perfil" style="display:none;">
+        <div class="profile-header-card">
+          <div class="profile-user-row">
+            <div class="profile-avatar-wrap" onclick="triggerAvatarUpload()" title="Toca para cambiar tu foto de perfil">
+              <img id="profile-avatar-img" src="https://files.catbox.moe/oh53r9.png" alt="Avatar">
+              <div class="avatar-edit-overlay">FOTO</div>
+            </div>
+            
+            <div class="profile-name-box">
+              <h2 id="profile-fullname">David Morales</h2>
+              <div class="profile-rank-subtitle" id="profile-tier-name">Senderista (Nivel 2)</div>
+            </div>
+
+            <div class="profile-tier-badge-right" onclick="openLevelsModal()" title="Toca para ver tu rango">
+              <img id="profile-tier-icon-right" src="https://files.catbox.moe/hpp6uj.png" alt="Trofeo Nivel">
+            </div>
+          </div>
+
+          <div class="tier-progress-section">
+            <div class="tier-progress-header">
+              <span>Progreso de Nivel</span>
+              <strong id="profile-tier-exp-text">11 / 15 Viajes para Explorador</strong>
+            </div>
+            <div class="tier-bar-track">
+              <div class="tier-bar-fill" id="profile-tier-progress-bar" style="width: 73%;"></div>
+            </div>
+          </div>
+
+          <div class="profile-stats-grid">
+            <div class="stat-box-mini">
+              <div class="stat-val-bold" style="color:#fbbf24;">⭐ 5.00</div>
+              <div class="stat-lbl-dim">Calificación</div>
+            </div>
+            <div class="stat-box-mini">
+              <div class="stat-val-bold" style="color:#38bdf8;" id="stats-total-trips">11</div>
+              <div class="stat-lbl-dim">Viajes totales</div>
+            </div>
+            <div class="stat-box-mini" onclick="redeemTokensForWallet()" style="cursor:pointer;" title="Toca para canjear por saldo">
+              <div class="stat-val-bold" style="color:var(--primary);" id="stats-total-tokens">2,150</div>
+              <div class="stat-lbl-dim">🪙 Tokens (Canjear)</div>
+            </div>
           </div>
         </div>
 
-        <div class="profile-stats-grid">
-          <div class="stat-box-mini">
-            <div class="stat-val-bold" style="color:#fbbf24;">⭐ 5.00</div>
-            <div class="stat-lbl-dim">Calificación</div>
+        <div class="profile-menu-group">
+          <div class="profile-menu-item" onclick="triggerAvatarUpload()">
+            <div class="profile-menu-left">
+              <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+              <span class="profile-menu-title">Cambiar Foto de Perfil</span>
+            </div>
+            <span class="badge-tag-neon">Subir</span>
           </div>
-          <div class="stat-box-mini">
-            <div class="stat-val-bold" style="color:#38bdf8;" id="stats-total-trips">11</div>
-            <div class="stat-lbl-dim">Viajes totales</div>
-          </div>
-          <div class="stat-box-mini" onclick="redeemTokensForWallet()" style="cursor:pointer;" title="Toca para canjear por saldo">
-            <div class="stat-val-bold" style="color:var(--primary);" id="stats-total-tokens">2,150</div>
-            <div class="stat-lbl-dim">🪙 Tokens (Canjear)</div>
-          </div>
-        </div>
-      </div>
 
-      <div class="profile-menu-group">
-        <div class="profile-menu-item" onclick="triggerAvatarUpload()">
-          <div class="profile-menu-left">
-            <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-            <span class="profile-menu-title">Cambiar Foto de Perfil</span>
+          <div class="profile-menu-item" onclick="redeemTokensForWallet()">
+            <div class="profile-menu-left">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+              <span class="profile-menu-title">Canjear Tokens por Saldo</span>
+            </div>
+            <span class="badge-tag-neon">$1.00 = 1K</span>
           </div>
-          <span class="badge-tag-neon">Subir</span>
-        </div>
 
-        <div class="profile-menu-item" onclick="redeemTokensForWallet()">
-          <div class="profile-menu-left">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
-            <span class="profile-menu-title">Canjear Tokens por Saldo</span>
+          <div class="profile-menu-item" onclick="shareReferralCode()">
+            <div class="profile-menu-left">
+              <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              <span class="profile-menu-title">Invitar Amigos (Gana $1.00)</span>
+            </div>
+            <span class="badge-tag-neon">Código: DAVIDJR</span>
           </div>
-          <span class="badge-tag-neon">$1.00 = 1K</span>
-        </div>
 
-        <div class="profile-menu-item" onclick="shareReferralCode()">
-          <div class="profile-menu-left">
-            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            <span class="profile-menu-title">Invitar Amigos (Gana $1.00)</span>
+          <div class="profile-menu-item" onclick="toggleBatterySaverMode()">
+            <div class="profile-menu-left">
+              <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.34V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+              <span class="profile-menu-title">Modo Batería Baja / Alto Rendimiento</span>
+            </div>
+            <span class="badge-tag-neon" id="battery-mode-tag">Normal</span>
           </div>
-          <span class="badge-tag-neon">Código: DAVIDJR</span>
-        </div>
 
-        <div class="profile-menu-item" onclick="toggleBatterySaverMode()">
-          <div class="profile-menu-left">
-            <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.34V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
-            <span class="profile-menu-title">Modo Batería Baja / Alto Rendimiento</span>
+          <div class="profile-menu-item" onclick="openLevelsModal()">
+            <div class="profile-menu-left">
+              <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <span class="profile-menu-title">Escala de Niveles JunRide</span>
+            </div>
+            <span style="font-size:0.75rem; color:var(--primary); font-weight:800;">6 Rangos</span>
           </div>
-          <span class="badge-tag-neon" id="battery-mode-tag">Normal</span>
-        </div>
 
-        <div class="profile-menu-item" onclick="openLevelsModal()">
-          <div class="profile-menu-left">
-            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <span class="profile-menu-title">Escala de Niveles JunRide</span>
+          <div class="profile-menu-item" onclick="openKycWhatsAppModal()">
+            <div class="profile-menu-left">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+              <span class="profile-menu-title">Validación de Chofer</span>
+            </div>
           </div>
-          <span style="font-size:0.75rem; color:var(--primary); font-weight:800;">6 Rangos</span>
-        </div>
 
-        <div class="profile-menu-item" onclick="openKycWhatsAppModal()">
-          <div class="profile-menu-left">
-            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-            <span class="profile-menu-title">Validación de Chofer</span>
+          <div class="profile-menu-item" onclick="window.location.href='https://wa.me/584123167126?text=Hola%20Soporte%20JunRide'">
+            <div class="profile-menu-left">
+              <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+              <span class="profile-menu-title">Soporte Oficial WhatsApp</span>
+            </div>
           </div>
         </div>
 
-        <div class="profile-menu-item" onclick="window.location.href='https://wa.me/584123167126?text=Hola%20Soporte%20JunRide'">
-          <div class="profile-menu-left">
-            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-            <span class="profile-menu-title">Soporte Oficial WhatsApp</span>
-          </div>
+        <div class="card-flat" style="padding:16px;">
+          <button style="width:100%; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);" onclick="logout()">Cerrar Sesión</button>
         </div>
-      </div>
+      </section>
 
-      <div class="card-flat" style="padding:16px;">
-        <button style="width:100%; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);" onclick="logout()">Cerrar Sesión</button>
-      </div>
-    </section>
+    </main>
 
-  </main>
+    <!-- Barra de Navegación Inferior -->
+    <nav class="bottom-nav" id="dynamic-bottom-nav"></nav>
+  </div>
 
   <!-- PANTALLA DEDICADA DE PEDIDO CON SELECTORES MODALES -->
   <div id="screen-ride-order">
@@ -563,19 +648,16 @@
         <button class="btn-close" onclick="closeActiveChatModal()">&times;</button>
       </div>
 
-      <!-- Respuestas Rápidas de Un Toque -->
       <div class="quick-replies-bar">
         <span class="badge-tag-neon" style="cursor:pointer;" onclick="sendQuickReply('Estoy en el punto de encuentro')">📍 Estoy aquí</span>
         <span class="badge-tag-neon" style="cursor:pointer;" onclick="sendQuickReply('Al lado del portón/bodega')">🚪 En el portón</span>
         <span class="badge-tag-neon" style="cursor:pointer;" onclick="sendQuickReply('Voy saliendo, 2 minutos')">⏳ Ya salgo</span>
       </div>
 
-      <!-- Historial de Mensajes -->
       <div id="chat-messages-container" style="flex:1; overflow-y:auto; padding:12px 4px; display:flex; flex-direction:column; gap:8px;">
         <p style="text-align:center; font-size:0.72rem; color:var(--text-muted);">Usa este chat para indicar referencias de entradas o veredas.</p>
       </div>
 
-      <!-- Barra de Envío con Botón de Voz -->
       <div style="display:flex; align-items:center; gap:6px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
         <button type="button" id="btn-record-audio" class="btn-icon-top" onclick="toggleAudioRecording()" style="width:42px; height:42px; border-radius:50%; flex-shrink:0;" title="Grabar nota de voz">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
@@ -713,9 +795,6 @@
       <button class="btn-primary-neon" style="width:100%; background:#25d366; color:#050811;" onclick="sendKycToWhatsApp()">Abrir WhatsApp y Enviar Documentos</button>
     </div>
   </div>
-
-  <!-- Barra de Navegación Inferior -->
-  <nav class="bottom-nav" id="dynamic-bottom-nav"></nav>
 
   <!-- LIBRERÍAS CARGADAS EN EL ORDEN CORRECTO -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
