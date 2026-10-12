@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=34">
+  <link rel="manifest" href="manifest.json?v=35">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -57,25 +57,29 @@
     </div>
   </section>
 
-  <!-- 2. PANTALLA DE SELECCIÓN DE ROL (PASAJERO VS CONDUCTOR) -->
+  <!-- 2. PANTALLA DE SELECCIÓN DE ROL (CON NUEVO ICONO OFICIAL DE CLIENTE) -->
   <section id="screen-role-select" class="welcome-screen-wrap animate-fade" style="display:none;">
     <div class="welcome-hero-content">
       <h2 style="font-size:1.6rem; color:#fff; font-weight:900;">¿Cómo deseas usar JunRide?</h2>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">Selecciona tu rol principal en la plataforma. Puedes cambiarlo luego.</p>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">Selecciona tu rol principal en la plataforma. Puedes alternar después.</p>
       
       <div class="role-card card-neon" onclick="chooseAppRole('passenger')">
-        <div class="role-icon-box">🙋‍♂️</div>
+        <div class="role-icon-box">
+          <img src="https://files.catbox.moe/e6ctf1.png" style="width:42px; height:42px; object-fit:contain;" alt="Modo Pasajero">
+        </div>
         <div style="text-align:left;">
           <h3 style="color:#00ff87; font-size:1.15rem; font-weight:900;">Modo Pasajero / Cliente</h3>
-          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, puestos compartidos y mudanzas en la montaña.</p>
+          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, colectivos y mudanzas en la montaña.</p>
         </div>
       </div>
 
       <div class="role-card card-neon" onclick="chooseAppRole('driver')">
-        <div class="role-icon-box"><img src="https://files.catbox.moe/wr94fi.png" style="width:36px; height:36px;" alt="Chofer"></div>
+        <div class="role-icon-box">
+          <img src="https://files.catbox.moe/wr94fi.png" style="width:40px; height:40px; object-fit:contain;" alt="Modo Chofer">
+        </div>
         <div style="text-align:left;">
           <h3 style="color:#38bdf8; font-size:1.15rem; font-weight:900;">Modo Conductor / Chofer</h3>
-          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Genera ingresos aceptando viajes con tu vehículo en tu sector.</p>
+          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Genera ingresos aceptando traslados con tu vehículo en tu sector.</p>
         </div>
       </div>
     </div>
@@ -335,7 +339,14 @@
             <button class="btn-sm btn-secondary-dim" onclick="switchPassengerMode()">Salir a Pasajero</button>
           </div>
 
-          <div style="background:rgba(255,255,255,0.03); padding:16px; border-radius:18px; margin:14px 0; text-align:center;">
+          <!-- BANNER DE VERIFICACIÓN PENDIENTE -->
+          <div id="driver-unverified-warning" style="display:none; background:rgba(245,158,11,0.12); border:1.5px dashed var(--warning); border-radius:16px; padding:12px; margin:10px 0; text-align:center;">
+            <strong style="color:#fbbf24; font-size:0.85rem; display:block;">⚠️ Cuenta Pendiente de Verificación</strong>
+            <p style="font-size:0.72rem; color:#cbd5e1; margin:4px 0 8px 0;">Envía tu Licencia y Carnet de Circulación a soporte para poder conectarte y aceptar carreras.</p>
+            <button class="btn-sm btn-secondary-dim" style="background:#25d366; color:#050811; font-weight:800;" onclick="sendKycToWhatsApp()">📲 Enviar Recaudos por WhatsApp</button>
+          </div>
+
+          <div id="driver-verified-panel" style="background:rgba(255,255,255,0.03); padding:16px; border-radius:18px; margin:14px 0; text-align:center;">
             <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">ESTADO DE CONEXIÓN & VOZ GPS:</span>
             
             <div class="driver-toggle-image-btn" id="btn-driver-status-img" onclick="toggleDriverStatus()">
@@ -370,7 +381,10 @@
             </div>
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:8px;">
-              <button class="btn-sm btn-secondary-dim" onclick="openActiveChatModal()">💬 Chat y Notas</button>
+              <button class="btn-sm btn-secondary-dim" style="position:relative;" onclick="openActiveChatModal()">
+                💬 Chat y Notas
+                <span id="active-trip-unread-dot" class="chat-btn-unread-dot"></span>
+              </button>
               <button class="btn-sm btn-secondary-dim" id="btn-driver-ext-map" onclick="openDriverNavExternalCurrent()">🗺️ Abrir Maps</button>
             </div>
           </div>
@@ -464,7 +478,6 @@
             </div>
           </div>
 
-          <!-- MÓDULO ADAPTATIVO: SI ES CHOFER MUESTRA MANTENIMIENTO, SI ES PASAJERO MUESTRA RANGO -->
           <div id="driver-maintenance-hud" style="display:none; margin-top:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border-glow); padding:12px; border-radius:16px;">
             <div class="panel-header-row" style="margin-bottom:6px;">
               <span style="font-size:0.75rem; color:#38bdf8; font-weight:800;">🔧 Mantenimiento de Unidad (<span id="profile-driver-veh-type">Moto</span>)</span>
@@ -520,7 +533,7 @@
           <div class="profile-menu-item" onclick="redeemTokensForWallet()">
             <div class="profile-menu-left">
               <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
-              <span class="profile-menu-title">Canjear Tokens por Saldo</span>
+              <span class="profile-menu-title" id="profile-redeem-title">Canjear Tokens por Saldo</span>
             </div>
             <span class="badge-tag-neon">$1.00 = 1K</span>
           </div>
@@ -544,7 +557,7 @@
           <div class="profile-menu-item" onclick="openLevelsModal()">
             <div class="profile-menu-left">
               <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              <span class="profile-menu-title">Escala de Niveles JunRide</span>
+              <span class="profile-menu-title" id="profile-levels-title">Escala de Niveles JunRide</span>
             </div>
             <span style="font-size:0.75rem; color:var(--primary); font-weight:800;">6 Rangos</span>
           </div>
@@ -554,6 +567,7 @@
               <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
               <span class="profile-menu-title">Validación de Chofer</span>
             </div>
+            <span class="badge-tag-neon" id="profile-driver-verified-tag">Pendiente</span>
           </div>
 
           <div class="profile-menu-item" onclick="window.location.href='https://wa.me/584123167126?text=Hola%20Soporte%20JunRide'">
@@ -697,7 +711,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE CHAT -->
+  <!-- MODAL DE CHAT CON MICRÓFONO AMPLIADO -->
   <div class="modal" id="modal-active-chat">
     <div class="modal-content card-neon animate-fade" style="height:80vh; max-height:550px; display:flex; flex-direction:column; padding:16px;">
       <div class="panel-header-row" style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
@@ -718,12 +732,13 @@
         <p style="text-align:center; font-size:0.72rem; color:var(--text-muted);">Usa este chat para indicar referencias de entradas o veredas.</p>
       </div>
 
-      <div style="display:flex; align-items:center; gap:6px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
-        <button type="button" id="btn-record-audio" class="btn-icon-top" onclick="toggleAudioRecording()" style="width:42px; height:42px; border-radius:50%; flex-shrink:0;" title="Grabar nota de voz">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+      <!-- Barra de Envío con Micrófono Ergonómico Grande -->
+      <div style="display:flex; align-items:center; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
+        <button type="button" id="btn-record-audio" class="chat-mic-large-btn" onclick="toggleAudioRecording()" title="Toca para grabar nota de voz">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="#00ff87"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
         </button>
-        <input type="text" id="chat-text-input" placeholder="Escribe tu referencia aquí..." style="margin:0; padding:10px 14px; font-size:0.85rem;" onkeypress="handleChatKeyPress(event)">
-        <button type="button" class="btn-primary-neon btn-sm" onclick="sendChatMessageText()" style="padding:10px 14px;">➤</button>
+        <input type="text" id="chat-text-input" placeholder="Escribe tu referencia aquí..." style="margin:0; padding:12px 14px; font-size:0.85rem;" onkeypress="handleChatKeyPress(event)">
+        <button type="button" class="btn-primary-neon btn-sm" onclick="sendChatMessageText()" style="padding:12px 16px;">➤</button>
       </div>
       <div id="audio-recording-indicator" style="display:none; text-align:center; font-size:0.72rem; color:#ef4444; font-weight:800; margin-top:4px;">
         🔴 Grabando nota de voz... Toca de nuevo el micro para enviar.
@@ -822,14 +837,14 @@
     </div>
   </div>
 
-  <!-- MODAL DE RANGOS -->
+  <!-- MODAL DE RANGOS ADAPTATIVO -->
   <div class="modal" id="modal-levels-breakdown">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
-        <h3 style="color:white; font-size:1.15rem; font-weight:900;">🏔️ Escala de Rangos JunRide</h3>
+        <h3 style="color:white; font-size:1.15rem; font-weight:900;" id="levels-modal-main-title">🏔️ Escala de Rangos JunRide</h3>
         <button class="btn-close" onclick="closeLevelsModal()">&times;</button>
       </div>
-      <p style="font-size:0.78rem; color:var(--text-muted); line-height:1.4;">Completa carreras en la montaña para desbloquear rangos exclusivos y beneficios de tarifa.</p>
+      <p style="font-size:0.78rem; color:var(--text-muted); line-height:1.4;" id="levels-modal-main-desc">Completa carreras en la montaña para desbloquear beneficios exclusivos.</p>
       <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;" id="levels-list-container"></div>
     </div>
   </div>
