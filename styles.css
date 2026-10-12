@@ -39,7 +39,7 @@ body {
   background-color: #050811;
   background-image: 
     radial-gradient(circle at 50% 10%, rgba(0, 255, 135, 0.12) 0%, transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800' opacity='0.08'%3E%3Cpath fill='none' stroke='%2300ff87' stroke-width='1.5' d='M0 150 Q200 80 400 160 T800 140 M0 280 Q180 220 380 290 T800 260 M0 420 Q220 360 420 430 T800 400 M0 560 Q160 510 390 570 T800 540 M0 700 Q240 640 450 710 T800 680'/%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800' opacity='0.08'%3E%3Cpath fill='none' stroke='%2300ff87' stroke-width='1.5' d='M0 150 Q200 80 400 160 T800 140 M0 280 Q180 220 380 290 T800 260 M0 420 Q220 360 420 430 T800 400 M0 560 Q160 510 390 570 T800 540 M0 700 Q240 640 450 710 T800 680'/%3E%3Cpath fill='none' stroke='%2300ff87' stroke-width='1' stroke-dasharray='4,4' d='M0 210 Q220 160 420 220 T800 200 M0 350 Q180 300 400 360 T800 330 M0 490 Q200 440 410 500 T800 470 M0 630 Q190 580 430 640 T800 610'/%3E%3C/svg%3E");
   background-size: cover, 600px 600px;
 }
 
@@ -117,7 +117,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 .animate-fade { animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Ticker de Alertas Viales en Vivo */
+/* Ticker Alertas */
 .live-alerts-ticker {
   background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 14px; padding: 10px 14px; margin-bottom: 12px;
@@ -347,7 +347,6 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; font-weight: 800;
 }
 
-/* Modal de Rangos */
 .level-card-large {
   display: flex; align-items: flex-start; gap: 16px;
   padding: 18px; border-radius: 22px;
@@ -438,12 +437,12 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 
 .nearby-veh-marker {
   display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(5,8,17,0.85); border: 1.5px solid var(--primary);
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(5,8,17,0.9); border: 1.5px solid var(--primary);
   box-shadow: 0 0 14px var(--primary-glow);
-  transition: all 1.2s ease;
+  transition: all 0.8s ease-in-out;
 }
-.nearby-veh-marker img { width: 22px; height: 22px; object-fit: contain; }
+.nearby-veh-marker img { width: 24px; height: 24px; object-fit: contain; }
 
 .search-radar-overlay {
   display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -523,7 +522,7 @@ input, select {
   outline: none; margin-bottom: 6px; font-size: 0.88rem;
 }
 
-/* Sistema de Notificaciones Toast Neón Animado */
+/* Toast Neón */
 #toast-container {
   position: fixed; top: 84px; left: 16px; right: 16px; max-width: 460px; margin: 0 auto;
   z-index: 999999; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
@@ -541,7 +540,7 @@ input, select {
 .toast-icon { font-size: 1.4rem; flex-shrink: 0; }
 .toast-body { flex: 1; font-size: 0.82rem; font-weight: 700; line-height: 1.35; }
 
-/* Barra Inferior Dinámica */
+/* Barra Inferior */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto;
   display: flex; justify-content: space-around; align-items: center;
