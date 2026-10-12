@@ -61,16 +61,25 @@ function triggerHaptic(duration = 45) {
   }
 }
 
-const JUNRIDE_LEVELS = [
-  { id: 1, name: "Caminante", minTrips: 0, maxTrips: 4, icon: "https://files.catbox.moe/31p0et.png", desc: "Rango de bienvenida. Primeros pasos para nuevos usuarios que inician su recorrido por la carretera de montaña." },
-  { id: 2, name: "Senderista", minTrips: 5, maxTrips: 14, icon: "https://files.catbox.moe/hpp6uj.png", desc: "Pasajero frecuente de las curvas de El Junquito. Desbloquea soporte prioritario en horas de tráfico alto y registro ágil." },
-  { id: 3, name: "Explorador", minTrips: 15, maxTrips: 29, icon: "https://files.catbox.moe/aezw5k.png", desc: "Conocedor experto de la vía. Prioridad de despacho en clima de niebla intensa o lluvia y doble acumulación de tokens." },
-  { id: 4, name: "Escalador", minTrips: 30, maxTrips: 49, icon: "https://files.catbox.moe/jin2u3.png", desc: "Viajero de altura constante. Apartado inmediato de traslados de madrugada y preferencia en asignación de unidades confort." },
-  { id: 5, name: "Guía", minTrips: 50, maxTrips: 79, icon: "https://files.catbox.moe/ybh81r.png", desc: "Veterano respetado de la montaña. Máxima prioridad con choferes mejor calificados y tarifa preferencial en mudanzas o carga." },
-  { id: 6, name: "Conquistador", minTrips: 80, maxTrips: 9999, icon: "https://files.catbox.moe/htwomx.png", desc: "Rango supremo de honor JunRide. Conquistador de la cima: insignia dorada en perfil, bonificación en tokens y asistencia directa 24/7." }
+// ESCALAS DE NIVELES SEPARADAS (PASAJERO VS CONDUCTOR)
+const JUNRIDE_LEVELS_PASSENGER = [
+  { id: 1, name: "Caminante", minTrips: 0, maxTrips: 4, icon: "https://files.catbox.moe/31p0et.png", desc: "Rango de bienvenida. Primeros pasos para nuevos usuarios que inician su recorrido por la montaña." },
+  { id: 2, name: "Senderista", minTrips: 5, maxTrips: 14, icon: "https://files.catbox.moe/hpp6uj.png", desc: "Pasajero frecuente de las curvas de El Junquito. Desbloquea soporte prioritario en horas pico." },
+  { id: 3, name: "Explorador", minTrips: 15, maxTrips: 29, icon: "https://files.catbox.moe/aezw5k.png", desc: "Conocedor experto de la vía. Prioridad de despacho en clima de niebla intensa o lluvia." },
+  { id: 4, name: "Escalador", minTrips: 30, maxTrips: 49, icon: "https://files.catbox.moe/jin2u3.png", desc: "Viajero de altura constante. Apartado inmediato de traslados de madrugada." },
+  { id: 5, name: "Guía", minTrips: 50, maxTrips: 79, icon: "https://files.catbox.moe/ybh81r.png", desc: "Veterano respetado de la montaña. Máxima prioridad con choferes mejor calificados." },
+  { id: 6, name: "Conquistador", minTrips: 80, maxTrips: 9999, icon: "https://files.catbox.moe/htwomx.png", desc: "Rango supremo de honor JunRide. Conquistador de la cima: insignia dorada en perfil y asistencia 24/7." }
 ];
 
-// COORDENADAS CALIBRADAS SOBRE EL ASFALTO REAL DE LA TRONCAL 4 (EL PANORAMA COMO KM 11 PRINCIPAL)
+const JUNRIDE_LEVELS_DRIVER = [
+  { id: 1, name: "Conductor Iniciado", minTrips: 0, maxTrips: 9, icon: "https://files.catbox.moe/31p0et.png", desc: "Inicio de turno en la montaña. Recepción regular de servicios y soporte 24/7." },
+  { id: 2, name: "Conductor Activo", minTrips: 10, maxTrips: 29, icon: "https://files.catbox.moe/hpp6uj.png", desc: "Acumulación doble de tokens por viaje completado y preferencia en servicios de retorno." },
+  { id: 3, name: "Ruta Experto", minTrips: 30, maxTrips: 59, icon: "https://files.catbox.moe/aezw5k.png", desc: "Desbloquea canje directo de tokens por bonos de gasolina y recargas de billetera." },
+  { id: 4, name: "Capitán de Montaña", minTrips: 60, maxTrips: 99, icon: "https://files.catbox.moe/jin2u3.png", desc: "Acceso al kit de indumentaria reflectiva oficial JunRide y bonificación mensual." },
+  { id: 5, name: "Master JunRide", minTrips: 100, maxTrips: 9999, icon: "https://files.catbox.moe/htwomx.png", desc: "Comisión preferencial reducida al 5% y prioridad absoluta en traslados de madrugada y mudanzas." }
+];
+
+// COORDENADAS PRECISAS CALIBRADAS SOBRE EL ASFALTO DE LA TRONCAL 4 (EL PANORAMA COMO KM 11 BASE)
 const JUNQUITO_ALL_KMS = [
   { km: 0, name: "Km 0 (La Yaguara / Metro)", lat: 10.4768, lon: -66.9600, alt: 940 },
   { km: 1, name: "Km 1 (Inicio Carretera Vieja)", lat: 10.4735, lon: -66.9680, alt: 990 },
@@ -162,7 +171,6 @@ let selectedDestIdx = 0;
 let selectedStopIdx = 12;
 let currentKmPickerTarget = 'origin';
 
-// MAPA DE MARCADORES DE CONDUCTORES REALES
 let activeRealDriversMarkers = {};
 
 let mediaRecorder = null;
@@ -180,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
   checkSessionAndAuth();
   fetchBCVRate();
   renderRechargeDetails('bdv');
-  renderLevelsBreakdownList();
   restoreOfflineTripState();
   listenRoadAlertsRealtime();
   listenTripsRealtime();
@@ -191,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // GESTIÓN DE SESIÓN Y FLUJO DE BIENVENIDA / ROLES
 function checkSessionAndAuth() {
-  const saved = localStorage.getItem('jr_user_profile_v35');
+  const saved = localStorage.getItem('jr_user_profile_v36');
   const welcomeScreen = document.getElementById('screen-welcome');
   const roleSelectScreen = document.getElementById('screen-role-select');
   const mainApp = document.getElementById('app-main-interface');
@@ -259,7 +266,6 @@ async function handleAuthSubmit(e) {
     return;
   }
 
-  // Generar código de referido único
   const cleanName = name.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 6) || 'JUNRIDE';
   const randomSuffix = Math.floor(100 + Math.random() * 900);
   const userReferralCode = `${cleanName}${randomSuffix}`;
@@ -271,7 +277,8 @@ async function handleAuthSubmit(e) {
     email: email,
     referralCode: userReferralCode,
     role: 'passenger',
-    isRegistered: false, // Se confirma al elegir rol
+    isRegistered: false,
+    verifiedDriver: false,
     kmBalance: 5.00,
     driverEarnings: 0.00,
     driverTripsCount: 0,
@@ -286,13 +293,11 @@ async function handleAuthSubmit(e) {
   closeAuthModal();
 
   if (authCurrentMode === 'register') {
-    // Pasa a la pantalla de selección de rol
     document.getElementById('screen-welcome').style.display = 'none';
     document.getElementById('screen-role-select').style.display = 'flex';
   } else {
-    // Login directo
     userData.isRegistered = true;
-    localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+    localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
     launchMainApplication();
   }
 }
@@ -307,7 +312,7 @@ function chooseAppRole(role) {
     document.getElementById('modal-driver-vehicle-setup').classList.add('active');
   } else {
     userData.isRegistered = true;
-    localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+    localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
     document.getElementById('screen-role-select').style.display = 'none';
     launchMainApplication();
   }
@@ -331,8 +336,9 @@ function finishDriverRegistration() {
   userData.vehicleType = vehType;
   userData.vehicleModel = vehModel;
   userData.vehiclePlate = vehPlate;
+  userData.verifiedDriver = false; // Requiere verificación
 
-  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
   document.getElementById('modal-driver-vehicle-setup').classList.remove('active');
   launchMainApplication();
   switchTab('driver-panel');
@@ -372,7 +378,7 @@ function restoreOfflineTripState() {
 
 // ADHERENCIA A LA TRONCAL 4
 function snapToNearestHighway(lat, lon) {
-  let closestKm = JUNQUITO_ALL_KMS[11];
+  let closestKm = JUNQUITO_ALL_KMS[11]; // Por defecto: Km 11 El Panorama
   let minDist = 999999;
   let closestIdx = 11;
 
@@ -390,35 +396,29 @@ function snapToNearestHighway(lat, lon) {
   return { snappedCoords: { lat: closestKm.lat, lon: closestKm.lon }, index: closestIdx, kmName: closestKm.name, alt: closestKm.alt };
 }
 
-// FILTRO SATELITAL ANTI-ANTENA CON VALIDACIÓN DE KM 11 EL PANORAMA
+// GPS SATELITAL PURO CON ANCLAJE EN KM 11 EL PANORAMA
 function requestStartupGpsLocation() {
+  selectedOriginIdx = 11;
+  customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
+  const triggerEl = document.getElementById('trigger-origin-name');
+  if (triggerEl) triggerEl.innerText = JUNQUITO_ALL_KMS[11].name;
+
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
       const accuracy = pos.coords.accuracy;
 
-      if (accuracy > 120) {
-        selectedOriginIdx = 11;
-        customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
-        const triggerEl = document.getElementById('trigger-origin-name');
-        if (triggerEl) triggerEl.innerText = JUNQUITO_ALL_KMS[11].name;
-        return;
-      }
+      // Descartar lectura de antena celular inexacta (> 100m)
+      if (accuracy > 100) return;
 
       if (lat >= 10.4300 && lat <= 10.4950 && lon >= -67.1950 && lon <= -66.9450) {
         const snap = snapToNearestHighway(lat, lon);
         customOriginCoords = snap.snappedCoords;
         selectedOriginIdx = snap.index;
-        const triggerEl = document.getElementById('trigger-origin-name');
         if (triggerEl) triggerEl.innerText = snap.kmName;
       }
-    }, err => {
-      selectedOriginIdx = 11;
-      customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
-      const triggerEl = document.getElementById('trigger-origin-name');
-      if (triggerEl) triggerEl.innerText = JUNQUITO_ALL_KMS[11].name;
-    }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+    }, () => {}, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
   }
 }
 
@@ -432,29 +432,30 @@ function useCurrentGpsLocation() {
       const lon = pos.coords.longitude;
       const accuracy = pos.coords.accuracy;
 
-      if (accuracy > 120) {
-        showNeonToast('warning', 'Señal de antena celular difusa. Fijado con precisión en Km 11 (El Panorama).');
+      if (accuracy > 100) {
+        // Fallback a ubicación base real
         selectedOriginIdx = 11;
         customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
+        showNeonToast('success', '📍 Ubicación precisa: Km 11 (Sector Los Olivos / Urb. El Panorama)');
       } else {
         const snap = snapToNearestHighway(lat, lon);
         customOriginCoords = snap.snappedCoords;
         selectedOriginIdx = snap.index;
+        showNeonToast('success', `📍 GPS exacto: ${snap.kmName}`);
       }
 
       const triggerEl = document.getElementById('trigger-origin-name');
       if (triggerEl) triggerEl.innerText = JUNQUITO_ALL_KMS[selectedOriginIdx].name;
 
       calculateRouteOrder();
-      showNeonToast('success', `📍 Ubicación fija: ${JUNQUITO_ALL_KMS[selectedOriginIdx].name}`);
-    }, err => {
+    }, () => {
       selectedOriginIdx = 11;
       customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
       const triggerEl = document.getElementById('trigger-origin-name');
       if (triggerEl) triggerEl.innerText = JUNQUITO_ALL_KMS[11].name;
       calculateRouteOrder();
-      showNeonToast('info', '📍 Fijado en Km 11 (Sector Los Olivos / Urb. El Panorama).');
-    }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+      showNeonToast('info', '📍 Ubicado en Km 11 (Sector Los Olivos / Urb. El Panorama).');
+    }, { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 });
   }
 }
 
@@ -626,10 +627,17 @@ function redeemTokensForWallet() {
   const dollarsToAdd = Math.floor(tokens / 1000);
   const tokensUsed = dollarsToAdd * 1000;
   userData.tokens -= tokensUsed;
-  userData.kmBalance = (userData.kmBalance || 0) + dollarsToAdd;
+
+  if (userData.role === 'driver') {
+    userData.driverEarnings = (userData.driverEarnings || 0) + dollarsToAdd;
+    showNeonToast('success', `🎉 ¡Tokens canjeados por +$${dollarsToAdd}.00 USD acreditados a tus ganancias netas!`);
+  } else {
+    userData.kmBalance = (userData.kmBalance || 0) + dollarsToAdd;
+    showNeonToast('success', `🎉 ¡Canje exitoso! Se acreditaron +$${dollarsToAdd}.00 USD a tu Cartera Digital.`);
+  }
+
   logWalletMovement('credit', `Canje de ${tokensUsed} Tokens`, dollarsToAdd);
   updateUIProfile();
-  showNeonToast('success', `🎉 ¡Canje exitoso! Se acreditaron +$${dollarsToAdd}.00 USD a tu Cartera Digital.`);
 }
 
 function shareReferralCode() {
@@ -642,7 +650,7 @@ function shareReferralCode() {
 function toggleBatterySaverMode() {
   triggerHaptic();
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -753,7 +761,7 @@ function handleAvatarFileSelected(event) {
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       userData.avatar = compressedDataUrl;
-      localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
       
       if (currentUserId && db) {
         db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
@@ -815,7 +823,7 @@ function speakDriverAlert(text) {
 function switchDriverMode() {
   triggerHaptic();
   userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('driver-panel');
@@ -825,7 +833,7 @@ function switchDriverMode() {
 function switchPassengerMode() {
   triggerHaptic();
   userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('inicio');
@@ -909,13 +917,14 @@ function switchTab(tabName) {
   window.scrollTo(0, 0);
 }
 
-function getUserCurrentLevel(tripsCount) {
-  let current = JUNRIDE_LEVELS[0];
-  let next = JUNRIDE_LEVELS[1];
-  for (let i = 0; i < JUNRIDE_LEVELS.length; i++) {
-    if (tripsCount >= JUNRIDE_LEVELS[i].minTrips) {
-      current = JUNRIDE_LEVELS[i];
-      next = JUNRIDE_LEVELS[i + 1] || null;
+function getUserCurrentLevel(tripsCount, isDriver = false) {
+  const levels = isDriver ? JUNRIDE_LEVELS_DRIVER : JUNRIDE_LEVELS_PASSENGER;
+  let current = levels[0];
+  let next = levels[1];
+  for (let i = 0; i < levels.length; i++) {
+    if (tripsCount >= levels[i].minTrips) {
+      current = levels[i];
+      next = levels[i + 1] || null;
     }
   }
   return { current, next };
@@ -946,31 +955,52 @@ function updateUIProfile() {
 
     applyBatterySaverUI();
 
-    // Adaptar vista del perfil: Chofer vs Pasajero
     const isDriver = (userData.role === 'driver');
     const driverMaintHud = document.getElementById('driver-maintenance-hud');
     const passengerTierHud = document.getElementById('passenger-tier-hud');
+    const verifiedBadgeTag = document.getElementById('profile-driver-verified-tag');
+    const unverifiedWarn = document.getElementById('driver-unverified-warning');
 
     if (isDriver) {
       if (driverMaintHud) driverMaintHud.style.display = 'block';
       if (passengerTierHud) passengerTierHud.style.display = 'none';
       const vehTypeTag = document.getElementById('profile-driver-veh-type');
-      if (vehTypeTag) vehTypeTag.innerText = userData.vehicleType || 'Unidad';
+      if (vehTypeTag) vehTypeTag.innerText = userData.vehicleType || 'Moto';
       const plateTag = document.getElementById('profile-driver-plate-tag');
       if (plateTag) plateTag.innerText = userData.vehiclePlate || 'Conductor';
+
+      // Validación de chofer
+      const isVerified = (userData.verifiedDriver === true);
+      if (verifiedBadgeTag) {
+        verifiedBadgeTag.innerText = isVerified ? 'Verificado ✓' : 'Pendiente';
+        verifiedBadgeTag.style.background = isVerified ? 'rgba(0,255,135,0.2)' : 'rgba(245,158,11,0.2)';
+        verifiedBadgeTag.style.color = isVerified ? 'var(--primary)' : '#fbbf24';
+      }
+      if (unverifiedWarn) unverifiedWarn.style.display = isVerified ? 'none' : 'block';
+
+      const redeemTitle = document.getElementById('profile-redeem-title');
+      if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo / Gasolina";
+      const levelsTitle = document.getElementById('profile-levels-title');
+      if (levelsTitle) levelsTitle.innerText = "Escala de Choferes JunRide";
     } else {
       if (driverMaintHud) driverMaintHud.style.display = 'none';
       if (passengerTierHud) passengerTierHud.style.display = 'block';
+      if (unverifiedWarn) unverifiedWarn.style.display = 'none';
+
+      const redeemTitle = document.getElementById('profile-redeem-title');
+      if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo";
+      const levelsTitle = document.getElementById('profile-levels-title');
+      if (levelsTitle) levelsTitle.innerText = "Escala de Niveles JunRide";
     }
 
     const totalTrips = userData.totalTrips || 0;
-    const { current, next } = getUserCurrentLevel(totalTrips);
+    const { current, next } = getUserCurrentLevel(totalTrips, isDriver);
 
     const tierIconRight = document.getElementById('profile-tier-icon-right');
     if (tierIconRight) tierIconRight.src = current.icon;
 
     const tierName = document.getElementById('profile-tier-name');
-    if (tierName) tierName.innerText = isDriver ? `Chofer Activo (${userData.vehicleType || 'Moto'})` : `${current.name} (Nivel ${current.id})`;
+    if (tierName) tierName.innerText = isDriver ? `${current.name} (${userData.vehicleType || 'Moto'})` : `${current.name} (Nivel ${current.id})`;
 
     const tierExpText = document.getElementById('profile-tier-exp-text');
     const tierBar = document.getElementById('profile-tier-progress-bar');
@@ -1015,10 +1045,17 @@ function renderLevelsBreakdownList() {
   const container = document.getElementById('levels-list-container');
   if (!container) return;
   container.innerHTML = '';
+  const isDriver = (userData && userData.role === 'driver');
+  const levels = isDriver ? JUNRIDE_LEVELS_DRIVER : JUNRIDE_LEVELS_PASSENGER;
   const totalTrips = (userData ? userData.totalTrips : 0) || 0;
-  const { current } = getUserCurrentLevel(totalTrips);
+  const { current } = getUserCurrentLevel(totalTrips, isDriver);
 
-  JUNRIDE_LEVELS.forEach(lvl => {
+  const modalTitle = document.getElementById('levels-modal-main-title');
+  const modalDesc = document.getElementById('levels-modal-main-desc');
+  if (modalTitle) modalTitle.innerText = isDriver ? "🚗 Escala de Rangos para Conductores" : "🏔️ Escala de Rangos JunRide";
+  if (modalDesc) modalDesc.innerText = isDriver ? "Completa carreras para desbloquear recompensas en gasolina, equipamiento reflectivo y menor comisión." : "Completa carreras en la montaña para desbloquear rangos exclusivos y beneficios de tarifa.";
+
+  levels.forEach(lvl => {
     const isCurrent = (current.id === lvl.id);
     container.innerHTML += `
       <div class="level-card-large ${isCurrent ? 'current-unlocked' : ''}">
@@ -1027,7 +1064,7 @@ function renderLevelsBreakdownList() {
         </div>
         <div class="level-info-body">
           <div class="level-title-row">
-            <span class="level-title-text">Nivel ${lvl.id}: ${lvl.name}</span>
+            <span class="level-title-text">${lvl.name}</span>
             <span class="level-trips-req">${lvl.minTrips}+ viajes</span>
           </div>
           <p class="level-desc-text">${lvl.desc}</p>
@@ -1171,7 +1208,7 @@ function logWalletMovement(type, title, amount) {
   userData.walletLedger.unshift({
     type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
   });
-  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
   renderWalletLedger();
 }
 
@@ -1247,7 +1284,6 @@ function selectOrderVehicle(cat) {
   calculateRouteOrder();
 }
 
-// CORRECCIÓN EXACTA DE LOS PINES (TOCAN LA CARRETERA CON PRECISIÓN)
 function createNeonPinIcon(label) {
   return L.divIcon({
     className: 'custom-neon-pin-wrapper',
@@ -1298,7 +1334,7 @@ function initOrderMap() {
   drawRouteOnMap(origPt, destPt);
 }
 
-// SOLO CHOFERES REALES (EXCLUYE PROPIO CELULAR Y FILTRA POR VEHÍCULO)
+// SOLO CHOFERES REALES EN LA ZONA (SIN MARCADORES FANTASMAS)
 function listenRealDriversInZone() {
   if (!db || !orderMapInstance) return;
 
@@ -1312,14 +1348,11 @@ function listenRealDriversInZone() {
       const driver = doc.data();
       const driverId = doc.id;
 
-      // 1. Excluir al propio usuario
       if (driverId === currentUserId) return;
 
-      // 2. Filtrar estrictamente por categoría
       const matchesCategory = (driver.vehicleType || 'Carro') === selectedOrderCategory;
       if (!matchesCategory) return;
 
-      // 3. Proximidad en la montaña (±4 km)
       const closestToDriver = snapToNearestHighway(driver.lat, driver.lon);
       const driverKm = closestToDriver.closestKm ? closestToDriver.closestKm.km : 11;
       const diffKm = Math.abs(driverKm - myOrigKm);
@@ -1362,7 +1395,7 @@ function listenRealDriversInZone() {
   }, () => {});
 }
 
-// TRAZADO LIMPIO DIRECTO SOBRE LA CARRETERA (SIN DESVÍOS POR ANTÍMANO)
+// TRAZADO SEGURO DIRECTO SOBRE EL EJE TRONCAL 4
 async function drawRouteOnMap(startCoords, endCoords) {
   if (orderRouteLayer && orderMapInstance) {
     orderMapInstance.removeLayer(orderRouteLayer);
@@ -1381,7 +1414,6 @@ async function drawRouteOnMap(startCoords, endCoords) {
       const routeDistanceKm = data.routes[0].distance / 1000;
       const directKm = Math.abs(JUNQUITO_ALL_KMS[selectedOriginIdx].km - JUNQUITO_ALL_KMS[selectedDestIdx].km);
 
-      // Si la ruta calculada no da una vuelta ilógica hacia Caracas
       if (routeDistanceKm <= (directKm * 1.8 + 2.5)) {
         const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
         orderRouteLayer = L.polyline(coords, { color: '#00ff87', weight: 4.5 }).addTo(orderMapInstance);
@@ -1394,7 +1426,7 @@ async function drawRouteOnMap(startCoords, endCoords) {
     }
   } catch(e) {}
 
-  // Trazado de respaldo continuo por los puntos reales de la carretera
+  // Trazado continuo garantizado por la secuencia de la carretera
   const startIdx = Math.min(selectedOriginIdx, selectedDestIdx);
   const endIdx = Math.max(selectedOriginIdx, selectedDestIdx);
   const highwayPoints = [];
@@ -1562,9 +1594,17 @@ async function cancelTrip(isManual = false) {
   }
 }
 
-// TOGGLE CONEXIÓN DEL CHOFER
+// TOGGLE CONEXIÓN DEL CHOFER CON VERIFICACIÓN OBLIGATORIA
 function toggleDriverStatus() {
   triggerHaptic();
+
+  // Control estricto de verificación
+  if (userData.verifiedDriver !== true) {
+    showNeonToast('warning', 'Tu cuenta debe estar verificada por soporte antes de conectarte.');
+    openKycWhatsAppModal();
+    return;
+  }
+
   isDriverOnline = !isDriverOnline;
   const statusImg = document.getElementById('img-driver-toggle-state');
   const statusBtn = document.getElementById('btn-driver-status-img');
@@ -1594,7 +1634,7 @@ function toggleDriverStatus() {
             updatedAt: new Date()
           }, { merge: true }).catch(() => {});
         }
-      }, err => {}, { enableHighAccuracy: true, maximumAge: 3000, timeout: 8000 });
+      }, () => {}, { enableHighAccuracy: true, maximumAge: 3000, timeout: 8000 });
     }
 
   } else {
@@ -1634,7 +1674,7 @@ function fetchPendingTripsForDriver() {
     snapshot.forEach(doc => {
       renderSingleDriverTripCard(doc.id, doc.data());
     });
-  }).catch(err => console.error("Error al consultar viajes:", err));
+  }).catch(() => {});
 }
 
 function renderSingleDriverTripCard(tripId, trip) {
@@ -1661,7 +1701,6 @@ function openDriverNavExternal(lat, lon) {
   window.location.href = url;
 }
 
-// NAVEGACIÓN DUAL: SI ESTÁ EN RECOGIDA VA AL ORIGEN, SI ESTÁ EN TRAYECTO VA AL DESTINO
 function openDriverNavExternalCurrent() {
   triggerHaptic(40);
   if (!currentTripData) return;
@@ -1712,7 +1751,6 @@ async function validatePassengerOTP() {
     document.getElementById('driver-otp-input-area').style.display = 'none';
     document.getElementById('driver-in-route-area').style.display = 'block';
     
-    // El botón de mapa se actualiza para guiar hacia el destino final
     const btnMap = document.getElementById('btn-driver-ext-map');
     if (btnMap) btnMap.innerText = '🗺️ Navegar al Destino';
   } else {
@@ -1731,7 +1769,8 @@ async function completeActiveTripDriver() {
 
   userData.driverEarnings = (userData.driverEarnings || 0) + netEarnings;
   userData.driverTripsCount = (userData.driverTripsCount || 0) + 1;
-  localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+  userData.totalTrips = (userData.totalTrips || 0) + 1;
+  localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
   updateUIProfile();
 
   if (db && activeTripId) {
@@ -1751,7 +1790,7 @@ async function completeActiveTripDriver() {
   fetchPendingTripsForDriver();
 }
 
-// SISTEMA DE CHAT EN TIEMPO REAL
+// SISTEMA DE CHAT EN TIEMPO REAL CON ALERTA DE MENSAJES EN BOTÓN
 function openActiveChatModal() {
   triggerHaptic();
   if (!activeTripId) {
@@ -1761,8 +1800,10 @@ function openActiveChatModal() {
   isChatModalOpen = true;
   document.getElementById('modal-active-chat').classList.add('active');
   
-  const dot = document.getElementById('nav-unread-badge-driver');
-  if (dot) dot.style.display = 'none';
+  const dotBottom = document.getElementById('nav-unread-badge-driver');
+  if (dotBottom) dotBottom.style.display = 'none';
+  const dotActiveBtn = document.getElementById('active-trip-unread-dot');
+  if (dotActiveBtn) dotActiveBtn.style.display = 'none';
 
   listenChatMessagesRealtime();
 }
@@ -1884,8 +1925,11 @@ function listenChatMessagesRealtime() {
       container.appendChild(bubble);
 
       if (!isMe && !isChatModalOpen) {
-        const dot = document.getElementById('nav-unread-badge-driver');
-        if (dot) dot.style.display = 'block';
+        const dotBottom = document.getElementById('nav-unread-badge-driver');
+        if (dotBottom) dotBottom.style.display = 'block';
+        const dotActiveBtn = document.getElementById('active-trip-unread-dot');
+        if (dotActiveBtn) dotActiveBtn.style.display = 'block';
+
         playMessageNotificationSound();
         showNeonToast('info', `💬 Nuevo mensaje de ${msg.senderName}`);
       }
@@ -1952,7 +1996,7 @@ function openKycWhatsAppModal() { triggerHaptic(); document.getElementById('moda
 function closeKycWhatsAppModal() { document.getElementById('modal-kyc-whatsapp').classList.remove('active'); }
 
 function sendKycToWhatsApp() {
-  const msg = encodeURIComponent(`Hola Soporte JunRide 🏔️. Solicito validación para mi cuenta de Conductor.\nNombre: ${userData.name || 'David'}\nTeléfono: ${userData.phone || '04123167126'}`);
+  const msg = encodeURIComponent(`Hola Soporte JunRide 🏔️. Envío mis recaudos para verificación de Chofer:\n👤 Nombre: ${userData.name || 'David'} ${userData.lastname || ''}\n📱 Teléfono: ${userData.phone || '04123167126'}\n🚗 Unidad: ${userData.vehicleType || 'Moto'} (${userData.vehiclePlate || 'S/P'})\n(Adjunto foto de Licencia y Carnet de Circulación)`);
   window.location.href = `https://wa.me/584123167126?text=${msg}`;
   closeKycWhatsAppModal();
 }
@@ -1966,7 +2010,7 @@ function requestWeeklyPayout() {
   window.location.href = `https://wa.me/584123167126?text=${msg}`;
 }
 
-// SINCRONIZACIÓN AUTOMÁTICA
+// SINCRONIZACIÓN AUTOMÁTICA Y ESCUCHA DE ESTATUS
 function listenTripsRealtime() {
   if (!db) return;
   db.collection('trips').onSnapshot(snapshot => {
@@ -2036,7 +2080,7 @@ function listenTripsRealtime() {
         driverList.innerHTML = '<p style="font-size:0.75rem; color:#94a3b8; text-align:center;">Esperando nuevas solicitudes...</p>';
       }
     }
-  }, err => console.error("Error en listener:", err));
+  }, () => {});
 }
 
 async function acceptTrip(tripId) {
@@ -2067,7 +2111,7 @@ function logout() {
   triggerHaptic(40);
   if (userData) {
     userData.isRegistered = false;
-    localStorage.setItem('jr_user_profile_v35', JSON.stringify(userData));
+    localStorage.setItem('jr_user_profile_v36', JSON.stringify(userData));
   }
   localStorage.removeItem('jr_active_trip_id');
   location.reload();
