@@ -78,7 +78,7 @@ const JUNQUITO_ALL_KMS = [
   { km: 2, name: "Km 2 (Sector El Samán)", lat: 10.4705, lon: -66.9750, alt: 1040 },
   { km: 3, name: "Km 3 (Sector Los Pinos)", lat: 10.4678, lon: -66.9820, alt: 1100 },
   { km: 4, name: "Km 4 (El Amparo / Mirador)", lat: 10.4652, lon: -66.9890, alt: 1160 },
-  { km: 5, name: "Km 5 (Curva Los Caobos)", lat: 10.4638, lon: -66.9965, alt: 1220 },
+  { km: 5, name: "Curva Los Caobos (Km 5)", lat: 10.4638, lon: -66.9965, alt: 1220 },
   { km: 6, name: "Km 6 (Sector La Roca)", lat: 10.4622, lon: -67.0040, alt: 1280 },
   { km: 7, name: "Km 7 (Entrada Carapita Alta)", lat: 10.4618, lon: -67.0115, alt: 1330 },
   { km: 8, name: "Km 8 (El Junquito Bajo)", lat: 10.4612, lon: -67.0195, alt: 1380 },
@@ -190,9 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (avatarInput) avatarInput.addEventListener('change', handleAvatarFileSelected);
 });
 
-// GESTIÓN DE SESIÓN Y BIENVENIDA
+// GESTIÓN DE SESIÓN Y PANTALLA PRINCIPAL
 function checkSessionAndAuth() {
-  const saved = localStorage.getItem('jr_user_profile_v33');
+  const saved = localStorage.getItem('jr_user_profile_v34');
   const welcomeScreen = document.getElementById('screen-welcome');
   const mainApp = document.getElementById('app-main-interface');
 
@@ -248,7 +248,7 @@ async function handleAuthSubmit(e) {
 
   const phone = document.getElementById('auth-input-phone').value.trim();
   const email = document.getElementById('auth-input-email').value.trim();
-  const name = document.getElementById('auth-input-name').value.trim() || 'Usuario';
+  const name = document.getElementById('auth-input-name').value.trim() || 'David';
   const lastname = document.getElementById('auth-input-lastname').value.trim() || '';
 
   if (!phone || !email) {
@@ -256,12 +256,18 @@ async function handleAuthSubmit(e) {
     return;
   }
 
+  // Generar código de referido personalizado único
+  const cleanName = name.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 6) || 'JUNRIDE';
+  const randomSuffix = Math.floor(100 + Math.random() * 900);
+  const userReferralCode = `${cleanName}${randomSuffix}`;
+
   if (authCurrentMode === 'register') {
     userData = {
       name: name,
       lastname: lastname,
       phone: phone,
       email: email,
+      referralCode: userReferralCode,
       role: 'passenger',
       isRegistered: true,
       kmBalance: 5.00,
@@ -275,13 +281,14 @@ async function handleAuthSubmit(e) {
       walletLedger: [{ type: 'credit', title: 'Bono Bienvenida JunRide', amount: 5.00, date: 'Hoy' }]
     };
   } else {
-    const existing = localStorage.getItem('jr_user_profile_v33');
+    const existing = localStorage.getItem('jr_user_profile_v34');
     if (existing) {
       try { userData = JSON.parse(existing); } catch(err) {}
     }
     if (!userData) {
       userData = {
-        name: 'David', lastname: 'Morales', phone: phone, email: email, role: 'passenger',
+        name: name, lastname: lastname, phone: phone, email: email,
+        referralCode: userReferralCode, role: 'passenger',
         isRegistered: true, kmBalance: 5.00, driverEarnings: 0.00, driverTripsCount: 0,
         totalTrips: 11, tokens: 2150, rating: 5.00, avatar: 'https://files.catbox.moe/oh53r9.png',
         batterySaver: false, walletLedger: [{ type: 'credit', title: 'Bono Inicial', amount: 5.00, date: 'Hoy' }]
@@ -290,9 +297,10 @@ async function handleAuthSubmit(e) {
     userData.isRegistered = true;
     userData.phone = phone;
     userData.email = email;
+    if (!userData.referralCode) userData.referralCode = userReferralCode;
   }
 
-  localStorage.setItem('jr_user_profile_v33', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
 
   if (db) {
     db.collection('users').doc(currentUserId).set(userData, { merge: true }).catch(() => {});
@@ -326,14 +334,17 @@ function restoreOfflineTripState() {
   }
 }
 
-// ADHERENCIA ESTRICTA A LA TRONCAL 4 (CALZADA REAL)
+// ADHERENCIA ESTRICTA A LA TRONCAL 4
 function snapToNearestHighway(lat, lon) {
   let closestKm = JUNQUITO_ALL_KMS[11]; // Predeterminado: Km 11 El Panorama
   let minDist = 999999;
   let closestIdx = 11;
 
   JUNQUITO_ALL_KMS.forEach((pt, idx) => {
-    let d = Math.hypot(pt.lat - lat, pt.lon - lon);
+    // Distancia métrica aproximada en grados
+    let dLat = (pt.lat - lat) * 111000;
+    let dLon = (pt.lon - lon) * 109000;
+    let d = Math.hypot(dLat, dLon);
     if (d < minDist) {
       minDist = d;
       closestKm = pt;
@@ -352,7 +363,7 @@ function requestStartupGpsLocation() {
       const lon = pos.coords.longitude;
       const accuracy = pos.coords.accuracy;
 
-      // Descartar lectura de antena celular inexacta (> 120m)
+      // Si la precisión es mayor a 120m, es antena 3G lejana: anclar en Km 11 El Panorama
       if (accuracy > 120) {
         console.warn("Señal 3G imprecisa por antena. Fijando en Km 11 (El Panorama).");
         selectedOriginIdx = 11;
@@ -370,7 +381,6 @@ function requestStartupGpsLocation() {
         if (triggerEl) triggerEl.innerText = snap.kmName;
       }
     }, err => {
-      // Si no da GPS, anclar de forma segura en Km 11 El Panorama
       selectedOriginIdx = 11;
       customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
       const triggerEl = document.getElementById('trigger-origin-name');
@@ -379,6 +389,43 @@ function requestStartupGpsLocation() {
   }
 }
 
+// BOTÓN MI GPS
+function useCurrentGpsLocation() {
+  triggerHaptic();
+  if (navigator.geolocation) {
+    showNeonToast('info', 'Calibrando satélites GPS en tiempo real...');
+    navigator.geolocation.getCurrentPosition(pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const accuracy = pos.coords.accuracy;
+
+      if (accuracy > 120) {
+        showNeonToast('warning', 'Señal de antena celular difusa. Fijado con precisión en Km 11 (El Panorama).');
+        selectedOriginIdx = 11;
+        customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
+      } else {
+        const snap = snapToNearestHighway(lat, lon);
+        customOriginCoords = snap.snappedCoords;
+        selectedOriginIdx = snap.index;
+      }
+
+      const triggerEl = document.getElementById('trigger-origin-name');
+      if (triggerEl) triggerEl.innerText = JUNQUITO_ALL_KMS[selectedOriginIdx].name;
+
+      calculateRouteOrder();
+      showNeonToast('success', `📍 Ubicación fija: ${JUNQUITO_ALL_KMS[selectedOriginIdx].name}`);
+    }, err => {
+      selectedOriginIdx = 11;
+      customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
+      const triggerEl = document.getElementById('trigger-origin-name');
+      if (triggerEl) triggerEl.innerText = JUNQUITO_ALL_KMS[11].name;
+      calculateRouteOrder();
+      showNeonToast('info', '📍 Fijado en Km 11 (Sector Los Olivos / Urb. El Panorama).');
+    }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+  }
+}
+
+// ALERTAS VIALES
 function listenRoadAlertsRealtime() {
   if (!db) return;
   db.collection('alertas_viales').orderBy('createdAt', 'desc').limit(1).onSnapshot(snapshot => {
@@ -393,11 +440,38 @@ function listenRoadAlertsRealtime() {
         banner.style.display = 'flex';
         document.getElementById('alert-banner-title').innerText = `⚠️ ${alertData.incident} (${alertData.km})`;
         document.getElementById('alert-banner-desc').innerText = `Reportado por ${alertData.reportedBy || 'Comunidad JunRide'}`;
+        banner.dataset.alertDocId = doc.id;
       }
     });
   }, () => {});
 }
 
+function dismissRoadAlertBanner(e) {
+  if (e) e.stopPropagation();
+  triggerHaptic(20);
+  const banner = document.getElementById('live-alerts-banner');
+  if (banner) banner.style.display = 'none';
+  showNeonToast('info', 'Alerta ocultada en tu pantalla.');
+}
+
+async function clearCurrentRoadAlertCommunity() {
+  triggerHaptic(50);
+  const banner = document.getElementById('live-alerts-banner');
+  const alertId = banner ? banner.dataset.alertDocId : null;
+
+  if (db && alertId) {
+    await db.collection('alertas_viales').doc(alertId).delete().catch(() => {});
+    showNeonToast('success', '✅ Vía marcada como despejada para toda la comunidad.');
+    closeReportTrafficModal();
+  } else if (db) {
+    const snaps = await db.collection('alertas_viales').get().catch(() => {});
+    if (snaps) snaps.forEach(d => d.ref.delete());
+    showNeonToast('success', '✅ Alertas despejadas.');
+    closeReportTrafficModal();
+  }
+}
+
+// SELECTOR MODAL DE KILÓMETROS Y POIS
 function openKmPickerModal(target) {
   triggerHaptic(20);
   currentKmPickerTarget = target;
@@ -408,6 +482,9 @@ function openKmPickerModal(target) {
 
   if (target === 'origin') title.innerText = 'Punto de Salida (Origen)';
   else if (target === 'destination') title.innerText = 'Punto de Llegada (Destino)';
+  else if (target === 'schedule_origin') title.innerText = 'Salida de Madrugada';
+  else if (target === 'schedule_dest') title.innerText = 'Destino de Madrugada';
+  else if (target === 'traffic_km') title.innerText = 'Kilómetro del Incidente';
   else title.innerText = 'Parada Intermedia';
 
   filterKmPickerList('');
@@ -449,16 +526,45 @@ function selectKmItem(idx) {
     selectedOriginIdx = idx;
     customOriginCoords = { lat: JUNQUITO_ALL_KMS[idx].lat, lon: JUNQUITO_ALL_KMS[idx].lon };
     document.getElementById('trigger-origin-name').innerText = JUNQUITO_ALL_KMS[idx].name;
+    calculateRouteOrder();
   } else if (currentKmPickerTarget === 'destination') {
     selectedDestIdx = idx;
     document.getElementById('trigger-destination-name').innerText = JUNQUITO_ALL_KMS[idx].name;
+    calculateRouteOrder();
   } else if (currentKmPickerTarget === 'stop') {
     selectedStopIdx = idx;
     document.getElementById('trigger-stop-name').innerText = `Parada: ${JUNQUITO_ALL_KMS[idx].name}`;
+    calculateRouteOrder();
+  } else if (currentKmPickerTarget === 'schedule_origin') {
+    document.getElementById('trigger-sched-origin-name').innerText = JUNQUITO_ALL_KMS[idx].name;
+  } else if (currentKmPickerTarget === 'schedule_dest') {
+    document.getElementById('trigger-sched-dest-name').innerText = JUNQUITO_ALL_KMS[idx].name;
+  } else if (currentKmPickerTarget === 'traffic_km') {
+    document.getElementById('trigger-traffic-km-name').innerText = JUNQUITO_ALL_KMS[idx].name;
   }
 
   closeKmPickerModal();
-  calculateRouteOrder();
+}
+
+function selectIncidentType(type, elem) {
+  triggerHaptic(20);
+  document.querySelectorAll('#incident-type-chips .touch-chip').forEach(c => c.classList.remove('active'));
+  elem.classList.add('active');
+  document.getElementById('incident-type-val').value = type;
+}
+
+function selectSchedHour(hour, elem) {
+  triggerHaptic(20);
+  document.querySelectorAll('#sched-hour-chips .touch-chip').forEach(c => c.classList.remove('active'));
+  elem.classList.add('active');
+  document.getElementById('schedule-hour-val').value = hour;
+}
+
+function selectSchedService(srv, elem) {
+  triggerHaptic(20);
+  document.querySelectorAll('#sched-service-chips .touch-chip').forEach(c => c.classList.remove('active'));
+  elem.classList.add('active');
+  document.getElementById('schedule-service-val').value = srv;
 }
 
 function triggerPanicSOS() {
@@ -495,14 +601,15 @@ function redeemTokensForWallet() {
 
 function shareReferralCode() {
   triggerHaptic();
-  const text = encodeURIComponent(`¡Usa mi código DAVIDJR en JunRide para obtener $1.00 de descuento en tu primer viaje en El Junquito! 🏔️🚕`);
+  const code = (userData && userData.referralCode) ? userData.referralCode : 'DAVID412';
+  const text = encodeURIComponent(`¡Usa mi código ${code} en JunRide para obtener $1.00 de descuento en tu primer viaje en El Junquito! 🏔️🚕`);
   window.location.href = `https://wa.me/?text=${text}`;
 }
 
 function toggleBatterySaverMode() {
   triggerHaptic();
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_v33', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -613,7 +720,7 @@ function handleAvatarFileSelected(event) {
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       userData.avatar = compressedDataUrl;
-      localStorage.setItem('jr_user_profile_v33', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
       
       if (currentUserId && db) {
         db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
@@ -675,7 +782,7 @@ function speakDriverAlert(text) {
 function switchDriverMode() {
   triggerHaptic();
   userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_v33', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('driver-panel');
@@ -685,7 +792,7 @@ function switchDriverMode() {
 function switchPassengerMode() {
   triggerHaptic();
   userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_v33', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('inicio');
@@ -795,6 +902,10 @@ function updateUIProfile() {
 
     const tagBal = document.getElementById('profile-wallet-balance-tag');
     if (tagBal) tagBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
+
+    // Código de referidos dinámico
+    const refTag = document.getElementById('profile-referral-tag');
+    if (refTag) refTag.innerText = `Código: ${userData.referralCode || 'DAVID412'}`;
 
     if (userData.avatar) {
       const avatarImg = document.getElementById('profile-avatar-img');
@@ -1011,7 +1122,7 @@ function logWalletMovement(type, title, amount) {
   userData.walletLedger.unshift({
     type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
   });
-  localStorage.setItem('jr_user_profile_v33', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
   renderWalletLedger();
 }
 
@@ -1045,37 +1156,6 @@ function adjustSeats(delta) {
   const seatsVal = document.getElementById('seats-count-val');
   if (seatsVal) seatsVal.innerText = coSharedSeats;
   calculateRouteOrder();
-}
-
-// BOTÓN MI GPS: OBTENCIÓN SATELITAL DIRECTA Y FIJACIÓN EN EL PANORAMA / TRONCAL 4
-function useCurrentGpsLocation() {
-  triggerHaptic();
-  if (navigator.geolocation) {
-    showNeonToast('info', 'Calibrando satélites GPS en tiempo real...');
-    navigator.geolocation.getCurrentPosition(pos => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      const accuracy = pos.coords.accuracy;
-
-      if (accuracy > 120) {
-        showNeonToast('warning', 'Señal de antena difusa. Fijado con precisión en Km 11 (El Panorama).');
-        selectedOriginIdx = 11;
-        customOriginCoords = { lat: JUNQUITO_ALL_KMS[11].lat, lon: JUNQUITO_ALL_KMS[11].lon };
-      } else {
-        const snap = snapToNearestHighway(lat, lon);
-        customOriginCoords = snap.snappedCoords;
-        selectedOriginIdx = snap.index;
-      }
-
-      const triggerEl = document.getElementById('trigger-origin-name');
-      if (triggerEl) triggerEl.innerText = JUNQUITO_ALL_KMS[selectedOriginIdx].name;
-
-      calculateRouteOrder();
-      showNeonToast('success', `📍 Ubicación fija: ${JUNQUITO_ALL_KMS[selectedOriginIdx].name}`);
-    }, err => {
-      showNeonToast('error', 'Concede permisos de ubicación satelital precisa.');
-    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-  }
 }
 
 function openRideOrderScreen(category = 'Carro') {
@@ -1114,6 +1194,8 @@ function selectOrderVehicle(cat) {
     else if (cat === 'Carga') radarIcon.src = 'https://files.catbox.moe/bjsczm.png';
   }
 
+  // Refrescar mapa de conductores según la categoría escogida (Moto, Carro, etc.)
+  listenRealDriversInZone();
   calculateRouteOrder();
 }
 
@@ -1163,13 +1245,13 @@ function initOrderMap() {
   originMarker = L.marker([origPt.lat, origPt.lon], { icon: createNeonPinIcon('Origen') }).addTo(orderMapInstance);
   destMarker = L.marker([destPt.lat, destPt.lon], { icon: createNeonPinIcon('Destino') }).addTo(orderMapInstance);
 
-  // INICIAR ESCUCHA DE CHOFERES REALES CONECTADOS EN LA ZONA (SIN VEHÍCULOS FALSOS)
+  // Escucha exclusiva de conductores reales filtrados
   listenRealDriversInZone();
 
   drawRouteOnMap(origPt, destPt);
 }
 
-// OBTENER SOLO CHOFERES REALES CONECTADOS EN TU ZONA (KM 9 A KM 13 SI ESTÁS EN KM 11)
+// SOLO CHOFERES REALES CONECTADOS (EXCLUYE PROPIO CELULAR Y FILTRA POR VEHÍCULO)
 function listenRealDriversInZone() {
   if (!db || !orderMapInstance) return;
 
@@ -1183,16 +1265,24 @@ function listenRealDriversInZone() {
       const driver = doc.data();
       const driverId = doc.id;
 
-      // Calcular distancia en kilómetros para mostrar solo choferes cercanos (radio de ±3 km)
-      const closestToDriver = snapToNearestHighway(driver.lat, driver.lon);
-      const diffKm = Math.abs(closestToDriver.closestKm ? closestToDriver.closestKm.km : 11 - myOrigKm);
+      // 1. Descartar al usuario actual para no verse a sí mismo
+      if (driverId === currentUserId) return;
 
-      if (diffKm <= 3.5) {
+      // 2. Filtrar estrictamente por el tipo de vehículo seleccionado (ej. Moto solo con Moto)
+      const matchesCategory = (driver.vehicleType || 'Carro') === selectedOrderCategory;
+      if (!matchesCategory) return;
+
+      // 3. Radio de proximidad de montaña (±4 kilómetros)
+      const closestToDriver = snapToNearestHighway(driver.lat, driver.lon);
+      const driverKm = closestToDriver.closestKm ? closestToDriver.closestKm.km : 11;
+      const diffKm = Math.abs(driverKm - myOrigKm);
+
+      if (diffKm <= 4.0) {
         currentActiveIds[driverId] = true;
 
-        const iconImg = driver.vehicleType === 'Moto' ? 'https://files.catbox.moe/xriwyl.png'
-          : driver.vehicleType === 'Colectivo' ? 'https://files.catbox.moe/w6c0q9.png'
-          : driver.vehicleType === 'Carga' ? 'https://files.catbox.moe/bjsczm.png'
+        const iconImg = selectedOrderCategory === 'Moto' ? 'https://files.catbox.moe/xriwyl.png'
+          : selectedOrderCategory === 'Colectivo' ? 'https://files.catbox.moe/w6c0q9.png'
+          : selectedOrderCategory === 'Carga' ? 'https://files.catbox.moe/bjsczm.png'
           : 'https://files.catbox.moe/lkxyw7.png';
 
         const customDriverIcon = L.divIcon({
@@ -1215,7 +1305,7 @@ function listenRealDriversInZone() {
       }
     });
 
-    // Remover del mapa a choferes que se hayan desconectado
+    // Remover del mapa conductores desconectados o no coincidentes
     Object.keys(activeRealDriversMarkers).forEach(id => {
       if (!currentActiveIds[id]) {
         orderMapInstance.removeLayer(activeRealDriversMarkers[id]);
@@ -1223,12 +1313,15 @@ function listenRealDriversInZone() {
       }
     });
 
-  }, err => console.warn("Error en escucha de choferes en zona:", err));
+  }, err => console.warn("Error en escucha de choferes:", err));
 }
 
-// TRAZADO LIMPIO DIRECTO SOBRE EL EJE TRONCAL 4 (SIN DESVÍOS POR ANTÍMANO O MAMERA)
+// TRAZADO LIMPIO DIRECTO SOBRE LA CARRETERA TRONCAL 4 (SIN VUELTAS POR ANTÍMANO)
 async function drawRouteOnMap(startCoords, endCoords) {
-  if (orderRouteLayer && orderMapInstance) orderMapInstance.removeLayer(orderRouteLayer);
+  if (orderRouteLayer && orderMapInstance) {
+    orderMapInstance.removeLayer(orderRouteLayer);
+    orderRouteLayer = null;
+  }
   
   const snapStart = snapToNearestHighway(startCoords.lat, startCoords.lon).snappedCoords;
   const snapEnd = snapToNearestHighway(endCoords.lat, endCoords.lon).snappedCoords;
@@ -1239,19 +1332,41 @@ async function drawRouteOnMap(startCoords, endCoords) {
     const res = await fetch(url);
     const data = await res.json();
     if (data.routes && data.routes.length > 0) {
-      const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-      orderRouteLayer = L.polyline(coords, { color: '#00ff87', weight: 4.5 }).addTo(orderMapInstance);
-      orderMapInstance.fitBounds(orderRouteLayer.getBounds(), { padding: [35, 35] });
+      const routeDistanceKm = data.routes[0].distance / 1000;
+      const directKm = Math.abs(JUNQUITO_ALL_KMS[selectedOriginIdx].km - JUNQUITO_ALL_KMS[selectedDestIdx].km);
 
-      if (originMarker) originMarker.setLatLng(coords[0]);
-      if (destMarker) destMarker.setLatLng(coords[coords.length - 1]);
-      return;
+      // Si la ruta calculada no da una vuelta loca hacia Caracas
+      if (routeDistanceKm <= (directKm * 1.8 + 2)) {
+        const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+        orderRouteLayer = L.polyline(coords, { color: '#00ff87', weight: 4.5 }).addTo(orderMapInstance);
+        orderMapInstance.fitBounds(orderRouteLayer.getBounds(), { padding: [35, 35] });
+
+        if (originMarker) originMarker.setLatLng(coords[0]);
+        if (destMarker) destMarker.setLatLng(coords[coords.length - 1]);
+        return;
+      }
     }
   } catch(e) {}
 
-  orderRouteLayer = L.polyline([[snapStart.lat, snapStart.lon], [snapEnd.lat, snapEnd.lon]], { color: '#00ff87', weight: 4, dashArray: '6, 6' }).addTo(orderMapInstance);
-  if (originMarker) originMarker.setLatLng([snapStart.lat, snapStart.lon]);
-  if (destMarker) destMarker.setLatLng([snapEnd.lat, snapEnd.lon]);
+  // Trazado de respaldo continuo por los puntos reales de la Troncal 4
+  const startIdx = Math.min(selectedOriginIdx, selectedDestIdx);
+  const endIdx = Math.max(selectedOriginIdx, selectedDestIdx);
+  const highwayPoints = [];
+  
+  if (selectedOriginIdx <= selectedDestIdx) {
+    for (let i = startIdx; i <= endIdx; i++) {
+      highwayPoints.push([JUNQUITO_ALL_KMS[i].lat, JUNQUITO_ALL_KMS[i].lon]);
+    }
+  } else {
+    for (let i = endIdx; i >= startIdx; i--) {
+      highwayPoints.push([JUNQUITO_ALL_KMS[i].lat, JUNQUITO_ALL_KMS[i].lon]);
+    }
+  }
+
+  orderRouteLayer = L.polyline(highwayPoints, { color: '#00ff87', weight: 4.5 }).addTo(orderMapInstance);
+  orderMapInstance.fitBounds(orderRouteLayer.getBounds(), { padding: [35, 35] });
+  if (originMarker) originMarker.setLatLng(highwayPoints[0]);
+  if (destMarker) destMarker.setLatLng(highwayPoints[highwayPoints.length - 1]);
 }
 
 function calculateRouteOrder() {
@@ -1356,7 +1471,6 @@ async function confirmOrderTrip() {
       localStorage.setItem('jr_active_trip_id', activeTripId);
       showNeonToast('success', '📡 Solicitud transmitida a todos los choferes.');
     } catch(err) {
-      console.error("Error al publicar en Firebase:", err);
       activeTripId = 'offline_' + Date.now();
       localStorage.setItem('jr_active_trip_id', activeTripId);
     }
@@ -1402,7 +1516,7 @@ async function cancelTrip(isManual = false) {
   }
 }
 
-// TOGGLE CONEXIÓN DEL CHOFER Y TRANSMISIÓN DE BALIZA
+// TOGGLE CONEXIÓN DEL CHOFER
 function toggleDriverStatus() {
   triggerHaptic();
   isDriverOnline = !isDriverOnline;
@@ -1482,7 +1596,7 @@ function renderSingleDriverTripCard(tripId, trip) {
   if (!driverList) return;
 
   const pLat = trip.pickupCoords ? trip.pickupCoords.lat : 10.4614;
-  const pLon = trip.pickupCoords ? trip.pickupCoords.lon : -67.0805;
+  const pLon = trip.pickupCoords ? trip.pickupCoords.lon : -67.0420;
 
   driverList.innerHTML += `
     <li style="display:flex; flex-direction:column; gap:8px; padding:14px; background:rgba(255,255,255,0.03); border-radius:16px; border:1px solid var(--border-glow); margin-bottom:8px;">
@@ -1562,7 +1676,7 @@ async function completeActiveTripDriver() {
 
   userData.driverEarnings = (userData.driverEarnings || 0) + netEarnings;
   userData.driverTripsCount = (userData.driverTripsCount || 0) + 1;
-  localStorage.setItem('jr_user_profile_v33', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
   updateUIProfile();
 
   if (db && activeTripId) {
@@ -1746,10 +1860,10 @@ function closeScheduleTripModal() { document.getElementById('modal-schedule-trip
 async function confirmScheduleTrip() {
   triggerHaptic();
   const date = document.getElementById('schedule-date-input').value;
-  const hour = document.getElementById('schedule-hour-select').value;
-  const service = document.getElementById('schedule-service-select').value;
-  const pickup = document.getElementById('schedule-pickup-input').value;
-  const dest = document.getElementById('schedule-dest-input').value;
+  const hour = document.getElementById('schedule-hour-val').value;
+  const service = document.getElementById('schedule-service-val').value;
+  const pickup = document.getElementById('trigger-sched-origin-name').innerText;
+  const dest = document.getElementById('trigger-sched-dest-name').innerText;
   const fare = parseFloat(document.getElementById('schedule-fare-input').value || 4.0);
 
   if (db) {
@@ -1761,7 +1875,7 @@ async function confirmScheduleTrip() {
     }).catch(() => {});
   }
 
-  showNeonToast('success', `✅ ¡Viaje de Madrugada apartado para el ${date} a las ${hour}!`);
+  showNeonToast('success', `✅ ¡Viaje apartado para el ${date} a las ${hour}!`);
   closeScheduleTripModal();
 }
 
@@ -1770,8 +1884,8 @@ function closeReportTrafficModal() { document.getElementById('modal-traffic-aler
 
 async function publishRoadAlert() {
   triggerHaptic();
-  const incident = document.getElementById('traffic-incident-type').value;
-  const km = document.getElementById('traffic-incident-km').value;
+  const incident = document.getElementById('incident-type-val').value;
+  const km = document.getElementById('trigger-traffic-km-name').innerText;
   if (db) {
     await db.collection('alertas_viales').add({ incident, km, reportedBy: userData ? userData.name : 'Comunidad', createdAt: new Date() }).catch(() => {});
   }
@@ -1797,7 +1911,7 @@ function requestWeeklyPayout() {
   window.location.href = `https://wa.me/584123167126?text=${msg}`;
 }
 
-// SINCRONIZACIÓN AUTOMÁTICA DE ESTADO DEL CHOFER Y PASAJERO
+// SINCRONIZACIÓN AUTOMÁTICA
 function listenTripsRealtime() {
   if (!db) return;
   db.collection('trips').onSnapshot(snapshot => {
@@ -1896,7 +2010,7 @@ function logout() {
   triggerHaptic(40);
   if (userData) {
     userData.isRegistered = false;
-    localStorage.setItem('jr_user_profile_v33', JSON.stringify(userData));
+    localStorage.setItem('jr_user_profile_v34', JSON.stringify(userData));
   }
   localStorage.removeItem('jr_active_trip_id');
   location.reload();
