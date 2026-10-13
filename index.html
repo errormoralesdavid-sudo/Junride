@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=36">
+  <link rel="manifest" href="manifest.json?v=37">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -260,7 +260,10 @@
           </div>
 
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:10px;">
-            <button class="btn-primary-neon btn-sm" onclick="openActiveChatModal()">💬 Abrir Chat y Voz</button>
+            <button class="btn-primary-neon btn-sm" style="position:relative;" onclick="openActiveChatModal()">
+              💬 Abrir Chat y Voz
+              <span id="passenger-trip-unread-dot" class="chat-btn-unread-dot"></span>
+            </button>
             <button class="btn-sm btn-secondary-dim" onclick="shareLiveTripStatus()">📲 Compartir Viaje</button>
           </div>
         </div>
@@ -326,8 +329,14 @@
       <!-- Pestaña HISTORIAL -->
       <section class="tab-content animate-fade" id="tab-historial" style="display:none;">
         <div class="card-neon" style="padding:20px;">
-          <h3 style="color:white;">Historial de Carreras</h3>
-          <ul id="history-list" style="list-style:none; margin-top:12px; display:flex; flex-direction:column; gap:8px;"></ul>
+          <div class="panel-header-row" style="margin-bottom:8px;">
+            <h3 style="color:white; font-size:1.15rem;">Historial de Carreras</h3>
+            <button class="btn-sm btn-secondary-dim" onclick="fetchTripsHistory()">🔄 Actualizar</button>
+          </div>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Registro oficial de tus viajes completados en El Junquito:</p>
+          <ul id="history-list" style="list-style:none; display:flex; flex-direction:column; gap:10px;">
+            <p style="font-size:0.78rem; color:var(--text-muted); text-align:center; padding:20px 0;">Cargando carreras...</p>
+          </ul>
         </div>
       </section>
 
@@ -339,7 +348,6 @@
             <button class="btn-sm btn-secondary-dim" onclick="switchPassengerMode()">Salir a Pasajero</button>
           </div>
 
-          <!-- BANNER DE VERIFICACIÓN PENDIENTE -->
           <div id="driver-unverified-warning" style="display:none; background:rgba(245,158,11,0.12); border:1.5px dashed var(--warning); border-radius:16px; padding:12px; margin:10px 0; text-align:center;">
             <strong style="color:#fbbf24; font-size:0.85rem; display:block;">⚠️ Cuenta Pendiente de Verificación</strong>
             <p style="font-size:0.72rem; color:#cbd5e1; margin:4px 0 8px 0;">Envía tu Licencia y Carnet de Circulación a soporte para poder conectarte y aceptar carreras.</p>
@@ -459,7 +467,7 @@
         </div>
       </section>
 
-      <!-- Pestaña PERFIL (LIMPIO SIN DATOS FIJOS) -->
+      <!-- Pestaña PERFIL -->
       <section class="tab-content animate-fade" id="tab-perfil" style="display:none;">
         <div class="profile-header-card">
           <div class="profile-user-row">
@@ -848,7 +856,7 @@
     </div>
   </div>
 
-  <!-- MODAL RECIBO DIGITAL -->
+  <!-- MODAL COMPROBANTE OFICIAL Y CALIFICACIÓN CON ESTRELLAS Y RESEÑA -->
   <div class="modal" id="modal-trip-receipt">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -857,23 +865,50 @@
       </div>
       
       <div style="background:rgba(255,255,255,0.03); padding:14px; border-radius:16px; border:1px solid var(--border-glow); font-size:0.8rem; line-height:1.7;">
-        <div><strong>Servicio:</strong> <span id="rec-service-name">Carro</span></div>
-        <div><strong>Ruta:</strong> <span id="rec-route-text">Km 11 ➔ Km 0</span></div>
-        <div><strong>Monto Abonado:</strong> <span id="rec-amount-text">$2.50</span> <small id="rec-amount-ves" style="color:var(--text-muted);"></small></div>
+        <div><strong>Conductor:</strong> <span id="rec-driver-name" style="color:var(--primary); font-weight:800;">---</span></div>
+        <div><strong>Servicio:</strong> <span id="rec-service-name">---</span></div>
+        <div><strong>Ruta:</strong> <span id="rec-route-text">--- ➔ ---</span></div>
+        <div><strong>Monto Abonado:</strong> <span id="rec-amount-text">$0.00</span> <small id="rec-amount-ves" style="color:var(--text-muted);"></small></div>
         <div><strong>Fecha y Hora:</strong> <span id="rec-date-text">Hoy</span></div>
         <div><strong>Seguridad:</strong> <span style="color:var(--primary); font-weight:800;">✓ PIN Validado</span></div>
       </div>
 
-      <div style="margin-top:8px;">
-        <label style="font-size:0.75rem; color:var(--text-muted);">Califica la experiencia del viaje:</label>
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
-          <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this)">🛡️ Manejo prudente en curvas</span>
+      <!-- SISTEMA INTERACTIVO DE 5 ESTRELLAS -->
+      <div style="margin-top:10px; text-align:center;">
+        <label style="font-size:0.78rem; color:var(--text-muted); font-weight:700;">Califica al conductor:</label>
+        <div class="star-rating-box" id="rating-stars-container">
+          <span class="star-rating-item active" onclick="setRatingStars(1)">★</span>
+          <span class="star-rating-item active" onclick="setRatingStars(2)">★</span>
+          <span class="star-rating-item active" onclick="setRatingStars(3)">★</span>
+          <span class="star-rating-item active" onclick="setRatingStars(4)">★</span>
+          <span class="star-rating-item active" onclick="setRatingStars(5)">★</span>
+        </div>
+        <input type="hidden" id="selected-rating-val" value="5">
+      </div>
+
+      <!-- COMENTARIO PÚBLICO VISIBLE PARA LA COMUNIDAD -->
+      <div style="margin-top:4px;">
+        <label style="font-size:0.72rem; color:var(--text-muted);">Comentario público sobre el conductor:</label>
+        <textarea id="trip-review-comment" placeholder="Ej. Manejo muy prudente en las curvas, respetuoso y puntual..." class="review-comment-textarea"></textarea>
+      </div>
+
+      <div style="margin-top:4px;">
+        <label style="font-size:0.72rem; color:var(--text-muted);">Etiquetas rápidas:</label>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
+          <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this)">🛡️ Prudente en curvas</span>
           <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this)">🌫️ Puntual en la neblina</span>
           <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this)">✨ Vehículo limpio</span>
         </div>
       </div>
 
-      <button class="btn-primary-neon" style="width:100%; margin-top:10px;" onclick="shareReceiptWhatsApp()">Compartir Recibo por WhatsApp</button>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+        <button class="btn-primary-neon" style="width:100%; padding:14px;" onclick="submitTripRatingAndSave()">
+          ⭐ Calificar y Guardar en Historial
+        </button>
+        <button class="btn-secondary-dim btn-sm" onclick="shareReceiptWhatsApp()">
+          📲 Compartir Recibo por WhatsApp
+        </button>
+      </div>
     </div>
   </div>
 
