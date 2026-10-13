@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=38">
+  <link rel="manifest" href="manifest.json?v=39">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,7 +21,7 @@
   <!-- Contenedor Flotante de Notificaciones Toast Neón -->
   <div id="toast-container"></div>
 
-  <!-- 1. PANTALLA DE BIENVENIDA / ONBOARDING (POR DEFECTO ACTIVA) -->
+  <!-- 1. PANTALLA DE BIENVENIDA / ONBOARDING -->
   <section id="screen-welcome" class="welcome-screen-wrap animate-fade">
     <div class="welcome-hero-content">
       
@@ -61,7 +61,7 @@
   <section id="screen-role-select" class="welcome-screen-wrap animate-fade" style="display:none;">
     <div class="welcome-hero-content">
       <h2 style="font-size:1.6rem; color:#fff; font-weight:900;">¿Cómo deseas usar JunRide?</h2>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">Selecciona tu rol principal en la plataforma. Podrás alternarlo después.</p>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">Selecciona tu rol principal en la plataforma. Podrás alternarlo en cualquier momento.</p>
       
       <div class="role-card card-neon" onclick="chooseAppRole('passenger')">
         <div class="role-icon-box">
@@ -69,7 +69,7 @@
         </div>
         <div style="text-align:left;">
           <h3 style="color:#00ff87; font-size:1.15rem; font-weight:900;">Modo Pasajero / Cliente</h3>
-          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, puestos compartidos y mudanzas en la montaña.</p>
+          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, colectivos y mudanzas en la montaña.</p>
         </div>
       </div>
 
@@ -117,7 +117,7 @@
     </div>
   </div>
 
-  <!-- 4. MODAL DE REGISTRO DE VEHÍCULO DEL CONDUCTOR -->
+  <!-- 4. MODAL DE CONFIGURACIÓN DE VEHÍCULO DEL CONDUCTOR -->
   <div class="modal" id="modal-driver-vehicle-setup">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -147,7 +147,7 @@
 
   <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
 
-  <!-- 5. INTERFAZ PRINCIPAL (BLINDADA: ESTRICTAMENTE OCULTA SI NO HAY SESIÓN VÁLIDA) -->
+  <!-- 5. INTERFAZ PRINCIPAL (PROTEGIDA) -->
   <div id="app-main-interface" style="display:none !important;">
     
     <header class="top-bar" id="main-header">
@@ -238,7 +238,7 @@
         <div class="wallet-banner card-neon" onclick="switchTab('recargas')">
           <div>
             <span style="font-size:0.75rem; color:var(--text-muted);">Billetera (Saldo Disponible)</span>
-            <div class="wallet-balance-num" id="ui-km-balance">$0.00</div>
+            <div class="wallet-balance-num" id="ui-km-balance">$1.00</div>
           </div>
           <button class="btn-primary-neon btn-sm">Recargar</button>
         </div>
@@ -279,7 +279,7 @@
             <div>
               <h3 style="color:white; font-size:1.08rem; font-weight:800;">Cartera Digital</h3>
               <span style="font-size:0.75rem; color:var(--text-muted);">Saldo activo para tus viajes</span>
-              <div style="font-size:2rem; font-weight:900; color:var(--primary); line-height:1.1; margin-top:4px;" id="recarga-km-val">$0.00</div>
+              <div style="font-size:2rem; font-weight:900; color:var(--primary); line-height:1.1; margin-top:4px;" id="recarga-km-val">$1.00</div>
             </div>
           </div>
         </div>
@@ -347,6 +347,13 @@
             <button class="btn-sm btn-secondary-dim" onclick="switchPassengerMode()">Salir a Pasajero</button>
           </div>
 
+          <!-- BANNER DE SUSPENSIÓN POR BAJO RATING -->
+          <div id="driver-suspended-warning" style="display:none; background:rgba(239,68,68,0.15); border:1.5px solid var(--danger); border-radius:16px; padding:12px; margin:10px 0; text-align:center;">
+            <strong style="color:#ef4444; font-size:0.88rem; display:block;">🔴 Cuenta Suspendida por Baja Calificación</strong>
+            <p style="font-size:0.72rem; color:#cbd5e1; margin:4px 0 8px 0;">Tu promedio actual está por debajo de 3.0 estrellas. Comunícate con soporte JunRide para reactivación.</p>
+            <button class="btn-sm btn-secondary-dim" style="background:#25d366; color:#050811; font-weight:800;" onclick="sendKycToWhatsApp()">📲 Contactar a Soporte</button>
+          </div>
+
           <!-- BANNER DE VERIFICACIÓN PENDIENTE -->
           <div id="driver-unverified-warning" style="display:none; background:rgba(245,158,11,0.12); border:1.5px dashed var(--warning); border-radius:16px; padding:12px; margin:10px 0; text-align:center;">
             <strong style="color:#fbbf24; font-size:0.85rem; display:block;">⚠️ Cuenta Pendiente de Verificación</strong>
@@ -402,7 +409,7 @@
         </div>
       </section>
 
-      <!-- Pestaña CONDUCTOR - GANANCIAS -->
+      <!-- Pestaña CONDUCTOR - GANANCIAS (SIN CAJA DE COMISIÓN DE EMPRESA) -->
       <section class="tab-content animate-fade" id="tab-driver-ganancias" style="display:none;">
         <div class="driver-earnings-hero">
           <div style="display:flex; align-items:center; gap:14px;">
@@ -419,15 +426,9 @@
 
         <div class="card-neon" style="padding:18px; margin-bottom:12px;">
           <h4 style="color:white; margin-bottom:8px;">Resumen Semanal de Actividad</h4>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; text-align:center;">
-            <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:14px;">
-              <span style="font-size:0.7rem; color:var(--text-muted);">Viajes Realizados</span>
-              <h4 style="font-size:1.3rem; color:#fff;" id="driver-trips-count-val">0</h4>
-            </div>
-            <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:14px;">
-              <span style="font-size:0.7rem; color:var(--text-muted);">Comisión App (10%)</span>
-              <h4 style="font-size:1.3rem; color:#a78bfa;" id="driver-commission-fee-val">$0.00</h4>
-            </div>
+          <div style="background:rgba(255,255,255,0.03); padding:16px; border-radius:16px; text-align:center;">
+            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:800;">Viajes Completados</span>
+            <h4 style="font-size:1.8rem; color:#fff; font-weight:900; margin-top:4px;" id="driver-trips-count-val">0</h4>
           </div>
         </div>
 
@@ -515,7 +516,7 @@
 
           <div class="profile-stats-grid">
             <div class="stat-box-mini">
-              <div class="stat-val-bold" style="color:#fbbf24;">⭐ 5.00</div>
+              <div class="stat-val-bold" style="color:#fbbf24;" id="stats-rating-val">⭐ 5.00</div>
               <div class="stat-lbl-dim">Calificación</div>
             </div>
             <div class="stat-box-mini">
@@ -523,7 +524,7 @@
               <div class="stat-lbl-dim">Viajes totales</div>
             </div>
             <div class="stat-box-mini" onclick="redeemTokensForWallet()" style="cursor:pointer;" title="Toca para canjear por saldo">
-              <div class="stat-val-bold" style="color:var(--primary);" id="stats-total-tokens">0</div>
+              <div class="stat-val-bold" style="color:var(--primary);" id="stats-total-tokens">100</div>
               <div class="stat-lbl-dim">🪙 Tokens (Canjear)</div>
             </div>
           </div>
