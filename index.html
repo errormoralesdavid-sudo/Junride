@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=37">
+  <link rel="manifest" href="manifest.json?v=38">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,7 +21,7 @@
   <!-- Contenedor Flotante de Notificaciones Toast Neón -->
   <div id="toast-container"></div>
 
-  <!-- 1. PANTALLA DE BIENVENIDA / ONBOARDING -->
+  <!-- 1. PANTALLA DE BIENVENIDA / ONBOARDING (POR DEFECTO ACTIVA) -->
   <section id="screen-welcome" class="welcome-screen-wrap animate-fade">
     <div class="welcome-hero-content">
       
@@ -57,11 +57,11 @@
     </div>
   </section>
 
-  <!-- 2. PANTALLA DE SELECCIÓN DE ROL (CON ICONO OFICIAL DE CLIENTE) -->
+  <!-- 2. PANTALLA DE SELECCIÓN DE ROL -->
   <section id="screen-role-select" class="welcome-screen-wrap animate-fade" style="display:none;">
     <div class="welcome-hero-content">
       <h2 style="font-size:1.6rem; color:#fff; font-weight:900;">¿Cómo deseas usar JunRide?</h2>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">Selecciona tu rol principal en la plataforma. Podrás alternarlo en cualquier momento.</p>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">Selecciona tu rol principal en la plataforma. Podrás alternarlo después.</p>
       
       <div class="role-card card-neon" onclick="chooseAppRole('passenger')">
         <div class="role-icon-box">
@@ -69,7 +69,7 @@
         </div>
         <div style="text-align:left;">
           <h3 style="color:#00ff87; font-size:1.15rem; font-weight:900;">Modo Pasajero / Cliente</h3>
-          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, colectivos y mudanzas en la montaña.</p>
+          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, puestos compartidos y mudanzas en la montaña.</p>
         </div>
       </div>
 
@@ -85,7 +85,7 @@
     </div>
   </section>
 
-  <!-- 3. MODAL DE REGISTRO / LOGIN -->
+  <!-- 3. MODAL DE ACCESO (REGISTRO / LOGIN) -->
   <div class="modal" id="modal-auth-form">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -147,8 +147,8 @@
 
   <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
 
-  <!-- 5. INTERFAZ PRINCIPAL -->
-  <div id="app-main-interface" style="display:none;">
+  <!-- 5. INTERFAZ PRINCIPAL (BLINDADA: ESTRICTAMENTE OCULTA SI NO HAY SESIÓN VÁLIDA) -->
+  <div id="app-main-interface" style="display:none !important;">
     
     <header class="top-bar" id="main-header">
       <div class="top-bar-left">
@@ -326,7 +326,7 @@
         </div>
       </section>
 
-      <!-- Pestaña HISTORIAL DE CARRERAS CON DETALLE REAL -->
+      <!-- Pestaña HISTORIAL -->
       <section class="tab-content animate-fade" id="tab-historial" style="display:none;">
         <div class="card-neon" style="padding:20px;">
           <div class="panel-header-row" style="margin-bottom:12px;">
@@ -856,7 +856,7 @@
     </div>
   </div>
 
-  <!-- MODAL COMPROBANTE CON ESTRELLAS INTERACTIVAS Y COMENTARIO PÚBLICO -->
+  <!-- MODAL COMPROBANTE CON ESTRELLAS Y RESEÑA PÚBLICA -->
   <div class="modal" id="modal-trip-receipt">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -873,7 +873,6 @@
         <div><strong>Seguridad:</strong> <span style="color:var(--primary); font-weight:800;">✓ PIN Validado con Éxito</span></div>
       </div>
 
-      <!-- SISTEMA INTERACTIVO DE CALIFICACIÓN POR ESTRELLAS -->
       <div style="margin-top:10px; text-align:center;">
         <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Califica a tu conductor (1 a 5 estrellas):</span>
         <div class="star-rating-box" id="receipt-stars-box">
@@ -886,13 +885,11 @@
         <small id="receipt-stars-label" style="font-size:0.72rem; color:#fbbf24; font-weight:800;">5 Estrellas (Excelente)</small>
       </div>
 
-      <!-- COMENTARIO PÚBLICO -->
       <div style="margin-top:8px;">
         <label style="font-size:0.75rem; color:var(--text-muted);">Deja una reseña pública sobre el chofer:</label>
         <textarea id="receipt-public-comment" class="review-textarea" rows="2" placeholder="Ej. Muy educado, prudente en las curvas de la montaña y puntual."></textarea>
       </div>
 
-      <!-- ETIQUETAS RÁPIDAS -->
       <div style="margin-top:4px;">
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
           <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this, 'Manejo prudente en curvas')">🛡️ Manejo prudente</span>
