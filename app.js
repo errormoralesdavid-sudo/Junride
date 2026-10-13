@@ -151,7 +151,7 @@ if (typeof firebase !== 'undefined') {
   }
 }
 
-// SESIÓN INICIAL LIMPIA
+// SESIÓN LIMPIA
 let currentUserId = localStorage.getItem('jr_session_uid') || null;
 let userData = null;
 let currentTab = 'inicio';
@@ -187,6 +187,11 @@ let isRecordingAudio = false;
 let isChatModalOpen = false;
 let authCurrentMode = 'register';
 
+// CALIFICACIÓN Y RESEÑA INTERACTIVA
+let currentRatingStars = 5;
+let backgroundChatUnsubscribe = null;
+let lastReviewedTripId = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -202,11 +207,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (avatarInput) avatarInput.addEventListener('change', handleAvatarFileSelected);
 });
 
-// ==============================================================
-// GESTIÓN DE SESIÓN Y PROTECCIÓN CONTRA CRASHES
-// ==============================================================
+// GESTIÓN DE SESIÓN
 function checkSessionAndAuth() {
-  const saved = localStorage.getItem('jr_user_profile_v38');
+  const saved = localStorage.getItem('jr_user_profile_v39');
   const welcomeScreen = document.getElementById('screen-welcome');
   const roleSelectScreen = document.getElementById('screen-role-select');
   const mainApp = document.getElementById('app-main-interface');
@@ -225,12 +228,12 @@ function checkSessionAndAuth() {
         listenRoadAlertsRealtime();
         listenTripsRealtime();
         syncUserWithFirestore();
+        fetchUserTripHistory();
         return;
       }
     } catch(e) {}
   }
 
-  // SI NO HAY USUARIO: PANTALLA LIMPIA SIN CRASH NI USUARIOS FANTASMA
   userData = null;
   currentUserId = null;
   if (welcomeScreen) welcomeScreen.style.display = 'flex';
@@ -244,7 +247,7 @@ function syncUserWithFirestore() {
     if (doc.exists) {
       const remote = doc.data();
       userData = { ...userData, ...remote };
-      localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_v39', JSON.stringify(userData));
       updateUIProfile();
     }
   }).catch(() => {});
@@ -283,7 +286,6 @@ function closeAuthModal() {
   document.getElementById('modal-auth-form').classList.remove('active');
 }
 
-// AUTENTICACIÓN CON VALIDACIÓN CRUZADA EN FIRESTORE
 async function handleAuthSubmit(e) {
   e.preventDefault();
   triggerHaptic(50);
@@ -357,6 +359,7 @@ async function handleAuthSubmit(e) {
       totalTrips: 0,
       tokens: 500,
       rating: 5.00,
+      ratingCount: 0,
       avatar: 'https://files.catbox.moe/oh53r9.png',
       batterySaver: false,
       createdAt: new Date().toISOString(),
@@ -371,7 +374,7 @@ async function handleAuthSubmit(e) {
     return;
   }
 
-  // LOGIN (YA TENGO UNA CUENTA - DOBLE VALIDACIÓN TELÉFONO + CORREO)
+  // LOGIN (YA TENGO UNA CUENTA - DOBLE VALIDACIÓN)
   if (authCurrentMode === 'login') {
     if (!db) {
       showNeonToast('error', 'Conectando con la base de datos... Por favor intenta en un segundo.');
@@ -420,12 +423,13 @@ async function handleAuthSubmit(e) {
         totalTrips: userDoc.totalTrips || 0,
         tokens: userDoc.tokens || 500,
         rating: userDoc.rating || 5.00,
+        ratingCount: userDoc.ratingCount || 0,
         avatar: userDoc.avatar || 'https://files.catbox.moe/oh53r9.png',
         batterySaver: userDoc.batterySaver || false,
         walletLedger: userDoc.walletLedger || [{ type: 'credit', title: 'Cuenta Restaurada', amount: 5.00, date: 'Hoy' }]
       };
 
-      localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_v39', JSON.stringify(userData));
 
       submitBtn.disabled = false;
       closeAuthModal();
@@ -455,7 +459,7 @@ function chooseAppRole(role) {
     document.getElementById('modal-driver-vehicle-setup').classList.add('active');
   } else {
     userData.isRegistered = true;
-    localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
+    localStorage.setItem('jr_user_profile_v39', JSON.stringify(userData));
     document.getElementById('screen-role-select').style.display = 'none';
     launchMainApplication();
   }
@@ -481,7 +485,7 @@ function finishDriverRegistration() {
   userData.vehiclePlate = vehPlate;
   userData.verifiedDriver = false;
 
-  localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v39', JSON.stringify(userData));
   document.getElementById('modal-driver-vehicle-setup').classList.remove('active');
   launchMainApplication();
   switchTab('driver-panel');
@@ -504,6 +508,7 @@ function launchMainApplication() {
   requestStartupGpsLocation();
   listenRoadAlertsRealtime();
   listenTripsRealtime();
+  fetchUserTripHistory();
 }
 
 function restoreOfflineTripState() {
@@ -517,6 +522,7 @@ function restoreOfflineTripState() {
       document.getElementById('live-driver-name').innerText = trip.driverName || 'Conductor en Camino';
       document.getElementById('trip-fare-val').innerText = trip.price;
       document.getElementById('passenger-otp-val').innerText = trip.otp;
+      startBackgroundChatListener(activeTripId);
     } catch(e) {}
   }
 }
@@ -796,7 +802,7 @@ function toggleBatterySaverMode() {
   triggerHaptic();
   if (!userData) return;
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v39', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -853,26 +859,243 @@ function calculateCashChange(billAmount) {
   if (resultEl) resultEl.innerText = `Tu cambio: $${changeUsd.toFixed(2)} USD (aprox. Bs. ${changeVes})`;
 }
 
-function openReceiptModal() {
+// ==============================================================
+// SISTEMA DE CALIFICACIÓN INTERACTIVA Y COMPROBANTE OFICIAL
+// ==============================================================
+function setTripRating(stars) {
+  triggerHaptic(25);
+  currentRatingStars = stars;
+  const starEls = document.querySelectorAll('#receipt-stars-box .star-item');
+  starEls.forEach((el, idx) => {
+    if (idx < stars) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+
+  const lbl = document.getElementById('receipt-stars-label');
+  const textMap = {
+    1: '1 Estrella (Deficiente)',
+    2: '2 Estrellas (Regular)',
+    3: '3 Estrellas (Bueno)',
+    4: '4 Estrellas (Muy Bueno)',
+    5: '5 Estrellas (Excelente)'
+  };
+  if (lbl) lbl.innerText = textMap[stars] || `${stars} Estrellas`;
+}
+
+function selectTagBadge(badgeElem, text) {
+  triggerHaptic(20);
+  badgeElem.classList.toggle('active');
+  const commentArea = document.getElementById('receipt-public-comment');
+  if (commentArea && badgeElem.classList.contains('active')) {
+    const currentVal = commentArea.value.trim();
+    commentArea.value = currentVal ? `${currentVal}. ${text}` : text;
+  }
+}
+
+function openReceiptModal(tripData = null) {
   triggerHaptic();
-  document.getElementById('rec-service-name').innerText = selectedOrderCategory;
-  document.getElementById('rec-route-text').innerText = `${JUNQUITO_ALL_KMS[selectedOriginIdx].name} ➔ ${JUNQUITO_ALL_KMS[selectedDestIdx].name}`;
-  document.getElementById('rec-amount-text').innerText = `$${offeredOrderPrice.toFixed(2)} USD`;
-  document.getElementById('rec-amount-ves').innerText = `(Bs. ${(offeredOrderPrice * currentBcvRate).toFixed(2)})`;
+  const trip = tripData || currentTripData;
+  if (!trip) return;
+
+  lastReviewedTripId = trip.id || activeTripId;
+
+  document.getElementById('rec-service-name').innerText = trip.service || selectedOrderCategory;
+  document.getElementById('rec-driver-name').innerText = trip.driverName || 'Conductor Asignado';
+  document.getElementById('rec-driver-veh').innerText = trip.driverVehicle || 'Vehículo Registrado';
+  document.getElementById('rec-route-text').innerText = `${trip.pickup || JUNQUITO_ALL_KMS[selectedOriginIdx].name} ➔ ${trip.dropoff || JUNQUITO_ALL_KMS[selectedDestIdx].name}`;
+  
+  const fare = parseFloat(trip.price || offeredOrderPrice);
+  document.getElementById('rec-amount-text').innerText = `$${fare.toFixed(2)} USD`;
+  document.getElementById('rec-amount-ves').innerText = `(Bs. ${(fare * currentBcvRate).toFixed(2)})`;
   document.getElementById('rec-date-text').innerText = new Date().toLocaleString();
+
+  // Resetear estrellas y reseña
+  setTripRating(5);
+  const commentArea = document.getElementById('receipt-public-comment');
+  if (commentArea) commentArea.value = '';
+
   document.getElementById('modal-trip-receipt').classList.add('active');
 }
-function closeReceiptModal() { document.getElementById('modal-trip-receipt').classList.remove('active'); }
 
-function selectTagBadge(badge) {
-  triggerHaptic(20);
-  badge.style.background = '#00ff87';
-  badge.style.color = '#050811';
+function closeReceiptModal() { 
+  document.getElementById('modal-trip-receipt').classList.remove('active'); 
+}
+
+// GUARDAR CALIFICACIÓN, ACTUALIZAR PROMEDIO DEL CHOFER Y ARCHIVAR EN FIRESTORE
+async function submitTripRatingAndReview() {
+  triggerHaptic(60);
+  const comment = document.getElementById('receipt-public-comment').value.trim();
+  const tripId = lastReviewedTripId || activeTripId;
+
+  if (db && tripId) {
+    try {
+      await db.collection('trips').doc(tripId).update({
+        clientRating: currentRatingStars,
+        clientComment: comment || 'Sin comentarios adicionales.',
+        ratedAt: new Date().toISOString()
+      });
+
+      // Actualizar promedio del conductor en Firestore
+      if (currentTripData && currentTripData.driverId) {
+        const driverRef = db.collection('users').doc(currentTripData.driverId);
+        const driverDoc = await driverRef.get();
+        if (driverDoc.exists) {
+          const dData = driverDoc.data();
+          const prevCount = dData.ratingCount || 1;
+          const prevRating = dData.rating || 5.0;
+          const newCount = prevCount + 1;
+          const newRating = Number(((prevRating * prevCount + currentRatingStars) / newCount).toFixed(2));
+
+          await driverRef.update({
+            rating: newRating,
+            ratingCount: newCount
+          });
+        }
+      }
+    } catch(err) {
+      console.warn("Error al guardar reseña en Firestore:", err);
+    }
+  }
+
+  showNeonToast('success', '⭐ ¡Gracias por calificar a tu conductor! Tu reseña quedó registrada en el historial.');
+  closeReceiptModal();
+  fetchUserTripHistory();
 }
 
 function shareReceiptWhatsApp() {
-  const msg = encodeURIComponent(`🧾 Recibo Oficial JunRide:\nServicio: ${selectedOrderCategory}\nTarifa: $${offeredOrderPrice.toFixed(2)} USD (Bs. ${(offeredOrderPrice * currentBcvRate).toFixed(2)})\nRuta: ${JUNQUITO_ALL_KMS[selectedOriginIdx].name} a ${JUNQUITO_ALL_KMS[selectedDestIdx].name}\nEstado: Completado con Seguridad Satelital 🏔️`);
+  const trip = currentTripData;
+  const fare = trip ? trip.price : offeredOrderPrice.toFixed(2);
+  const driver = trip ? trip.driverName : 'Conductor Asignado';
+  const route = trip ? `${trip.pickup} a ${trip.dropoff}` : `${JUNQUITO_ALL_KMS[selectedOriginIdx].name} a ${JUNQUITO_ALL_KMS[selectedDestIdx].name}`;
+
+  const msg = encodeURIComponent(`🧾 Recibo Oficial JunRide:\n🚗 Conductor: ${driver}\n💵 Tarifa: $${fare} USD (Bs. ${(fare * currentBcvRate).toFixed(2)})\n🛣️ Ruta: ${route}\n⭐ Calificación: ${currentRatingStars} Estrellas\nEstado: Viaje Completado con Seguridad Satelital 🏔️`);
   window.location.href = `https://wa.me/?text=${msg}`;
+}
+
+// ==============================================================
+// CONSULTA REAL DEL HISTORIAL DE CARRERAS (PESTAÑA VIAJES)
+// ==============================================================
+async function fetchUserTripHistory() {
+  const container = document.getElementById('history-cards-container');
+  const loading = document.getElementById('history-loading-msg');
+  const empty = document.getElementById('history-empty-msg');
+  if (!container) return;
+
+  if (loading) loading.style.display = 'block';
+  if (empty) empty.style.display = 'none';
+  container.innerHTML = '';
+
+  if (!db || !currentUserId) {
+    if (loading) loading.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+
+  try {
+    const isDriver = (userData && userData.role === 'driver');
+    const queryField = isDriver ? 'driverId' : 'clientId';
+
+    const snapshot = await db.collection('trips')
+      .where(queryField, '==', currentUserId)
+      .where('status', '==', 'Completado')
+      .get();
+
+    if (loading) loading.style.display = 'none';
+
+    if (snapshot.empty) {
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+
+    const trips = [];
+    snapshot.forEach(doc => {
+      trips.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Ordenar descendente por fecha
+    trips.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    trips.forEach(t => {
+      const stars = t.clientRating ? '★'.repeat(t.clientRating) + '☆'.repeat(5 - t.clientRating) : '★★★★★';
+      const commentHtml = t.clientComment ? `<div class="history-comment-box">"${t.clientComment}"</div>` : '';
+      const partnerName = isDriver ? (t.clientName || 'Pasajero') : (t.driverName || 'Conductor');
+      const partnerRole = isDriver ? 'Pasajero' : 'Chofer';
+      const fareUsd = parseFloat(t.price || 0).toFixed(2);
+      const fareBs = (fareUsd * currentBcvRate).toFixed(2);
+      const dateStr = t.createdAt ? (new Date(t.createdAt).toLocaleDateString() + ' ' + new Date(t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : 'Reciente';
+
+      container.innerHTML += `
+        <div class="history-trip-card">
+          <div class="history-card-header">
+            <div>
+              <span class="badge-tag-neon">${t.service || 'Carrera'}</span>
+              <strong style="margin-left:6px; font-size:0.85rem; color:#fff;">${partnerRole}: ${partnerName}</strong>
+            </div>
+            <span class="history-fare-badge">$${fareUsd} USD</span>
+          </div>
+
+          <div class="history-route-row">
+            <span>📍 ${t.pickup}</span>
+            <span style="color:var(--primary);">➔</span>
+            <span>🏁 ${t.dropoff}</span>
+          </div>
+
+          <div class="history-meta-row">
+            <span>📅 ${dateStr} (Bs. ${fareBs})</span>
+            <span class="history-rating-stars">${stars}</span>
+          </div>
+
+          ${commentHtml}
+        </div>
+      `;
+    });
+
+  } catch(err) {
+    console.warn("Error al cargar historial:", err);
+    if (loading) loading.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+  }
+}
+
+// ==============================================================
+// ESCUCHA DEL CHAT EN SEGUNDO PLANO (PUNTO ROJO & SONIDO REAL)
+// ==============================================================
+function startBackgroundChatListener(tripId) {
+  if (!db || !tripId) return;
+
+  if (backgroundChatUnsubscribe) {
+    backgroundChatUnsubscribe();
+  }
+
+  backgroundChatUnsubscribe = db.collection('trips').doc(tripId).collection('messages')
+    .orderBy('createdAt', 'desc')
+    .limit(1)
+    .onSnapshot(snapshot => {
+      if (snapshot.empty) return;
+
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        const isFromOtherPerson = (msg.senderId && msg.senderId !== currentUserId);
+
+        // Si el mensaje es de la otra persona y el modal de chat está CERRADO
+        if (isFromOtherPerson && !isChatModalOpen) {
+          playMessageNotificationSound();
+          showNeonToast('info', `💬 Nuevo mensaje de ${msg.senderName || 'tu chofer/pasajero'}`);
+
+          // Encender punto rojo en la tarjeta del viaje activo del chofer
+          const dotActiveBtn = document.getElementById('active-trip-unread-dot');
+          if (dotActiveBtn) dotActiveBtn.style.display = 'block';
+
+          // Encender punto rojo en el botón de chat del pasajero
+          const dotPassengerLive = document.getElementById('passenger-live-chat-dot');
+          if (dotPassengerLive) dotPassengerLive.style.display = 'block';
+
+          // Encender punto rojo en la barra inferior (Tab de Mensajes)
+          const dotBottom = document.getElementById('nav-unread-badge-driver');
+          if (dotBottom) dotBottom.style.display = 'block';
+        }
+      });
+    }, () => {});
 }
 
 function triggerAvatarUpload() {
@@ -908,7 +1131,7 @@ function handleAvatarFileSelected(event) {
 
       if (userData) {
         userData.avatar = compressedDataUrl;
-        localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
+        localStorage.setItem('jr_user_profile_v39', JSON.stringify(userData));
         if (currentUserId && db) {
           db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
         }
@@ -970,7 +1193,7 @@ function switchDriverMode() {
   triggerHaptic();
   if (!userData) return;
   userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v39', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('driver-panel');
@@ -981,7 +1204,7 @@ function switchPassengerMode() {
   triggerHaptic();
   if (!userData) return;
   userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_v39', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('inicio');
@@ -1061,387 +1284,13 @@ function switchTab(tabName) {
     if (dot) dot.style.display = 'none';
   }
 
+  // Al entrar a la pestaña Viajes, consultar el historial actualizado
+  if (tabName === 'historial') {
+    fetchUserTripHistory();
+  }
+
   renderDynamicBottomNav();
   window.scrollTo(0, 0);
-}
-
-function getUserCurrentLevel(tripsCount, isDriver = false) {
-  const levels = isDriver ? JUNRIDE_LEVELS_DRIVER : JUNRIDE_LEVELS_PASSENGER;
-  let current = levels[0];
-  let next = levels[1];
-  for (let i = 0; i < levels.length; i++) {
-    if (tripsCount >= levels[i].minTrips) {
-      current = levels[i];
-      next = levels[i + 1] || null;
-    }
-  }
-  return { current, next };
-}
-
-// ACTUALIZACIÓN DE UI BLINDADA (SIN CRASHES SI NO HAY USUARIO)
-function updateUIProfile() {
-  if (!userData) {
-    const pName = document.getElementById('profile-fullname');
-    if (pName) pName.innerText = '---';
-    const pTier = document.getElementById('profile-tier-name');
-    if (pTier) pTier.innerText = '---';
-    return;
-  }
-
-  try {
-    const kmBal = document.getElementById('ui-km-balance');
-    if (kmBal) kmBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
-    
-    const recBal = document.getElementById('recarga-km-val');
-    if (recBal) recBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
-
-    const profName = document.getElementById('profile-fullname');
-    if (profName) profName.innerText = `${userData.name || ''} ${userData.lastname || ''}`.trim() || 'Usuario';
-
-    const tagBal = document.getElementById('profile-wallet-balance-tag');
-    if (tagBal) tagBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
-
-    const refTag = document.getElementById('profile-referral-tag');
-    if (refTag) refTag.innerText = `Código: ${userData.referralCode || '---'}`;
-
-    if (userData.avatar) {
-      const avatarImg = document.getElementById('profile-avatar-img');
-      if (avatarImg) avatarImg.src = userData.avatar;
-    }
-
-    applyBatterySaverUI();
-
-    const isDriver = (userData.role === 'driver');
-    const driverMaintHud = document.getElementById('driver-maintenance-hud');
-    const passengerTierHud = document.getElementById('passenger-tier-hud');
-    const verifiedBadgeTag = document.getElementById('profile-driver-verified-tag');
-    const unverifiedWarn = document.getElementById('driver-unverified-warning');
-
-    if (isDriver) {
-      if (driverMaintHud) driverMaintHud.style.display = 'block';
-      if (passengerTierHud) passengerTierHud.style.display = 'none';
-      const vehTypeTag = document.getElementById('profile-driver-veh-type');
-      if (vehTypeTag) vehTypeTag.innerText = userData.vehicleType || 'Moto';
-      const plateTag = document.getElementById('profile-driver-plate-tag');
-      if (plateTag) plateTag.innerText = userData.vehiclePlate || 'S/P';
-
-      const isVerified = (userData.verifiedDriver === true);
-      if (verifiedBadgeTag) {
-        verifiedBadgeTag.innerText = isVerified ? 'Verificado ✓' : 'Pendiente';
-        verifiedBadgeTag.style.background = isVerified ? 'rgba(0,255,135,0.2)' : 'rgba(245,158,11,0.2)';
-        verifiedBadgeTag.style.color = isVerified ? 'var(--primary)' : '#fbbf24';
-      }
-      if (unverifiedWarn) unverifiedWarn.style.display = isVerified ? 'none' : 'block';
-
-      const redeemTitle = document.getElementById('profile-redeem-title');
-      if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo / Gasolina";
-      const levelsTitle = document.getElementById('profile-levels-title');
-      if (levelsTitle) levelsTitle.innerText = "Escala de Choferes JunRide";
-    } else {
-      if (driverMaintHud) driverMaintHud.style.display = 'none';
-      if (passengerTierHud) passengerTierHud.style.display = 'block';
-      if (unverifiedWarn) unverifiedWarn.style.display = 'none';
-
-      const redeemTitle = document.getElementById('profile-redeem-title');
-      if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo";
-      const levelsTitle = document.getElementById('profile-levels-title');
-      if (levelsTitle) levelsTitle.innerText = "Escala de Niveles JunRide";
-    }
-
-    const totalTrips = userData.totalTrips || 0;
-    const { current, next } = getUserCurrentLevel(totalTrips, isDriver);
-
-    const tierIconRight = document.getElementById('profile-tier-icon-right');
-    if (tierIconRight) tierIconRight.src = current.icon;
-
-    const tierName = document.getElementById('profile-tier-name');
-    if (tierName) tierName.innerText = isDriver ? `${current.name} (${userData.vehicleType || 'Moto'})` : `${current.name} (Nivel ${current.id})`;
-
-    const tierExpText = document.getElementById('profile-tier-exp-text');
-    const tierBar = document.getElementById('profile-tier-progress-bar');
-    if (next) {
-      const span = next.minTrips - current.minTrips;
-      const currentInTier = totalTrips - current.minTrips;
-      const pct = Math.min(100, Math.max(10, Math.round((currentInTier / span) * 100)));
-      if (tierExpText) tierExpText.innerText = `${totalTrips} / ${next.minTrips} Viajes para ${next.name}`;
-      if (tierBar) tierBar.style.width = `${pct}%`;
-    } else {
-      if (tierExpText) tierExpText.innerText = `${totalTrips} Viajes (Nivel Máximo)`;
-      if (tierBar) tierBar.style.width = `100%`;
-    }
-
-    const statTrips = document.getElementById('stats-total-trips');
-    if (statTrips) statTrips.innerText = totalTrips;
-
-    const statTokens = document.getElementById('stats-total-tokens');
-    if (statTokens) statTokens.innerText = (userData.tokens || 500).toLocaleString();
-
-    const headerBadge = document.getElementById('header-driver-badge');
-    if (headerBadge) {
-      headerBadge.style.display = isDriver ? 'flex' : 'none';
-    }
-
-    const earnVal = document.getElementById('driver-total-earnings-val');
-    if (earnVal) earnVal.innerText = `$${(userData.driverEarnings || 0).toFixed(2)}`;
-
-    const dTripsCount = document.getElementById('driver-trips-count-val');
-    if (dTripsCount) dTripsCount.innerText = `${userData.driverTripsCount || 0}`;
-
-    const commFee = document.getElementById('driver-commission-fee-val');
-    if (commFee) commFee.innerText = `$${((userData.driverEarnings || 0) * 0.10).toFixed(2)}`;
-
-    renderWalletLedger();
-  } catch(e) {
-    console.error("UI profile error:", e);
-  }
-}
-
-function renderLevelsBreakdownList() {
-  const container = document.getElementById('levels-list-container');
-  if (!container) return;
-  container.innerHTML = '';
-  const isDriver = (userData && userData.role === 'driver');
-  const levels = isDriver ? JUNRIDE_LEVELS_DRIVER : JUNRIDE_LEVELS_PASSENGER;
-  const totalTrips = (userData ? userData.totalTrips : 0) || 0;
-  const { current } = getUserCurrentLevel(totalTrips, isDriver);
-
-  const modalTitle = document.getElementById('levels-modal-main-title');
-  const modalDesc = document.getElementById('levels-modal-main-desc');
-  if (modalTitle) modalTitle.innerText = isDriver ? "🚗 Escala de Rangos para Conductores" : "🏔️ Escala de Rangos JunRide";
-  if (modalDesc) modalDesc.innerText = isDriver ? "Completa carreras para desbloquear recompensas en gasolina, equipamiento reflectivo y menor comisión." : "Completa carreras en la montaña para desbloquear rangos exclusivos y beneficios de tarifa.";
-
-  levels.forEach(lvl => {
-    const isCurrent = (current.id === lvl.id);
-    container.innerHTML += `
-      <div class="level-card-large ${isCurrent ? 'current-unlocked' : ''}">
-        <div class="level-trophy-large-wrap">
-          <img src="${lvl.icon}" alt="${lvl.name}">
-        </div>
-        <div class="level-info-body">
-          <div class="level-title-row">
-            <span class="level-title-text">${lvl.name}</span>
-            <span class="level-trips-req">${lvl.minTrips}+ viajes</span>
-          </div>
-          <p class="level-desc-text">${lvl.desc}</p>
-        </div>
-      </div>
-    `;
-  });
-}
-
-function openLevelsModal() { 
-  triggerHaptic();
-  renderLevelsBreakdownList();
-  document.getElementById('modal-levels-breakdown').classList.add('active'); 
-}
-function closeLevelsModal() { document.getElementById('modal-levels-breakdown').classList.remove('active'); }
-
-async function fetchBCVRate(manual = false) {
-  if (manual) triggerHaptic();
-  const badge = document.getElementById('bcv-rate-val');
-  if (manual && badge) badge.innerText = "Cargando...";
-
-  let rateFound = null;
-  try {
-    const res = await fetch('https://rates.dolarvzla.com/bcv/current.json', { cache: 'no-cache' });
-    const data = await res.json();
-    if (data && data.current && data.current.usd) rateFound = parseFloat(data.current.usd);
-    else if (data && data.price) rateFound = parseFloat(data.price);
-  } catch (e) {}
-
-  if (!rateFound) {
-    try {
-      const res2 = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', { cache: 'no-cache' });
-      const data2 = await res2.json();
-      if (data2 && data2.promedio) rateFound = parseFloat(data2.promedio);
-    } catch (e2) {}
-  }
-
-  if (rateFound && !isNaN(rateFound)) {
-    currentBcvRate = rateFound;
-    localStorage.setItem('jr_last_bcv_rate', rateFound.toString());
-  }
-  if (badge) badge.innerText = `${currentBcvRate.toFixed(2)} Bs.`;
-  const ordBcv = document.getElementById('order-bcv-val');
-  if (ordBcv) ordBcv.innerText = `${currentBcvRate.toFixed(2)} Bs.`;
-  calculateRouteOrder();
-}
-
-function renderRechargeDetails(method) {
-  const logoEl = document.getElementById('pay-current-logo');
-  const titleEl = document.getElementById('pay-method-title');
-  const container = document.getElementById('pay-fields-container');
-  const lblRef = document.getElementById('lbl-recharge-ref');
-  const lblAmount = document.getElementById('lbl-recharge-amount');
-  if (!container) return;
-
-  if (method === 'bdv') {
-    if (logoEl) logoEl.src = "https://files.catbox.moe/m27j7r.png";
-    if (titleEl) titleEl.innerText = "Pago Móvil Banco de Venezuela";
-    if (lblRef) lblRef.innerText = "Últimos 6 dígitos de la referencia:";
-    if (lblAmount) lblAmount.innerText = "Monto pagado en Bs.:";
-    container.innerHTML = `
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Banco Destino:</span><div style="font-size:0.85rem; font-weight:700;">Banco de Venezuela (0102)</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('0102', 'Código Banco')">Copiar</button>
-      </div>
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Teléfono:</span><div style="font-size:0.85rem; font-weight:700;">0412-3167126</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('04123167126', 'Teléfono')">Copiar</button>
-      </div>
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Cédula de Identidad:</span><div style="font-size:0.85rem; font-weight:700;">30.629.336</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('30629336', 'Cédula')">Copiar</button>
-      </div>`;
-  } else if (method === 'zinli') {
-    if (logoEl) logoEl.src = "https://files.catbox.moe/24w3zq.png";
-    if (titleEl) titleEl.innerText = "Transferencia Zinli (Dólares USD)";
-    if (lblRef) lblRef.innerText = "Referencia / Comprobante de Zinli:";
-    if (lblAmount) lblAmount.innerText = "Monto enviado en USD ($):";
-    container.innerHTML = `
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Correo Oficial Zinli:</span><div style="font-size:0.85rem; font-weight:700;">davidjunride@gmail.com</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('davidjunride@gmail.com', 'Correo Zinli')">Copiar</button>
-      </div>
-      <div class="pay-detail-row"><div><span style="font-size:0.72rem; color:var(--text-muted);">Titular:</span><div style="font-size:0.85rem; font-weight:700;">David Morales</div></div></div>`;
-  } else if (method === 'binance') {
-    if (logoEl) logoEl.src = "https://files.catbox.moe/0amryl.png";
-    if (titleEl) titleEl.innerText = "Binance Pay (USDT)";
-    if (lblRef) lblRef.innerText = "Binance Order ID / Pay ID:";
-    if (lblAmount) lblAmount.innerText = "Monto enviado en USDT:";
-    container.innerHTML = `
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Binance Pay ID:</span><div style="font-size:0.85rem; font-weight:700;">521126834</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('521126834', 'Binance Pay ID')">Copiar</button>
-      </div>
-      <div class="pay-detail-row"><div><span style="font-size:0.72rem; color:var(--text-muted);">Usuario:</span><div style="font-size:0.85rem; font-weight:700;">David M. (JunRide)</div></div></div>`;
-  }
-}
-
-function selectRechargeMethod(method) {
-  triggerHaptic();
-  selectedRechargeMethodKey = method;
-  document.querySelectorAll('.recharge-brand-card').forEach(c => c.classList.remove('active'));
-  const btn = document.getElementById(`btn-pay-${method}`);
-  if (btn) btn.classList.add('active');
-  renderRechargeDetails(method);
-}
-
-function copyToClipboard(txt, label) {
-  triggerHaptic();
-  const tempTextArea = document.createElement('textarea');
-  tempTextArea.value = txt;
-  document.body.appendChild(tempTextArea);
-  tempTextArea.select();
-  try {
-    document.execCommand('copy');
-    showNeonToast('success', `¡${label} copiado con éxito!`);
-  } catch(e) {
-    showNeonToast('error', `Error al copiar ${label}.`);
-  }
-  document.body.removeChild(tempTextArea);
-}
-
-function verifyPaymentReference(e) {
-  e.preventDefault();
-  triggerHaptic(50);
-  if (!userData) return;
-  const ref = document.getElementById('pay-ref-input').value.trim();
-  const amount = parseFloat(document.getElementById('pay-amount-input').value);
-  let usdVal = amount;
-  if (selectedRechargeMethodKey === 'bdv') usdVal = (amount / currentBcvRate);
-  
-  userData.kmBalance = (userData.kmBalance || 0) + usdVal;
-  logWalletMovement('credit', `Recarga ${selectedRechargeMethodKey.toUpperCase()} (#${ref})`, usdVal);
-  updateUIProfile();
-  showNeonToast('success', `✅ ¡Recarga acreditada por $${usdVal.toFixed(2)} USD!`);
-  e.target.reset();
-}
-
-function logWalletMovement(type, title, amount) {
-  if (!userData) return;
-  if (!userData.walletLedger) userData.walletLedger = [];
-  userData.walletLedger.unshift({
-    type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
-  });
-  localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
-  renderWalletLedger();
-}
-
-function renderWalletLedger() {
-  const container = document.getElementById('wallet-ledger-list');
-  if (!container) return;
-  const ledger = userData ? (userData.walletLedger || []) : [];
-  container.innerHTML = '';
-  ledger.slice(0, 5).forEach(item => {
-    let sign = item.type === 'debit' ? '-' : '+';
-    let color = item.type === 'debit' ? '#ef4444' : '#00ff87';
-    container.innerHTML += `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:6px; font-size:0.78rem;">
-        <div><strong>${item.title}</strong><p style="font-size:0.68rem; color:#94a3b8;">${item.date}</p></div>
-        <strong style="color:${color};">${sign}$${item.amount.toFixed(2)}</strong>
-      </div>`;
-  });
-}
-
-function toggleStopInput() {
-  triggerHaptic();
-  hasIntermediateStop = !hasIntermediateStop;
-  const stopBox = document.getElementById('stop-row-box');
-  if (stopBox) stopBox.style.display = hasIntermediateStop ? 'block' : 'none';
-  calculateRouteOrder();
-}
-
-function adjustSeats(delta) {
-  triggerHaptic();
-  coSharedSeats = Math.max(1, Math.min(4, coSharedSeats + delta));
-  const seatsVal = document.getElementById('seats-count-val');
-  if (seatsVal) seatsVal.innerText = coSharedSeats;
-  calculateRouteOrder();
-}
-
-function openRideOrderScreen(category = 'Carro') {
-  triggerHaptic();
-  if (!userData) {
-    openAuthModal('register');
-    return;
-  }
-  selectedOrderCategory = category;
-  document.getElementById('screen-ride-order').classList.add('active');
-  selectOrderVehicle(category);
-  setTimeout(() => {
-    initOrderMap();
-    calculateRouteOrder();
-  }, 150);
-}
-
-function closeRideOrderScreen() {
-  triggerHaptic();
-  document.getElementById('screen-ride-order').classList.remove('active');
-}
-
-function selectOrderVehicle(cat) {
-  triggerHaptic(20);
-  selectedOrderCategory = cat;
-  document.querySelectorAll('.order-veh-chip').forEach(el => el.classList.remove('selected'));
-  if (cat === 'Carro') document.getElementById('chip-carro').classList.add('selected');
-  else if (cat === 'Moto') document.getElementById('chip-moto').classList.add('selected');
-  else if (cat === 'Colectivo') document.getElementById('chip-puesto').classList.add('selected');
-  else if (cat === 'Carga') document.getElementById('chip-carga').classList.add('selected');
-  
-  const seatsBox = document.getElementById('seats-selector-box');
-  if (seatsBox) seatsBox.style.display = (cat === 'Colectivo') ? 'flex' : 'none';
-
-  const radarIcon = document.getElementById('radar-vehicle-icon');
-  if (radarIcon) {
-    if (cat === 'Carro') radarIcon.src = 'https://files.catbox.moe/lkxyw7.png';
-    else if (cat === 'Moto') radarIcon.src = 'https://files.catbox.moe/xriwyl.png';
-    else if (cat === 'Colectivo') radarIcon.src = 'https://files.catbox.moe/w6c0q9.png';
-    else if (cat === 'Carga') radarIcon.src = 'https://files.catbox.moe/bjsczm.png';
-  }
-
-  listenRealDriversInZone();
-  calculateRouteOrder();
 }
 
 function createNeonPinIcon(label) {
@@ -1699,7 +1548,7 @@ async function confirmOrderTrip() {
     price: offeredOrderPrice.toFixed(2),
     otp: otpCode,
     status: 'Buscando conductor',
-    createdAt: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+    createdAt: new Date().toISOString()
   };
 
   if (db) {
@@ -1708,6 +1557,7 @@ async function confirmOrderTrip() {
       activeTripId = docRef.id;
       localStorage.setItem('jr_active_trip_id', activeTripId);
       showNeonToast('success', '📡 Solicitud transmitida a todos los choferes.');
+      startBackgroundChatListener(activeTripId);
     } catch(err) {
       activeTripId = 'offline_' + Date.now();
       localStorage.setItem('jr_active_trip_id', activeTripId);
@@ -1745,6 +1595,11 @@ async function cancelTrip(isManual = false) {
     localStorage.removeItem('jr_driver_active_trip_cache');
     activeTripId = null;
     currentTripData = null;
+
+    if (backgroundChatUnsubscribe) {
+      backgroundChatUnsubscribe();
+      backgroundChatUnsubscribe = null;
+    }
 
     document.getElementById('search-radar-box').style.display = 'none';
     document.getElementById('order-form-controls').style.display = 'block';
@@ -1931,13 +1786,14 @@ async function completeActiveTripDriver() {
     userData.driverEarnings = (userData.driverEarnings || 0) + netEarnings;
     userData.driverTripsCount = (userData.driverTripsCount || 0) + 1;
     userData.totalTrips = (userData.totalTrips || 0) + 1;
-    localStorage.setItem('jr_user_profile_v38', JSON.stringify(userData));
+    localStorage.setItem('jr_user_profile_v39', JSON.stringify(userData));
     updateUIProfile();
   }
 
   if (db && activeTripId) {
     await db.collection('trips').doc(activeTripId).update({
-      status: 'Completado'
+      status: 'Completado',
+      completedAt: new Date().toISOString()
     }).catch(() => {});
   }
 
@@ -1947,6 +1803,8 @@ async function completeActiveTripDriver() {
   document.getElementById('driver-active-trip-box').style.display = 'none';
   localStorage.removeItem('jr_active_trip_id');
   localStorage.removeItem('jr_driver_active_trip_cache');
+  
+  fetchUserTripHistory();
   activeTripId = null;
   currentTripData = null;
   fetchPendingTripsForDriver();
@@ -1962,10 +1820,13 @@ function openActiveChatModal() {
   isChatModalOpen = true;
   document.getElementById('modal-active-chat').classList.add('active');
   
+  // Limpiar todos los puntos rojos de alerta de mensaje
   const dotBottom = document.getElementById('nav-unread-badge-driver');
   if (dotBottom) dotBottom.style.display = 'none';
   const dotActiveBtn = document.getElementById('active-trip-unread-dot');
   if (dotActiveBtn) dotActiveBtn.style.display = 'none';
+  const dotPassengerLive = document.getElementById('passenger-live-chat-dot');
+  if (dotPassengerLive) dotPassengerLive.style.display = 'none';
 
   listenChatMessagesRealtime();
 }
@@ -1999,7 +1860,7 @@ async function sendChatMessageText() {
     senderName: senderName,
     text: text,
     type: 'text',
-    createdAt: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+    createdAt: new Date().toISOString()
   }).catch(() => {});
 
   input.value = '';
@@ -2032,7 +1893,7 @@ async function toggleAudioRecording() {
               senderName: `${userData.name || 'Usuario'} ${userData.lastname || ''}`.trim(),
               audioData: base64Audio,
               type: 'audio',
-              createdAt: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+              createdAt: new Date().toISOString()
             }).catch(() => {});
             showNeonToast('success', '🎤 Nota de voz enviada.');
           }
@@ -2085,16 +1946,6 @@ function listenChatMessagesRealtime() {
         `;
       }
       container.appendChild(bubble);
-
-      if (!isMe && !isChatModalOpen) {
-        const dotBottom = document.getElementById('nav-unread-badge-driver');
-        if (dotBottom) dotBottom.style.display = 'block';
-        const dotActiveBtn = document.getElementById('active-trip-unread-dot');
-        if (dotActiveBtn) dotActiveBtn.style.display = 'block';
-
-        playMessageNotificationSound();
-        showNeonToast('info', `💬 Nuevo mensaje de ${msg.senderName}`);
-      }
     });
 
     container.scrollTop = container.scrollHeight;
@@ -2194,11 +2045,14 @@ function listenTripsRealtime() {
       const trip = doc.data();
       const tripId = doc.id;
 
+      // CHOFER: VIAJE ASIGNADO O EN TRAYECTO
       if (trip.driverId === currentUserId && (trip.status === 'Conductor asignado' || trip.status === 'En trayecto')) {
         activeTripId = tripId;
         currentTripData = { ...trip, id: tripId };
         localStorage.setItem('jr_active_trip_id', tripId);
         localStorage.setItem('jr_driver_active_trip_cache', JSON.stringify(currentTripData));
+
+        startBackgroundChatListener(tripId);
 
         const tripBox = document.getElementById('driver-active-trip-box');
         if (tripBox) {
@@ -2215,8 +2069,9 @@ function listenTripsRealtime() {
         }
       }
 
+      // PASAJERO: VIAJE ASIGNADO, EN TRAYECTO O COMPLETADO
       if (activeTripId === tripId && userData.role === 'passenger') {
-        currentTripData = trip;
+        currentTripData = { ...trip, id: tripId };
 
         if (trip.status === 'Conductor asignado') {
           closeRideOrderScreen();
@@ -2224,13 +2079,18 @@ function listenTripsRealtime() {
           document.getElementById('passenger-trip-status-title').innerText = '🛰️ Conductor Asignado (En camino)';
           document.getElementById('live-driver-name').innerText = trip.driverName || 'Conductor Asignado';
           document.getElementById('trip-fare-val').innerText = trip.price;
+          startBackgroundChatListener(tripId);
         } else if (trip.status === 'En trayecto') {
           document.getElementById('passenger-trip-status-title').innerText = '🟢 En Trayecto hacia el Destino';
           document.getElementById('live-driver-name').innerText = 'Viaje en curso con seguridad satelital';
         } else if (trip.status === 'Completado') {
           document.getElementById('live-tracking-box').style.display = 'none';
           showNeonToast('success', '🏁 ¡Has llegado a tu destino! Gracias por viajar con JunRide.');
-          openReceiptModal();
+          
+          // Abrir modal de comprobante interactivo con calificación y reseña pública
+          openReceiptModal(currentTripData);
+
+          fetchUserTripHistory();
           activeTripId = null;
           localStorage.removeItem('jr_offline_active_trip');
           localStorage.removeItem('jr_active_trip_id');
@@ -2268,12 +2128,15 @@ async function acceptTrip(tripId) {
       status: 'Conductor asignado',
       driverId: currentUserId,
       driverName: `${userData.name || 'Chofer'} ${userData.lastname || ''}`.trim(),
-      driverPhone: userData.phone
+      driverPhone: userData.phone,
+      driverVehicle: `${userData.vehicleType || 'Moto'} (${userData.vehiclePlate || 'S/P'})`
     }).catch(() => {});
   }
 
   speakDriverAlert("Carrera aceptada. Dirígete a recoger al pasajero.");
   showNeonToast('success', '✅ ¡Carrera aceptada! Dirígete al origen.');
+
+  startBackgroundChatListener(tripId);
 
   const driverList = document.getElementById('driver-requests-list');
   if (driverList) driverList.innerHTML = '';
@@ -2284,7 +2147,7 @@ async function acceptTrip(tripId) {
 
 function logout() {
   triggerHaptic(40);
-  localStorage.removeItem('jr_user_profile_v38');
+  localStorage.removeItem('jr_user_profile_v39');
   localStorage.removeItem('jr_session_uid');
   localStorage.removeItem('jr_active_trip_id');
   localStorage.removeItem('jr_driver_active_trip_cache');
