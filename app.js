@@ -203,7 +203,7 @@ function checkSessionAndAuth() {
   const welcomeScreen = document.getElementById('screen-welcome');
   const roleSelectScreen = document.getElementById('screen-role-select');
   const mainApp = document.getElementById('app-main-interface');
-  const saved = localStorage.getItem('jr_user_profile_data_v40');
+  const saved = localStorage.getItem('jr_user_profile_data_v41');
 
   if (saved && currentUserId) {
     try {
@@ -231,7 +231,7 @@ function checkSessionAndAuth() {
 
   userData = null;
   currentUserId = null;
-  localStorage.removeItem('jr_user_profile_data_v40');
+  localStorage.removeItem('jr_user_profile_data_v41');
   localStorage.removeItem('jr_session_uid');
 
   if (mainApp) mainApp.style.setProperty('display', 'none', 'important');
@@ -245,7 +245,7 @@ function syncUserWithFirestore() {
     if (doc.exists) {
       const remote = doc.data();
       userData = { ...userData, ...remote };
-      localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
       updateUIProfile();
     }
   }).catch(() => {});
@@ -303,7 +303,7 @@ async function handleAuthSubmit(e) {
   submitBtn.disabled = true;
   submitBtn.innerText = 'Verificando con el servidor...';
 
-  // 1. REGISTRO (PARÁMETROS DE BIENVENIDA ACTUALIZADOS: $1.00 USD Y 100 TOKENS)
+  // 1. REGISTRO (ROLES AISLADOS: PASAJERO Y CHOFER INDEPENDIENTES)
   if (authCurrentMode === 'register') {
     const name = document.getElementById('auth-input-name').value.trim();
     const lastname = document.getElementById('auth-input-lastname').value.trim();
@@ -354,13 +354,21 @@ async function handleAuthSubmit(e) {
       role: 'passenger',
       isRegistered: false,
       verifiedDriver: false,
-      kmBalance: 1.00, // Bono actualizado: $1.00 USD
+      kmBalance: 1.00, // Bono de bienvenida inicial de $1.00 USD
+      
+      // DATOS AISLADOS DE PASAJERO
+      passengerTrips: 0,
+      passengerTokens: 100, // Tokens iniciales de pasajero
+      passengerRating: 5.00,
+      passengerRatingCount: 1,
+
+      // DATOS AISLADOS DE CHOFER
       driverEarnings: 0.00,
-      driverTripsCount: 0,
-      totalTrips: 0,
-      tokens: 100, // Tokens iniciales actualizados: 100 Tokens
-      rating: 5.00,
-      ratingCount: 1,
+      driverTrips: 0,
+      driverTokens: 100, // Tokens iniciales de chofer
+      driverRating: 5.00,
+      driverRatingCount: 1,
+
       avatar: 'https://files.catbox.moe/oh53r9.png',
       batterySaver: false,
       createdAt: new Date().toISOString(),
@@ -419,18 +427,26 @@ async function handleAuthSubmit(e) {
         vehicleModel: userDoc.vehicleModel || 'S/M',
         vehiclePlate: userDoc.vehiclePlate || 'S/P',
         kmBalance: typeof userDoc.kmBalance === 'number' ? userDoc.kmBalance : 1.00,
+        
+        // RECUPERACIÓN ESTRICTA Y AISLADA DE PASAJERO
+        passengerTrips: typeof userDoc.passengerTrips === 'number' ? userDoc.passengerTrips : (userDoc.totalTrips || 0),
+        passengerTokens: typeof userDoc.passengerTokens === 'number' ? userDoc.passengerTokens : (userDoc.tokens || 100),
+        passengerRating: typeof userDoc.passengerRating === 'number' ? userDoc.passengerRating : 5.00,
+        passengerRatingCount: userDoc.passengerRatingCount || 1,
+
+        // RECUPERACIÓN ESTRICTA Y AISLADA DE CHOFER
         driverEarnings: typeof userDoc.driverEarnings === 'number' ? userDoc.driverEarnings : 0.00,
-        driverTripsCount: userDoc.driverTripsCount || 0,
-        totalTrips: userDoc.totalTrips || 0,
-        tokens: typeof userDoc.tokens === 'number' ? userDoc.tokens : 100,
-        rating: typeof userDoc.rating === 'number' ? userDoc.rating : 5.00,
-        ratingCount: userDoc.ratingCount || 1,
+        driverTrips: typeof userDoc.driverTrips === 'number' ? userDoc.driverTrips : (userDoc.driverTripsCount || 0),
+        driverTokens: typeof userDoc.driverTokens === 'number' ? userDoc.driverTokens : 100,
+        driverRating: typeof userDoc.driverRating === 'number' ? userDoc.driverRating : (userDoc.rating || 5.00),
+        driverRatingCount: userDoc.driverRatingCount || 1,
+
         avatar: userDoc.avatar || 'https://files.catbox.moe/oh53r9.png',
         batterySaver: userDoc.batterySaver || false,
         walletLedger: userDoc.walletLedger || [{ type: 'credit', title: 'Cuenta Restaurada', amount: 1.00, date: 'Hoy' }]
       };
 
-      localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
 
       submitBtn.disabled = false;
       closeAuthModal();
@@ -460,7 +476,7 @@ function chooseAppRole(role) {
     document.getElementById('modal-driver-vehicle-setup').classList.add('active');
   } else {
     userData.isRegistered = true;
-    localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
+    localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
     document.getElementById('screen-role-select').style.display = 'none';
     launchMainApplication();
   }
@@ -486,7 +502,7 @@ function finishDriverRegistration() {
   userData.vehiclePlate = vehPlate;
   userData.verifiedDriver = false;
 
-  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
   document.getElementById('modal-driver-vehicle-setup').classList.remove('active');
   launchMainApplication();
   switchTab('driver-panel');
@@ -780,29 +796,33 @@ function shareLiveTripStatus() {
 function redeemTokensForWallet() {
   triggerHaptic();
   if (!userData) return;
-  const tokens = userData.tokens || 0;
+  const isDriver = (userData.role === 'driver');
+  const tokens = isDriver ? (userData.driverTokens || 0) : (userData.passengerTokens || 0);
+
   if (tokens < 1000) {
     showNeonToast('warning', 'Necesitas al menos 1,000 tokens para canjear ($1.00 USD).');
     return;
   }
   const dollarsToAdd = Math.floor(tokens / 1000);
   const tokensUsed = dollarsToAdd * 1000;
-  userData.tokens -= tokensUsed;
 
-  if (userData.role === 'driver') {
+  if (isDriver) {
+    userData.driverTokens -= tokensUsed;
     userData.driverEarnings = (userData.driverEarnings || 0) + dollarsToAdd;
     showNeonToast('success', `🎉 ¡Tokens canjeados por +$${dollarsToAdd}.00 USD acreditados a tus ganancias netas!`);
   } else {
+    userData.passengerTokens -= tokensUsed;
     userData.kmBalance = (userData.kmBalance || 0) + dollarsToAdd;
     showNeonToast('success', `🎉 ¡Canje exitoso! Se acreditaron +$${dollarsToAdd}.00 USD a tu Cartera Digital.`);
   }
 
-  logWalletMovement('credit', `Canje de ${tokensUsed} Tokens`, dollarsToAdd);
+  logWalletMovement('credit', `Canje de ${tokensUsed} Tokens (${isDriver ? 'Chofer' : 'Pasajero'})`, dollarsToAdd);
 
   // PERSISTENCIA INMEDIATA EN FIRESTORE
   if (db && currentUserId) {
     db.collection('users').doc(currentUserId).update({
-      tokens: userData.tokens,
+      passengerTokens: userData.passengerTokens || 0,
+      driverTokens: userData.driverTokens || 0,
       kmBalance: userData.kmBalance,
       driverEarnings: userData.driverEarnings || 0,
       walletLedger: userData.walletLedger
@@ -823,7 +843,7 @@ function toggleBatterySaverMode() {
   triggerHaptic();
   if (!userData) return;
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -959,14 +979,14 @@ async function submitTripRatingAndReview() {
         const driverDoc = await driverRef.get();
         if (driverDoc.exists) {
           const dData = driverDoc.data();
-          const prevCount = dData.ratingCount || 1;
-          const prevRating = dData.rating || 5.0;
+          const prevCount = dData.driverRatingCount || 1;
+          const prevRating = dData.driverRating || 5.0;
           const newCount = prevCount + 1;
           const newRating = Number(((prevRating * prevCount + currentRatingStars) / newCount).toFixed(2));
 
           await driverRef.update({
-            rating: newRating,
-            ratingCount: newCount
+            driverRating: newRating,
+            driverRatingCount: newCount
           });
         }
       }
@@ -990,7 +1010,9 @@ function shareReceiptWhatsApp() {
   window.location.href = `https://wa.me/?text=${msg}`;
 }
 
-// CONSULTA REAL DEL HISTORIAL DE CARRERAS
+// ==============================================================
+// HISTORIAL DE VIAJES DEL PASAJERO
+// ==============================================================
 async function fetchUserTripHistory() {
   const container = document.getElementById('history-cards-container');
   const loading = document.getElementById('history-loading-msg');
@@ -1008,11 +1030,8 @@ async function fetchUserTripHistory() {
   }
 
   try {
-    const isDriver = (userData.role === 'driver');
-    const queryField = isDriver ? 'driverId' : 'clientId';
-
     const snapshot = await db.collection('trips')
-      .where(queryField, '==', currentUserId)
+      .where('clientId', '==', currentUserId)
       .where('status', '==', 'Completado')
       .get();
 
@@ -1028,23 +1047,22 @@ async function fetchUserTripHistory() {
       trips.push({ id: doc.id, ...doc.data() });
     });
 
-    trips.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    trips.sort((a, b) => new Date(b.completedAt || b.createdAt || 0) - new Date(a.completedAt || a.createdAt || 0));
 
     trips.forEach(t => {
       const stars = t.clientRating ? '★'.repeat(t.clientRating) + '☆'.repeat(5 - t.clientRating) : '★★★★★';
       const commentHtml = t.clientComment ? `<div class="history-comment-box">"${t.clientComment}"</div>` : '';
-      const partnerName = isDriver ? (t.clientName || 'Pasajero') : (t.driverName || 'Conductor');
-      const partnerRole = isDriver ? 'Pasajero' : 'Chofer';
+      const driverName = t.driverName || 'Conductor';
       const fareUsd = parseFloat(t.price || 0).toFixed(2);
       const fareBs = (fareUsd * currentBcvRate).toFixed(2);
-      const dateStr = t.createdAt ? (new Date(t.createdAt).toLocaleDateString() + ' ' + new Date(t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : 'Reciente';
+      const dateStr = t.completedAt || t.createdAt ? (new Date(t.completedAt || t.createdAt).toLocaleDateString() + ' ' + new Date(t.completedAt || t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : 'Reciente';
 
       container.innerHTML += `
         <div class="history-trip-card">
           <div class="history-card-header">
             <div>
               <span class="badge-tag-neon">${t.service || 'Carrera'}</span>
-              <strong style="margin-left:6px; font-size:0.85rem; color:#fff;">${partnerRole}: ${partnerName}</strong>
+              <strong style="margin-left:6px; font-size:0.85rem; color:#fff;">Chofer: ${driverName}</strong>
             </div>
             <span class="history-fare-badge">$${fareUsd} USD</span>
           </div>
@@ -1066,523 +1084,81 @@ async function fetchUserTripHistory() {
     });
 
   } catch(err) {
-    console.warn("Error al cargar historial:", err);
+    console.warn("Error al cargar historial del pasajero:", err);
     if (loading) loading.style.display = 'none';
     if (empty) empty.style.display = 'block';
   }
 }
 
-// ESCUCHA DEL CHAT EN SEGUNDO PLANO
-function startBackgroundChatListener(tripId) {
-  if (!db || !tripId || !userData) return;
+// ==============================================================
+// HISTORIAL DE CARRERAS CONDUCIDAS DEL CHOFER (REGISTRO DETALLADO)
+// ==============================================================
+async function fetchDriverTripHistory() {
+  const container = document.getElementById('driver-completed-rides-list');
+  if (!container) return;
 
-  if (backgroundChatUnsubscribe) {
-    backgroundChatUnsubscribe();
-  }
-
-  backgroundChatUnsubscribe = db.collection('trips').doc(tripId).collection('messages')
-    .orderBy('createdAt', 'desc')
-    .limit(1)
-    .onSnapshot(snapshot => {
-      if (snapshot.empty) return;
-
-      snapshot.forEach(doc => {
-        const msg = doc.data();
-        const isFromOtherPerson = (msg.senderId && msg.senderId !== currentUserId);
-
-        if (isFromOtherPerson && !isChatModalOpen) {
-          playMessageNotificationSound();
-          showNeonToast('info', `💬 Nuevo mensaje de ${msg.senderName || 'tu chofer/pasajero'}`);
-
-          const dotActiveBtn = document.getElementById('active-trip-unread-dot');
-          if (dotActiveBtn) dotActiveBtn.style.display = 'block';
-
-          const dotPassengerLive = document.getElementById('passenger-live-chat-dot');
-          if (dotPassengerLive) dotPassengerLive.style.display = 'block';
-
-          const dotBottom = document.getElementById('nav-unread-badge-driver');
-          if (dotBottom) dotBottom.style.display = 'block';
-        }
-      });
-    }, () => {});
-}
-
-function triggerAvatarUpload() {
-  triggerHaptic();
-  document.getElementById('profile-avatar-input').click();
-}
-
-function handleAvatarFileSelected(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement('canvas');
-      const maxDim = 256;
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height) {
-        if (width > maxDim) { height *= maxDim / width; width = maxDim; }
-      } else {
-        if (height > maxDim) { width *= maxDim / height; height = maxDim; }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-
-      if (userData) {
-        userData.avatar = compressedDataUrl;
-        localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
-        if (currentUserId && db) {
-          db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
-        }
-        updateUIProfile();
-      }
-      showNeonToast('success', 'Foto de perfil actualizada con éxito.');
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function playChimeSound() {
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.4);
-  } catch(e) {}
-}
-
-function playMessageNotificationSound() {
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-    osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.3);
-  } catch(e) {}
-}
-
-function speakDriverAlert(text) {
-  playChimeSound();
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-ES';
-    utterance.rate = 1.0;
-    window.speechSynthesis.speak(utterance);
-  }
-}
-
-function switchDriverMode() {
-  triggerHaptic();
-  if (!userData) return;
-  userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
-  updateUIProfile();
-  renderDynamicBottomNav();
-  switchTab('driver-panel');
-  speakDriverAlert("Modo chofer activado");
-}
-
-function switchPassengerMode() {
-  triggerHaptic();
-  if (!userData) return;
-  userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
-  updateUIProfile();
-  renderDynamicBottomNav();
-  switchTab('inicio');
-  speakDriverAlert("Modo pasajero activado");
-}
-
-function handleHeaderHomeClick() {
-  triggerHaptic();
-  if (userData && userData.role === 'driver') switchTab('driver-panel');
-  else switchTab('inicio');
-}
-
-function renderDynamicBottomNav() {
-  const navContainer = document.getElementById('dynamic-bottom-nav');
-  if (!navContainer || !userData) return;
-  const isDriver = (userData.role === 'driver');
-
-  if (isDriver) {
-    navContainer.innerHTML = `
-      <button class="nav-item-btn ${currentTab === 'driver-panel' ? 'active' : ''}" onclick="switchTab('driver-panel')">
-        <div class="nav-active-pill"></div>
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
-        <small>Tablero</small>
-      </button>
-      <button class="nav-item-btn ${currentTab === 'driver-ganancias' ? 'active' : ''}" onclick="switchTab('driver-ganancias')">
-        <div class="nav-active-pill"></div>
-        <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
-        <small>Ganancias</small>
-      </button>
-      <button class="nav-item-btn ${currentTab === 'driver-mensajes' ? 'active' : ''}" onclick="switchTab('driver-mensajes')">
-        <div class="nav-active-pill"></div>
-        <div class="nav-unread-dot" id="nav-unread-badge-driver"></div>
-        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
-        <small>Mensajes</small>
-      </button>
-      <button class="nav-item-btn ${currentTab === 'perfil' ? 'active' : ''}" onclick="switchTab('perfil')">
-        <div class="nav-active-pill"></div>
-        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-        <small>Perfil</small>
-      </button>
-    `;
-  } else {
-    navContainer.innerHTML = `
-      <button class="nav-item-btn ${currentTab === 'inicio' ? 'active' : ''}" onclick="switchTab('inicio')">
-        <div class="nav-active-pill"></div>
-        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-        <small>Inicio</small>
-      </button>
-      <button class="nav-item-btn ${currentTab === 'recargas' ? 'active' : ''}" onclick="switchTab('recargas')">
-        <div class="nav-active-pill"></div>
-        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-        <small>Pagos</small>
-      </button>
-      <button class="nav-item-btn ${currentTab === 'historial' ? 'active' : ''}" onclick="switchTab('historial')">
-        <div class="nav-active-pill"></div>
-        <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-        <small>Viajes</small>
-      </button>
-      <button class="nav-item-btn ${currentTab === 'perfil' ? 'active' : ''}" onclick="switchTab('perfil')">
-        <div class="nav-active-pill"></div>
-        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-        <small>Perfil</small>
-      </button>
-    `;
-  }
-}
-
-function switchTab(tabName) {
-  triggerHaptic(25);
-  currentTab = tabName;
-  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-  const targetTab = document.getElementById(`tab-${tabName}`);
-  if (targetTab) targetTab.style.display = 'block';
-
-  if (tabName === 'driver-mensajes') {
-    const dot = document.getElementById('nav-unread-badge-driver');
-    if (dot) dot.style.display = 'none';
-  }
-
-  if (tabName === 'historial') {
-    fetchUserTripHistory();
-  }
-
-  renderDynamicBottomNav();
-  window.scrollTo(0, 0);
-}
-
-function getUserCurrentLevel(tripsCount, isDriver = false) {
-  const levels = isDriver ? JUNRIDE_LEVELS_DRIVER : JUNRIDE_LEVELS_PASSENGER;
-  let current = levels[0];
-  let next = levels[1];
-  for (let i = 0; i < levels.length; i++) {
-    if (tripsCount >= levels[i].minTrips) {
-      current = levels[i];
-      next = levels[i + 1] || null;
-    }
-  }
-  return { current, next };
-}
-
-// ACTUALIZACIÓN DE UI BLINDADA CON SUSPENSIÓN POR RATING < 3.0
-function updateUIProfile() {
-  if (!userData) {
-    const pName = document.getElementById('profile-fullname');
-    if (pName) pName.innerText = '---';
-    const pTier = document.getElementById('profile-tier-name');
-    if (pTier) pTier.innerText = '---';
+  if (!db || !currentUserId || !userData) {
+    container.innerHTML = '<p style="font-size:0.78rem; color:var(--text-muted);">Aún no has completado carreras en este turno.</p>';
     return;
   }
 
+  container.innerHTML = '<p style="font-size:0.78rem; color:var(--text-muted); text-align:center;">Consultando tus carreras completadas...</p>';
+
   try {
-    const kmBal = document.getElementById('ui-km-balance');
-    if (kmBal) kmBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
-    
-    const recBal = document.getElementById('recarga-km-val');
-    if (recBal) recBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
+    const snapshot = await db.collection('trips')
+      .where('driverId', '==', currentUserId)
+      .where('status', '==', 'Completado')
+      .get();
 
-    const profName = document.getElementById('profile-fullname');
-    if (profName) profName.innerText = `${userData.name || ''} ${userData.lastname || ''}`.trim() || 'Usuario';
-
-    const tagBal = document.getElementById('profile-wallet-balance-tag');
-    if (tagBal) tagBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
-
-    const refTag = document.getElementById('profile-referral-tag');
-    if (refTag) refTag.innerText = `Código: ${userData.referralCode || '---'}`;
-
-    if (userData.avatar) {
-      const avatarImg = document.getElementById('profile-avatar-img');
-      if (avatarImg) avatarImg.src = userData.avatar;
+    if (snapshot.empty) {
+      container.innerHTML = '<p style="font-size:0.78rem; color:var(--text-muted);">Aún no has completado carreras en este turno.</p>';
+      return;
     }
 
-    applyBatterySaverUI();
+    const trips = [];
+    snapshot.forEach(doc => {
+      trips.push({ id: doc.id, ...doc.data() });
+    });
 
-    const isDriver = (userData.role === 'driver');
-    const driverMaintHud = document.getElementById('driver-maintenance-hud');
-    const passengerTierHud = document.getElementById('passenger-tier-hud');
-    const verifiedBadgeTag = document.getElementById('profile-driver-verified-tag');
-    const unverifiedWarn = document.getElementById('driver-unverified-warning');
-    const suspendedWarn = document.getElementById('driver-suspended-warning');
+    trips.sort((a, b) => new Date(b.completedAt || b.createdAt || 0) - new Date(a.completedAt || a.createdAt || 0));
 
-    // CONTROL DE CALIDAD: SUSPENSIÓN SI RATING < 3.0
-    const isSuspended = isDriver && (userData.rating < 3.00 && (userData.ratingCount || 1) >= 2);
+    container.innerHTML = '';
+    trips.forEach(t => {
+      const fareTotal = parseFloat(t.price || 0);
+      const netUsd = (fareTotal * 0.90).toFixed(2);
+      const netBs = (netUsd * currentBcvRate).toFixed(2);
+      const stars = t.clientRating ? '★'.repeat(t.clientRating) + '☆'.repeat(5 - t.clientRating) : '★★★★★';
+      const commentHtml = t.clientComment ? `<div class="history-comment-box">"${t.clientComment}"</div>` : '';
+      const dateStr = t.completedAt || t.createdAt ? (new Date(t.completedAt || t.createdAt).toLocaleDateString() + ' ' + new Date(t.completedAt || t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : 'Reciente';
 
-    if (isDriver) {
-      if (driverMaintHud) driverMaintHud.style.display = 'block';
-      if (passengerTierHud) passengerTierHud.style.display = 'none';
-      const vehTypeTag = document.getElementById('profile-driver-veh-type');
-      if (vehTypeTag) vehTypeTag.innerText = userData.vehicleType || 'Moto';
-      const plateTag = document.getElementById('profile-driver-plate-tag');
-      if (plateTag) plateTag.innerText = userData.vehiclePlate || 'S/P';
-
-      const isVerified = (userData.verifiedDriver === true);
-      if (verifiedBadgeTag) {
-        verifiedBadgeTag.innerText = isSuspended ? 'Suspendido' : (isVerified ? 'Verificado ✓' : 'Pendiente');
-        verifiedBadgeTag.style.background = isSuspended ? 'rgba(239,68,68,0.2)' : (isVerified ? 'rgba(0,255,135,0.2)' : 'rgba(245,158,11,0.2)');
-        verifiedBadgeTag.style.color = isSuspended ? '#ef4444' : (isVerified ? 'var(--primary)' : '#fbbf24');
-      }
-      
-      if (suspendedWarn) suspendedWarn.style.display = isSuspended ? 'block' : 'none';
-      if (unverifiedWarn) unverifiedWarn.style.display = (!isVerified && !isSuspended) ? 'block' : 'none';
-
-      const redeemTitle = document.getElementById('profile-redeem-title');
-      if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo / Gasolina";
-      const levelsTitle = document.getElementById('profile-levels-title');
-      if (levelsTitle) levelsTitle.innerText = "Escala de Choferes JunRide";
-    } else {
-      if (driverMaintHud) driverMaintHud.style.display = 'none';
-      if (passengerTierHud) passengerTierHud.style.display = 'block';
-      if (unverifiedWarn) unverifiedWarn.style.display = 'none';
-      if (suspendedWarn) suspendedWarn.style.display = 'none';
-
-      const redeemTitle = document.getElementById('profile-redeem-title');
-      if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo";
-      const levelsTitle = document.getElementById('profile-levels-title');
-      if (levelsTitle) levelsTitle.innerText = "Escala de Niveles JunRide";
-    }
-
-    const totalTrips = userData.totalTrips || 0;
-    const { current, next } = getUserCurrentLevel(totalTrips, isDriver);
-
-    const tierIconRight = document.getElementById('profile-tier-icon-right');
-    if (tierIconRight) tierIconRight.src = current.icon;
-
-    const tierName = document.getElementById('profile-tier-name');
-    if (tierName) tierName.innerText = isDriver ? `${current.name} (${userData.vehicleType || 'Moto'})` : `${current.name} (Nivel ${current.id})`;
-
-    const tierExpText = document.getElementById('profile-tier-exp-text');
-    const tierBar = document.getElementById('profile-tier-progress-bar');
-    if (next) {
-      const span = next.minTrips - current.minTrips;
-      const currentInTier = totalTrips - current.minTrips;
-      const pct = Math.min(100, Math.max(10, Math.round((currentInTier / span) * 100)));
-      if (tierExpText) tierExpText.innerText = `${totalTrips} / ${next.minTrips} Viajes para ${next.name}`;
-      if (tierBar) tierBar.style.width = `${pct}%`;
-    } else {
-      if (tierExpText) tierExpText.innerText = `${totalTrips} Viajes (Nivel Máximo)`;
-      if (tierBar) tierBar.style.width = `100%`;
-    }
-
-    const statRating = document.getElementById('stats-rating-val');
-    if (statRating) statRating.innerText = `⭐ ${(userData.rating || 5.00).toFixed(2)}`;
-
-    const statTrips = document.getElementById('stats-total-trips');
-    if (statTrips) statTrips.innerText = totalTrips;
-
-    const statTokens = document.getElementById('stats-total-tokens');
-    if (statTokens) statTokens.innerText = (userData.tokens || 100).toLocaleString();
-
-    const headerBadge = document.getElementById('header-driver-badge');
-    if (headerBadge) {
-      headerBadge.style.display = isDriver ? 'flex' : 'none';
-    }
-
-    const earnVal = document.getElementById('driver-total-earnings-val');
-    if (earnVal) earnVal.innerText = `$${(userData.driverEarnings || 0).toFixed(2)}`;
-
-    const dTripsCount = document.getElementById('driver-trips-count-val');
-    if (dTripsCount) dTripsCount.innerText = `${userData.driverTripsCount || 0}`;
-
-    renderWalletLedger();
-  } catch(e) {
-    console.error("UI profile error:", e);
-  }
-}
-
-function renderLevelsBreakdownList() {
-  const container = document.getElementById('levels-list-container');
-  if (!container) return;
-  container.innerHTML = '';
-  const isDriver = (userData && userData.role === 'driver');
-  const levels = isDriver ? JUNRIDE_LEVELS_DRIVER : JUNRIDE_LEVELS_PASSENGER;
-  const totalTrips = (userData ? userData.totalTrips : 0) || 0;
-  const { current } = getUserCurrentLevel(totalTrips, isDriver);
-
-  const modalTitle = document.getElementById('levels-modal-main-title');
-  const modalDesc = document.getElementById('levels-modal-main-desc');
-  if (modalTitle) modalTitle.innerText = isDriver ? "🚗 Escala de Rangos para Conductores" : "🏔️ Escala de Rangos JunRide";
-  if (modalDesc) modalDesc.innerText = isDriver ? "Completa carreras para desbloquear recompensas en gasolina, equipamiento reflectivo y menor comisión." : "Completa carreras en la montaña para desbloquear rangos exclusivos y beneficios de tarifa.";
-
-  levels.forEach(lvl => {
-    const isCurrent = (current.id === lvl.id);
-    container.innerHTML += `
-      <div class="level-card-large ${isCurrent ? 'current-unlocked' : ''}">
-        <div class="level-trophy-large-wrap">
-          <img src="${lvl.icon}" alt="${lvl.name}">
-        </div>
-        <div class="level-info-body">
-          <div class="level-title-row">
-            <span class="level-title-text">${lvl.name}</span>
-            <span class="level-trips-req">${lvl.minTrips}+ viajes</span>
+      container.innerHTML += `
+        <div class="driver-history-card" style="margin-bottom:8px;">
+          <div class="history-card-header">
+            <div>
+              <span class="badge-tag-neon">${t.service || 'Viaje'}</span>
+              <strong style="margin-left:6px; font-size:0.85rem; color:#fff;">👤 ${t.clientName || 'Pasajero'}</strong>
+            </div>
+            <strong style="color:var(--primary); font-size:0.95rem;">+$${netUsd} USD</strong>
           </div>
-          <p class="level-desc-text">${lvl.desc}</p>
+
+          <div class="history-route-row" style="margin:4px 0;">
+            <span style="font-size:0.78rem;">📍 ${t.pickup} ➔ 🏁 ${t.dropoff}</span>
+          </div>
+
+          <div class="history-meta-row">
+            <span>📅 ${dateStr} (Bs. ${netBs})</span>
+            <span class="history-rating-stars">${stars}</span>
+          </div>
+
+          ${commentHtml}
         </div>
-      </div>
-    `;
-  });
-}
+      `;
+    });
 
-function openLevelsModal() { 
-  triggerHaptic();
-  renderLevelsBreakdownList();
-  document.getElementById('modal-levels-breakdown').classList.add('active'); 
-}
-function closeLevelsModal() { document.getElementById('modal-levels-breakdown').classList.remove('active'); }
-
-async function fetchBCVRate(manual = false) {
-  if (manual) triggerHaptic();
-  const badge = document.getElementById('bcv-rate-val');
-  if (manual && badge) badge.innerText = "Cargando...";
-
-  let rateFound = null;
-  try {
-    const res = await fetch('https://rates.dolarvzla.com/bcv/current.json', { cache: 'no-cache' });
-    const data = await res.json();
-    if (data && data.current && data.current.usd) rateFound = parseFloat(data.current.usd);
-    else if (data && data.price) rateFound = parseFloat(data.price);
-  } catch (e) {}
-
-  if (!rateFound) {
-    try {
-      const res2 = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', { cache: 'no-cache' });
-      const data2 = await res2.json();
-      if (data2 && data2.promedio) rateFound = parseFloat(data2.promedio);
-    } catch (e2) {}
+  } catch(err) {
+    console.warn("Error al cargar historial de chofer:", err);
+    container.innerHTML = '<p style="font-size:0.78rem; color:var(--text-muted);">No se pudieron cargar las carreras en este momento.</p>';
   }
-
-  if (rateFound && !isNaN(rateFound)) {
-    currentBcvRate = rateFound;
-    localStorage.setItem('jr_last_bcv_rate', rateFound.toString());
-  }
-  if (badge) badge.innerText = `${currentBcvRate.toFixed(2)} Bs.`;
-  const ordBcv = document.getElementById('order-bcv-val');
-  if (ordBcv) ordBcv.innerText = `${currentBcvRate.toFixed(2)} Bs.`;
-  calculateRouteOrder();
-}
-
-function renderRechargeDetails(method) {
-  const logoEl = document.getElementById('pay-current-logo');
-  const titleEl = document.getElementById('pay-method-title');
-  const container = document.getElementById('pay-fields-container');
-  const lblRef = document.getElementById('lbl-recharge-ref');
-  const lblAmount = document.getElementById('lbl-recharge-amount');
-  if (!container) return;
-
-  if (method === 'bdv') {
-    if (logoEl) logoEl.src = "https://files.catbox.moe/m27j7r.png";
-    if (titleEl) titleEl.innerText = "Pago Móvil Banco de Venezuela";
-    if (lblRef) lblRef.innerText = "Últimos 6 dígitos de la referencia:";
-    if (lblAmount) lblAmount.innerText = "Monto pagado en Bs.:";
-    container.innerHTML = `
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Banco Destino:</span><div style="font-size:0.85rem; font-weight:700;">Banco de Venezuela (0102)</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('0102', 'Código Banco')">Copiar</button>
-      </div>
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Teléfono:</span><div style="font-size:0.85rem; font-weight:700;">0412-3167126</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('04123167126', 'Teléfono')">Copiar</button>
-      </div>
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Cédula de Identidad:</span><div style="font-size:0.85rem; font-weight:700;">30.629.336</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('30629336', 'Cédula')">Copiar</button>
-      </div>`;
-  } else if (method === 'zinli') {
-    if (logoEl) logoEl.src = "https://files.catbox.moe/24w3zq.png";
-    if (titleEl) titleEl.innerText = "Transferencia Zinli (Dólares USD)";
-    if (lblRef) lblRef.innerText = "Referencia / Comprobante de Zinli:";
-    if (lblAmount) lblAmount.innerText = "Monto enviado en USD ($):";
-    container.innerHTML = `
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Correo Oficial Zinli:</span><div style="font-size:0.85rem; font-weight:700;">davidjunride@gmail.com</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('davidjunride@gmail.com', 'Correo Zinli')">Copiar</button>
-      </div>
-      <div class="pay-detail-row"><div><span style="font-size:0.72rem; color:var(--text-muted);">Titular:</span><div style="font-size:0.85rem; font-weight:700;">David Morales</div></div></div>`;
-  } else if (method === 'binance') {
-    if (logoEl) logoEl.src = "https://files.catbox.moe/0amryl.png";
-    if (titleEl) titleEl.innerText = "Binance Pay (USDT)";
-    if (lblRef) lblRef.innerText = "Binance Order ID / Pay ID:";
-    if (lblAmount) lblAmount.innerText = "Monto enviado en USDT:";
-    container.innerHTML = `
-      <div class="pay-detail-row">
-        <div><span style="font-size:0.72rem; color:var(--text-muted);">Binance Pay ID:</span><div style="font-size:0.85rem; font-weight:700;">521126834</div></div>
-        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('521126834', 'Binance Pay ID')">Copiar</button>
-      </div>
-      <div class="pay-detail-row"><div><span style="font-size:0.72rem; color:var(--text-muted);">Usuario:</span><div style="font-size:0.85rem; font-weight:700;">David M. (JunRide)</div></div></div>`;
-  }
-}
-
-function selectRechargeMethod(method) {
-  triggerHaptic();
-  selectedRechargeMethodKey = method;
-  document.querySelectorAll('.recharge-brand-card').forEach(c => c.classList.remove('active'));
-  const btn = document.getElementById(`btn-pay-${method}`);
-  if (btn) btn.classList.add('active');
-  renderRechargeDetails(method);
-}
-
-function copyToClipboard(txt, label) {
-  triggerHaptic();
-  const tempTextArea = document.createElement('textarea');
-  tempTextArea.value = txt;
-  document.body.appendChild(tempTextArea);
-  tempTextArea.select();
-  try {
-    document.execCommand('copy');
-    showNeonToast('success', `¡${label} copiado con éxito!`);
-  } catch(e) {
-    showNeonToast('error', `Error al copiar ${label}.`);
-  }
-  document.body.removeChild(tempTextArea);
 }
 
 // PERSISTENCIA REAL AL RECARGAR SALDO
@@ -1616,7 +1192,7 @@ function logWalletMovement(type, title, amount) {
   userData.walletLedger.unshift({
     type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
   });
-  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
   renderWalletLedger();
 }
 
@@ -2029,8 +1605,10 @@ function toggleDriverStatus() {
   triggerHaptic();
   if (!userData) return;
 
-  // VERIFICAR SUSPENSIÓN POR RATING
-  if (userData.rating < 3.00 && (userData.ratingCount || 1) >= 2) {
+  // CONTROL DE CALIDAD: SUSPENSIÓN POR CALIFICACIÓN < 3.0
+  const driverRating = userData.driverRating !== undefined ? userData.driverRating : 5.00;
+  const ratingCount = userData.driverRatingCount || 1;
+  if (driverRating < 3.00 && ratingCount >= 2) {
     showNeonToast('error', 'Tu cuenta está suspendida por tener calificación menor a 3.0 estrellas.');
     return;
   }
@@ -2194,7 +1772,7 @@ async function validatePassengerOTP() {
   }
 }
 
-// FINALIZAR VIAJE: PERSISTENCIA EN FIRESTORE, SUMA DE VIAJES Y ASIGNACIÓN DINÁMICA DE TOKENS
+// FINALIZAR VIAJE: AISLAMIENTO TOTAL DE ESTADÍSTICAS Y TOKENS POR SERVICIO
 async function completeActiveTripDriver() {
   triggerHaptic(100);
   playChimeSound();
@@ -2203,44 +1781,42 @@ async function completeActiveTripDriver() {
   const netEarnings = fareVal * 0.90;
   const serviceType = currentTripData ? currentTripData.service : 'Carro';
 
-  // REGLA DE TOKENS POR TIPO DE SERVICIO
+  // REGLAS DINÁMICAS DE TOKENS POR TIPO DE TRANSPORTE
   let tokensAwarded = 100;
   if (serviceType === 'Moto') tokensAwarded = 100;
   else if (serviceType === 'Carro') tokensAwarded = 100;
   else if (serviceType === 'Colectivo') tokensAwarded = 50;
   else if (serviceType === 'Carga') tokensAwarded = 250;
 
-  // 1. ACTUALIZAR CHOFER EN LOCAL Y EN FIRESTORE
+  // 1. ACTUALIZAR CHOFER EN LOCAL Y EN FIRESTORE (SOLO ESTADÍSTICAS DE CHOFER)
   if (userData) {
     userData.driverEarnings = (userData.driverEarnings || 0) + netEarnings;
-    userData.driverTripsCount = (userData.driverTripsCount || 0) + 1;
-    userData.totalTrips = (userData.totalTrips || 0) + 1;
-    userData.tokens = (userData.tokens || 100) + tokensAwarded;
-    localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
+    userData.driverTrips = (userData.driverTrips || 0) + 1;
+    userData.driverTokens = (userData.driverTokens || 100) + tokensAwarded;
+    localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
     updateUIProfile();
 
     if (db && currentUserId) {
       db.collection('users').doc(currentUserId).update({
         driverEarnings: userData.driverEarnings,
-        driverTripsCount: userData.driverTripsCount,
-        totalTrips: userData.totalTrips,
-        tokens: userData.tokens
+        driverTrips: userData.driverTrips,
+        driverTokens: userData.driverTokens
       }).catch(() => {});
     }
   }
 
-  // 2. ACTUALIZAR PASAJERO EN FIRESTORE (+1 VIAJE Y TOKENS CORRESPONDIENTES)
+  // 2. ACTUALIZAR PASAJERO EN FIRESTORE (SOLO ESTADÍSTICAS DE PASAJERO)
   if (db && currentTripData && currentTripData.clientId) {
     try {
       const passengerRef = db.collection('users').doc(currentTripData.clientId);
       const passDoc = await passengerRef.get();
       if (passDoc.exists) {
         const pData = passDoc.data();
-        const pTotalTrips = (pData.totalTrips || 0) + 1;
-        const pTokens = (pData.tokens || 100) + tokensAwarded;
+        const pTrips = (pData.passengerTrips || pData.totalTrips || 0) + 1;
+        const pTokens = (pData.passengerTokens || pData.tokens || 100) + tokensAwarded;
         await passengerRef.update({
-          totalTrips: pTotalTrips,
-          tokens: pTokens
+          passengerTrips: pTrips,
+          passengerTokens: pTokens
         });
       }
     } catch(err) {
@@ -2248,7 +1824,7 @@ async function completeActiveTripDriver() {
     }
   }
 
-  // 3. ACTUALIZAR ESTADO DE LA CARRERA
+  // 3. ACTUALIZAR ESTADO DE LA CARRERA EN FIRESTORE
   if (db && activeTripId) {
     await db.collection('trips').doc(activeTripId).update({
       status: 'Completado',
@@ -2264,7 +1840,7 @@ async function completeActiveTripDriver() {
   localStorage.removeItem('jr_active_trip_id');
   localStorage.removeItem('jr_driver_active_trip_cache');
   
-  fetchUserTripHistory();
+  fetchDriverTripHistory();
   activeTripId = null;
   currentTripData = null;
   fetchPendingTripsForDriver();
@@ -2545,9 +2121,7 @@ function listenTripsRealtime() {
           document.getElementById('live-tracking-box').style.display = 'none';
           showNeonToast('success', `🏁 ¡Has llegado a tu destino! Ganaste +${trip.tokensAwarded || 100} Tokens.`);
           
-          // Sincronizar usuario para reflejar el +1 viaje y tokens ganados
           syncUserWithFirestore();
-
           openReceiptModal(currentTripData);
           fetchUserTripHistory();
           activeTripId = null;
@@ -2604,9 +2178,303 @@ async function acceptTrip(tripId) {
   document.getElementById('driver-in-route-area').style.display = 'none';
 }
 
+// ACTUALIZACIÓN DE UI BLINDADA CON AISLAMIENTO TOTAL ENTRE PASAJERO Y CHOFER
+function updateUIProfile() {
+  if (!userData) {
+    const pName = document.getElementById('profile-fullname');
+    if (pName) pName.innerText = '---';
+    const pTier = document.getElementById('profile-tier-name');
+    if (pTier) pTier.innerText = '---';
+    return;
+  }
+
+  try {
+    const isDriver = (userData.role === 'driver');
+
+    // SALDOS MONETARIOS
+    const kmBal = document.getElementById('ui-km-balance');
+    if (kmBal) kmBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
+    
+    const recBal = document.getElementById('recarga-km-val');
+    if (recBal) recBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
+
+    const profName = document.getElementById('profile-fullname');
+    if (profName) profName.innerText = `${userData.name || ''} ${userData.lastname || ''}`.trim() || 'Usuario';
+
+    const refTag = document.getElementById('profile-referral-tag');
+    if (refTag) refTag.innerText = `Código: ${userData.referralCode || '---'}`;
+
+    if (userData.avatar) {
+      const avatarImg = document.getElementById('profile-avatar-img');
+      if (avatarImg) avatarImg.src = userData.avatar;
+    }
+
+    applyBatterySaverUI();
+
+    const driverMaintHud = document.getElementById('driver-maintenance-hud');
+    const passengerTierHud = document.getElementById('passenger-tier-hud');
+    const verifiedBadgeTag = document.getElementById('profile-driver-verified-tag');
+    const unverifiedWarn = document.getElementById('driver-unverified-warning');
+    const suspendedWarn = document.getElementById('driver-suspended-warning');
+
+    // CONTROL DE SUSPENSIÓN POR CALIFICACIÓN < 3.0
+    const driverRating = userData.driverRating !== undefined ? userData.driverRating : 5.00;
+    const driverRatingCount = userData.driverRatingCount || 1;
+    const isSuspended = isDriver && (driverRating < 3.00 && driverRatingCount >= 2);
+
+    if (isDriver) {
+      if (driverMaintHud) driverMaintHud.style.display = 'block';
+      if (passengerTierHud) passengerTierHud.style.display = 'none';
+      const vehTypeTag = document.getElementById('profile-driver-veh-type');
+      if (vehTypeTag) vehTypeTag.innerText = userData.vehicleType || 'Moto';
+      const plateTag = document.getElementById('profile-driver-plate-tag');
+      if (plateTag) plateTag.innerText = userData.vehiclePlate || 'S/P';
+
+      const isVerified = (userData.verifiedDriver === true);
+      if (verifiedBadgeTag) {
+        verifiedBadgeTag.innerText = isSuspended ? 'Suspendido' : (isVerified ? 'Verificado ✓' : 'Pendiente');
+        verifiedBadgeTag.style.background = isSuspended ? 'rgba(239,68,68,0.2)' : (isVerified ? 'rgba(0,255,135,0.2)' : 'rgba(245,158,11,0.2)');
+        verifiedBadgeTag.style.color = isSuspended ? '#ef4444' : (isVerified ? 'var(--primary)' : '#fbbf24');
+      }
+      
+      if (suspendedWarn) suspendedWarn.style.display = isSuspended ? 'block' : 'none';
+      if (unverifiedWarn) unverifiedWarn.style.display = (!isVerified && !isSuspended) ? 'block' : 'none';
+
+      const redeemTitle = document.getElementById('profile-redeem-title');
+      if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo / Gasolina";
+      const levelsTitle = document.getElementById('profile-levels-title');
+      if (levelsTitle) levelsTitle.innerText = "Escala de Choferes JunRide";
+
+      // ESTADÍSTICAS PURAS DE CONDUCTOR (AISLADAS)
+      const currentDriverTrips = userData.driverTrips || 0;
+      const { current } = getUserCurrentLevel(currentDriverTrips, true);
+
+      const tierIconRight = document.getElementById('profile-tier-icon-right');
+      if (tierIconRight) tierIconRight.src = current.icon;
+
+      const tierName = document.getElementById('profile-tier-name');
+      if (tierName) tierName.innerText = `${current.name} (${userData.vehicleType || 'Moto'})`;
+
+      const statRating = document.getElementById('stats-rating-val');
+      if (statRating) statRating.innerText = `⭐ ${driverRating.toFixed(2)}`;
+
+      const statTrips = document.getElementById('stats-total-trips');
+      if (statTrips) statTrips.innerText = currentDriverTrips;
+
+      const statTokens = document.getElementById('stats-total-tokens');
+      if (statTokens) statTokens.innerText = (userData.driverTokens !== undefined ? userData.driverTokens : 100).toLocaleString();
+
+      const earnVal = document.getElementById('driver-total-earnings-val');
+      if (earnVal) earnVal.innerText = `$${(userData.driverEarnings || 0).toFixed(2)}`;
+
+      const dTripsCount = document.getElementById('driver-trips-count-val');
+      if (dTripsCount) dTripsCount.innerText = `${currentDriverTrips}`;
+
+    } else {
+      // MODO PASAJERO (ESTADÍSTICAS PURAS DE CLIENTE AISLADAS)
+      if (driverMaintHud) driverMaintHud.style.display = 'none';
+      if (passengerTierHud) passengerTierHud.style.display = 'block';
+      if (unverifiedWarn) unverifiedWarn.style.display = 'none';
+      if (suspendedWarn) suspendedWarn.style.display = 'none';
+
+      const redeemTitle = document.getElementById('profile-redeem-title');
+      if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo";
+      const levelsTitle = document.getElementById('profile-levels-title');
+      if (levelsTitle) levelsTitle.innerText = "Escala de Niveles JunRide";
+
+      const currentPassengerTrips = userData.passengerTrips || 0;
+      const { current, next } = getUserCurrentLevel(currentPassengerTrips, false);
+
+      const tierIconRight = document.getElementById('profile-tier-icon-right');
+      if (tierIconRight) tierIconRight.src = current.icon;
+
+      const tierName = document.getElementById('profile-tier-name');
+      if (tierName) tierName.innerText = `${current.name} (Nivel ${current.id})`;
+
+      const tierExpText = document.getElementById('profile-tier-exp-text');
+      const tierBar = document.getElementById('profile-tier-progress-bar');
+      if (next) {
+        const span = next.minTrips - current.minTrips;
+        const currentInTier = currentPassengerTrips - current.minTrips;
+        const pct = Math.min(100, Math.max(10, Math.round((currentInTier / span) * 100)));
+        if (tierExpText) tierExpText.innerText = `${currentPassengerTrips} / ${next.minTrips} Viajes para ${next.name}`;
+        if (tierBar) tierBar.style.width = `${pct}%`;
+      } else {
+        if (tierExpText) tierExpText.innerText = `${currentPassengerTrips} Viajes (Nivel Máximo)`;
+        if (tierBar) tierBar.style.width = `100%`;
+      }
+
+      const passRating = userData.passengerRating !== undefined ? userData.passengerRating : 5.00;
+      const statRating = document.getElementById('stats-rating-val');
+      if (statRating) statRating.innerText = `⭐ ${passRating.toFixed(2)}`;
+
+      const statTrips = document.getElementById('stats-total-trips');
+      if (statTrips) statTrips.innerText = currentPassengerTrips;
+
+      const statTokens = document.getElementById('stats-total-tokens');
+      if (statTokens) statTokens.innerText = (userData.passengerTokens !== undefined ? userData.passengerTokens : 100).toLocaleString();
+    }
+
+    const headerBadge = document.getElementById('header-driver-badge');
+    if (headerBadge) {
+      headerBadge.style.display = isDriver ? 'flex' : 'none';
+    }
+
+    renderWalletLedger();
+  } catch(e) {
+    console.error("Error al actualizar UI del perfil:", e);
+  }
+}
+
+function renderLevelsBreakdownList() {
+  const container = document.getElementById('levels-list-container');
+  if (!container) return;
+  container.innerHTML = '';
+  const isDriver = (userData && userData.role === 'driver');
+  const levels = isDriver ? JUNRIDE_LEVELS_DRIVER : JUNRIDE_LEVELS_PASSENGER;
+  const tripsCount = isDriver ? (userData ? userData.driverTrips || 0 : 0) : (userData ? userData.passengerTrips || 0 : 0);
+  const { current } = getUserCurrentLevel(tripsCount, isDriver);
+
+  const modalTitle = document.getElementById('levels-modal-main-title');
+  const modalDesc = document.getElementById('levels-modal-main-desc');
+  if (modalTitle) modalTitle.innerText = isDriver ? "🚗 Escala de Rangos para Conductores" : "🏔️ Escala de Rangos JunRide";
+  if (modalDesc) modalDesc.innerText = isDriver ? "Completa carreras para desbloquear recompensas en gasolina, equipamiento reflectivo y menor comisión." : "Completa carreras en la montaña para desbloquear rangos exclusivos y beneficios de tarifa.";
+
+  levels.forEach(lvl => {
+    const isCurrent = (current.id === lvl.id);
+    container.innerHTML += `
+      <div class="level-card-large ${isCurrent ? 'current-unlocked' : ''}">
+        <div class="level-trophy-large-wrap">
+          <img src="${lvl.icon}" alt="${lvl.name}">
+        </div>
+        <div class="level-info-body">
+          <div class="level-title-row">
+            <span class="level-title-text">${lvl.name}</span>
+            <span class="level-trips-req">${lvl.minTrips}+ viajes</span>
+          </div>
+          <p class="level-desc-text">${lvl.desc}</p>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function openLevelsModal() { 
+  triggerHaptic();
+  renderLevelsBreakdownList();
+  document.getElementById('modal-levels-breakdown').classList.add('active'); 
+}
+function closeLevelsModal() { document.getElementById('modal-levels-breakdown').classList.remove('active'); }
+
+async function fetchBCVRate(manual = false) {
+  if (manual) triggerHaptic();
+  const badge = document.getElementById('bcv-rate-val');
+  if (manual && badge) badge.innerText = "Cargando...";
+
+  let rateFound = null;
+  try {
+    const res = await fetch('https://rates.dolarvzla.com/bcv/current.json', { cache: 'no-cache' });
+    const data = await res.json();
+    if (data && data.current && data.current.usd) rateFound = parseFloat(data.current.usd);
+    else if (data && data.price) rateFound = parseFloat(data.price);
+  } catch (e) {}
+
+  if (!rateFound) {
+    try {
+      const res2 = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', { cache: 'no-cache' });
+      const data2 = await res2.json();
+      if (data2 && data2.promedio) rateFound = parseFloat(data2.promedio);
+    } catch (e2) {}
+  }
+
+  if (rateFound && !isNaN(rateFound)) {
+    currentBcvRate = rateFound;
+    localStorage.setItem('jr_last_bcv_rate', rateFound.toString());
+  }
+  if (badge) badge.innerText = `${currentBcvRate.toFixed(2)} Bs.`;
+  const ordBcv = document.getElementById('order-bcv-val');
+  if (ordBcv) ordBcv.innerText = `${currentBcvRate.toFixed(2)} Bs.`;
+  calculateRouteOrder();
+}
+
+function renderRechargeDetails(method) {
+  const logoEl = document.getElementById('pay-current-logo');
+  const titleEl = document.getElementById('pay-method-title');
+  const container = document.getElementById('pay-fields-container');
+  const lblRef = document.getElementById('lbl-recharge-ref');
+  const lblAmount = document.getElementById('lbl-recharge-amount');
+  if (!container) return;
+
+  if (method === 'bdv') {
+    if (logoEl) logoEl.src = "https://files.catbox.moe/m27j7r.png";
+    if (titleEl) titleEl.innerText = "Pago Móvil Banco de Venezuela";
+    if (lblRef) lblRef.innerText = "Últimos 6 dígitos de la referencia:";
+    if (lblAmount) lblAmount.innerText = "Monto pagado en Bs.:";
+    container.innerHTML = `
+      <div class="pay-detail-row">
+        <div><span style="font-size:0.72rem; color:var(--text-muted);">Banco Destino:</span><div style="font-size:0.85rem; font-weight:700;">Banco de Venezuela (0102)</div></div>
+        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('0102', 'Código Banco')">Copiar</button>
+      </div>
+      <div class="pay-detail-row">
+        <div><span style="font-size:0.72rem; color:var(--text-muted);">Teléfono:</span><div style="font-size:0.85rem; font-weight:700;">0412-3167126</div></div>
+        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('04123167126', 'Teléfono')">Copiar</button>
+      </div>
+      <div class="pay-detail-row">
+        <div><span style="font-size:0.72rem; color:var(--text-muted);">Cédula de Identidad:</span><div style="font-size:0.85rem; font-weight:700;">30.629.336</div></div>
+        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('30629336', 'Cédula')">Copiar</button>
+      </div>`;
+  } else if (method === 'zinli') {
+    if (logoEl) logoEl.src = "https://files.catbox.moe/24w3zq.png";
+    if (titleEl) titleEl.innerText = "Transferencia Zinli (Dólares USD)";
+    if (lblRef) lblRef.innerText = "Referencia / Comprobante de Zinli:";
+    if (lblAmount) lblAmount.innerText = "Monto enviado en USD ($):";
+    container.innerHTML = `
+      <div class="pay-detail-row">
+        <div><span style="font-size:0.72rem; color:var(--text-muted);">Correo Oficial Zinli:</span><div style="font-size:0.85rem; font-weight:700;">davidjunride@gmail.com</div></div>
+        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('davidjunride@gmail.com', 'Correo Zinli')">Copiar</button>
+      </div>
+      <div class="pay-detail-row"><div><span style="font-size:0.72rem; color:var(--text-muted);">Titular:</span><div style="font-size:0.85rem; font-weight:700;">David Morales</div></div></div>`;
+  } else if (method === 'binance') {
+    if (logoEl) logoEl.src = "https://files.catbox.moe/0amryl.png";
+    if (titleEl) titleEl.innerText = "Binance Pay (USDT)";
+    if (lblRef) lblRef.innerText = "Binance Order ID / Pay ID:";
+    if (lblAmount) lblAmount.innerText = "Monto enviado en USDT:";
+    container.innerHTML = `
+      <div class="pay-detail-row">
+        <div><span style="font-size:0.72rem; color:var(--text-muted);">Binance Pay ID:</span><div style="font-size:0.85rem; font-weight:700;">521126834</div></div>
+        <button type="button" class="copy-chip-btn" onclick="copyToClipboard('521126834', 'Binance Pay ID')">Copiar</button>
+      </div>
+      <div class="pay-detail-row"><div><span style="font-size:0.72rem; color:var(--text-muted);">Usuario:</span><div style="font-size:0.85rem; font-weight:700;">David M. (JunRide)</div></div></div>`;
+  }
+}
+
+function selectRechargeMethod(method) {
+  triggerHaptic();
+  selectedRechargeMethodKey = method;
+  document.querySelectorAll('.recharge-brand-card').forEach(c => c.classList.remove('active'));
+  const btn = document.getElementById(`btn-pay-${method}`);
+  if (btn) btn.classList.add('active');
+  renderRechargeDetails(method);
+}
+
+function copyToClipboard(txt, label) {
+  triggerHaptic();
+  const tempTextArea = document.createElement('textarea');
+  tempTextArea.value = txt;
+  document.body.appendChild(tempTextArea);
+  tempTextArea.select();
+  try {
+    document.execCommand('copy');
+    showNeonToast('success', `¡${label} copiado con éxito!`);
+  } catch(e) {
+    showNeonToast('error', `Error al copiar ${label}.`);
+  }
+  document.body.removeChild(tempTextArea);
+}
+
 function logout() {
   triggerHaptic(40);
-  localStorage.removeItem('jr_user_profile_data_v40');
+  localStorage.removeItem('jr_user_profile_data_v41');
   localStorage.removeItem('jr_session_uid');
   localStorage.removeItem('jr_active_trip_id');
   localStorage.removeItem('jr_driver_active_trip_cache');
