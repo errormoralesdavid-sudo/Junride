@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=41">
+  <link rel="manifest" href="manifest.json?v=42">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,6 +20,20 @@
 
   <!-- Contenedor Flotante de Notificaciones Toast Neón -->
   <div id="toast-container"></div>
+
+  <!-- MODAL VISOR DE FOTO AMPLIADA (LIGHTBOX) -->
+  <div class="modal modal-lightbox" id="modal-image-lightbox" onclick="closeImageLightbox()">
+    <div class="lightbox-content animate-fade" onclick="event.stopPropagation()">
+      <div class="lightbox-header">
+        <span id="lightbox-image-title">Foto Ampliada</span>
+        <button class="btn-close" onclick="closeImageLightbox()">&times;</button>
+      </div>
+      <div class="lightbox-img-wrap">
+        <img id="lightbox-target-img" src="" alt="Foto Detallada">
+      </div>
+      <small style="font-size:0.72rem; color:var(--text-muted); text-align:center; display:block;">Toca fuera o la X para cerrar</small>
+    </div>
+  </div>
 
   <!-- 1. PANTALLA DE BIENVENIDA / ONBOARDING -->
   <section id="screen-welcome" class="welcome-screen-wrap animate-fade">
@@ -117,7 +131,7 @@
     </div>
   </div>
 
-  <!-- 4. MODAL DE CONFIGURACIÓN DE VEHÍCULO DEL CONDUCTOR (CON FOTO DE UNIDAD) -->
+  <!-- 4. MODAL DE CONFIGURACIÓN DE VEHÍCULO DEL CONDUCTOR -->
   <div class="modal" id="modal-driver-vehicle-setup">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -140,7 +154,6 @@
       <label style="font-size:0.75rem; color:var(--text-muted);">Número de Placa:</label>
       <input type="text" id="driver-veh-plate-input" placeholder="Ej. AA1B23C" required>
 
-      <!-- FOTO REAL DEL VEHÍCULO -->
       <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">Foto del Vehículo (Para que el cliente te identifique):</label>
       <div class="veh-photo-upload-container" onclick="triggerVehiclePhotoUpload()">
         <img id="setup-veh-photo-preview" src="https://files.catbox.moe/lkxyw7.png" alt="Foto del Vehículo">
@@ -156,14 +169,14 @@
     </div>
   </div>
 
-  <!-- INPUTS DE ARCHIVOS OCULTOS PARA AVATAR Y VEHÍCULO -->
+  <!-- INPUTS DE ARCHIVOS OCULTOS -->
   <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
   <input type="file" id="driver-veh-photo-input" accept="image/*" style="display:none;">
 
   <!-- 5. INTERFAZ PRINCIPAL -->
   <div id="app-main-interface" style="display:none !important;">
     
-    <!-- CABECERA PRINCIPAL -->
+    <!-- CABECERA -->
     <header class="top-bar" id="main-header">
       <div class="top-bar-left">
         <div class="brand-logo-lockup" onclick="handleHeaderHomeClick()">
@@ -253,7 +266,7 @@
           <button class="btn-primary-neon btn-sm">Recargar</button>
         </div>
 
-        <!-- SEGUIMIENTO DE VIAJE ACTIVO CON FOTO DEL CHOFER Y VEHÍCULO -->
+        <!-- SEGUIMIENTO DE VIAJE ACTIVO CON FOTOS CLICABLES PARA AMPLIAR -->
         <div class="card-neon" id="live-tracking-box" style="display:none; padding:18px; margin-bottom:14px;">
           <div class="panel-header-row">
             <h4 style="color:var(--primary);" id="passenger-trip-status-title">🛰️ Conductor Asignado</h4>
@@ -262,10 +275,10 @@
 
           <div class="live-driver-profile-hud">
             <div class="live-driver-avatars-row">
-              <div class="live-driver-avatar-circle" title="Foto del Chofer">
+              <div class="live-driver-avatar-circle" title="Toca para ampliar foto del Chofer" onclick="triggerZoomElementImage('live-driver-avatar-img', 'Foto del Chofer')">
                 <img id="live-driver-avatar-img" src="https://files.catbox.moe/oh53r9.png" alt="Chofer">
               </div>
-              <div class="live-vehicle-photo-circle" title="Foto del Vehículo">
+              <div class="live-vehicle-photo-circle" title="Toca para ampliar foto del Vehículo" onclick="triggerZoomElementImage('live-vehicle-photo-img', 'Foto del Vehículo')">
                 <img id="live-vehicle-photo-img" src="https://files.catbox.moe/lkxyw7.png" alt="Vehículo">
               </div>
             </div>
@@ -292,7 +305,7 @@
         </div>
       </section>
 
-      <!-- Pestaña RECARGAS (CON DOBLE VALIDACIÓN FIRESTORE) -->
+      <!-- Pestaña RECARGAS -->
       <section class="tab-content animate-fade" id="tab-recargas" style="display:none;">
         <div class="card-neon" style="display:flex; align-items:center; justify-content:space-between; padding:20px; margin-bottom:14px; background:linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(15,23,42,0.95) 100%); border:1.5px solid var(--primary); box-shadow:0 0 24px rgba(0,255,135,0.18);">
           <div style="display:flex; align-items:center; gap:16px;">
@@ -366,7 +379,7 @@
         </div>
       </section>
 
-      <!-- Pestaña CONDUCTOR - TABLERO -->
+      <!-- Pestaña CONDUCTOR - TABLERO (CON FOTO DEL PASAJERO EN VIVO) -->
       <section class="tab-content animate-fade" id="tab-driver-panel" style="display:none;">
         <div class="card-neon" style="padding:20px;">
           <div class="panel-header-row">
@@ -398,14 +411,23 @@
             <small id="driver-status-text" style="color:#ef4444; font-size:0.75rem; font-weight:800;">🔴 Desconectado (Toca el botón para conectarte)</small>
           </div>
 
-          <!-- PANEL DE VIAJE EN CURSO PARA EL CONDUCTOR -->
+          <!-- PANEL DE VIAJE EN CURSO PARA EL CONDUCTOR CON PERFIL Y FOTO DE PASAJERO -->
           <div id="driver-active-trip-box" style="display:none; background:rgba(0,255,135,0.06); border:1.5px solid var(--primary); border-radius:18px; padding:16px; margin-bottom:14px;">
             <div class="panel-header-row">
               <span style="font-size:0.8rem; font-weight:800; color:var(--primary);">🚕 VIAJE EN EJECUCIÓN</span>
               <span style="font-size:0.85rem; font-weight:900; color:#fff;" id="driver-trip-fare-badge">$0.00</span>
             </div>
-            
-            <p style="font-size:0.8rem; color:#fff; margin:6px 0;" id="driver-trip-route-info">Origen ➔ Destino</p>
+
+            <!-- PERFIL VISUAL DEL PASAJERO CON FOTO CLICABLE -->
+            <div class="driver-passenger-card-hud">
+              <div class="driver-passenger-avatar-wrap" onclick="triggerZoomElementImage('driver-passenger-avatar-img', 'Foto del Pasajero')">
+                <img id="driver-passenger-avatar-img" src="https://files.catbox.moe/oh53r9.png" alt="Pasajero">
+              </div>
+              <div style="flex:1;">
+                <strong id="driver-passenger-name" style="font-size:0.9rem; color:#fff; display:block;">Pasajero en espera</strong>
+                <span id="driver-trip-route-info" style="font-size:0.75rem; color:#cbd5e1; display:block; margin-top:2px;">Origen ➔ Destino</span>
+              </div>
+            </div>
             
             <div id="driver-otp-input-area" style="margin:10px 0; background:rgba(0,0,0,0.4); padding:10px; border-radius:14px; text-align:center;">
               <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:4px;">Pide el PIN de 4 dígitos al pasajero:</label>
@@ -502,9 +524,9 @@
       <section class="tab-content animate-fade" id="tab-perfil" style="display:none;">
         <div class="profile-header-card">
           <div class="profile-user-row">
-            <div class="profile-avatar-wrap" onclick="triggerAvatarUpload()" title="Toca para cambiar tu foto de perfil">
+            <div class="profile-avatar-wrap" onclick="triggerZoomElementImage('profile-avatar-img', 'Mi Foto de Perfil')" title="Toca para ver o cambiar tu foto de perfil">
               <img id="profile-avatar-img" src="https://files.catbox.moe/oh53r9.png" alt="Avatar">
-              <div class="avatar-edit-overlay">FOTO</div>
+              <div class="avatar-edit-overlay" onclick="event.stopPropagation(); triggerAvatarUpload();">FOTO</div>
             </div>
             
             <div class="profile-name-box">
@@ -525,13 +547,13 @@
             </div>
 
             <div class="driver-veh-profile-card">
-              <div class="driver-veh-thumb-wrap" onclick="triggerVehiclePhotoUpload()" title="Toca para cambiar foto de la unidad">
+              <div class="driver-veh-thumb-wrap" onclick="triggerZoomElementImage('profile-driver-veh-img', 'Foto de la Unidad')" title="Toca para ver en grande">
                 <img id="profile-driver-veh-img" src="https://files.catbox.moe/lkxyw7.png" alt="Vehículo Chofer">
-                <span class="veh-edit-tag">EDITAR</span>
+                <span class="veh-edit-tag" onclick="event.stopPropagation(); triggerVehiclePhotoUpload();">EDITAR</span>
               </div>
               <div style="flex:1;">
                 <strong id="profile-driver-veh-model" style="font-size:0.82rem; color:#fff; display:block;">Modelo de Unidad</strong>
-                <small style="font-size:0.68rem; color:var(--text-muted);">Foto visible para los pasajeros</small>
+                <small style="font-size:0.68rem; color:var(--text-muted);">Foto visible para los pasajeros (toca para ampliar)</small>
                 <button type="button" class="btn-sm btn-secondary-dim" style="margin-top:6px; font-size:0.68rem; padding:4px 8px;" onclick="openDriverVehicleEditModal()">Cambiar Vehículo</button>
               </div>
             </div>
