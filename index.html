@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=40">
+  <link rel="manifest" href="manifest.json?v=41">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -117,13 +117,14 @@
     </div>
   </div>
 
-  <!-- 4. MODAL DE CONFIGURACIÓN DE VEHÍCULO DEL CONDUCTOR -->
+  <!-- 4. MODAL DE CONFIGURACIÓN DE VEHÍCULO DEL CONDUCTOR (CON FOTO DE UNIDAD) -->
   <div class="modal" id="modal-driver-vehicle-setup">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
         <h3 style="color:white; font-size:1.15rem;">🚗 Configura tu Unidad</h3>
+        <button class="btn-close" onclick="closeDriverVehicleModal()">&times;</button>
       </div>
-      <p style="font-size:0.75rem; color:var(--text-muted);">Selecciona el tipo de transporte que conduces para recibir carreras adecuadas:</p>
+      <p style="font-size:0.75rem; color:var(--text-muted);">Selecciona tu transporte e ingresa los datos para recibir carreras acordes:</p>
       
       <div class="touch-chips-selector-vertical" id="driver-veh-setup-chips">
         <div class="touch-chip active" onclick="selectSetupVehicleType('Moto', this)">🏍️ Moto Express</div>
@@ -133,24 +134,36 @@
       </div>
       <input type="hidden" id="driver-veh-setup-val" value="Moto">
 
-      <label style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">Modelo y Color del Vehículo:</label>
+      <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">Modelo y Color del Vehículo:</label>
       <input type="text" id="driver-veh-model-input" placeholder="Ej. Bera SBR Azul / Toyota Corolla Blanco" required>
 
       <label style="font-size:0.75rem; color:var(--text-muted);">Número de Placa:</label>
       <input type="text" id="driver-veh-plate-input" placeholder="Ej. AA1B23C" required>
 
-      <button type="button" class="btn-primary-neon" style="width:100%; padding:14px; margin-top:10px;" onclick="finishDriverRegistration()">
-        Activar Tablero de Conductor
+      <!-- FOTO REAL DEL VEHÍCULO -->
+      <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">Foto del Vehículo (Para que el cliente te identifique):</label>
+      <div class="veh-photo-upload-container" onclick="triggerVehiclePhotoUpload()">
+        <img id="setup-veh-photo-preview" src="https://files.catbox.moe/lkxyw7.png" alt="Foto del Vehículo">
+        <div>
+          <strong id="setup-veh-photo-label" style="font-size:0.82rem; color:var(--primary); display:block;">📸 Toca para subir foto de tu vehículo</strong>
+          <small style="font-size:0.68rem; color:var(--text-muted);">Opcional pero recomendado para mayor confianza</small>
+        </div>
+      </div>
+
+      <button type="button" class="btn-primary-neon" style="width:100%; padding:14px; margin-top:12px;" onclick="finishDriverRegistration()">
+        Guardar Unidad y Activar Tablero
       </button>
     </div>
   </div>
 
+  <!-- INPUTS DE ARCHIVOS OCULTOS PARA AVATAR Y VEHÍCULO -->
   <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
+  <input type="file" id="driver-veh-photo-input" accept="image/*" style="display:none;">
 
   <!-- 5. INTERFAZ PRINCIPAL -->
   <div id="app-main-interface" style="display:none !important;">
     
-    <!-- CABECERA LIMPIA: SIN SOS AMONTONADO, CON TASA BCV Y CHOFER DESTACADOS -->
+    <!-- CABECERA PRINCIPAL -->
     <header class="top-bar" id="main-header">
       <div class="top-bar-left">
         <div class="brand-logo-lockup" onclick="handleHeaderHomeClick()">
@@ -227,7 +240,7 @@
           </div>
         </div>
 
-        <div class="driver-mode-cta card-neon" onclick="switchDriverMode()">
+        <div class="driver-mode-cta card-neon" onclick="handleDriverCtaClick()">
           <img src="https://files.catbox.moe/wr94fi.png" alt="Icono Conductor">
           <span>CAMBIAR AL MODO CONDUCTOR</span>
         </div>
@@ -240,18 +253,31 @@
           <button class="btn-primary-neon btn-sm">Recargar</button>
         </div>
 
-        <!-- SEGUIMIENTO DE VIAJE ACTIVO -->
+        <!-- SEGUIMIENTO DE VIAJE ACTIVO CON FOTO DEL CHOFER Y VEHÍCULO -->
         <div class="card-neon" id="live-tracking-box" style="display:none; padding:18px; margin-bottom:14px;">
           <div class="panel-header-row">
             <h4 style="color:var(--primary);" id="passenger-trip-status-title">🛰️ Conductor Asignado</h4>
             <button class="btn-sm btn-secondary-dim" onclick="cancelTrip(true)">Cancelar</button>
           </div>
-          <div style="background:rgba(0,255,135,0.08); padding:12px; border-radius:14px; margin:10px 0;">
-            <strong id="live-driver-name" style="color:white; font-size:0.95rem;">Conductor en camino</strong>
-            <p style="font-size:0.75rem; color:var(--primary); margin-top:2px;">Tarifa acordada: $<span id="trip-fare-val">0.00</span></p>
+
+          <div class="live-driver-profile-hud">
+            <div class="live-driver-avatars-row">
+              <div class="live-driver-avatar-circle" title="Foto del Chofer">
+                <img id="live-driver-avatar-img" src="https://files.catbox.moe/oh53r9.png" alt="Chofer">
+              </div>
+              <div class="live-vehicle-photo-circle" title="Foto del Vehículo">
+                <img id="live-vehicle-photo-img" src="https://files.catbox.moe/lkxyw7.png" alt="Vehículo">
+              </div>
+            </div>
+
+            <div style="flex:1;">
+              <strong id="live-driver-name" style="color:white; font-size:0.95rem; display:block;">Conductor en camino</strong>
+              <span id="live-driver-vehicle-details" style="font-size:0.72rem; color:#38bdf8; font-weight:700; display:block; margin-top:1px;">Vehículo Registrado</span>
+              <p style="font-size:0.75rem; color:var(--primary); margin-top:2px;">Tarifa acordada: $<span id="trip-fare-val">0.00</span></p>
+            </div>
           </div>
           
-          <div style="background:rgba(0,255,135,0.12); border:2px dashed var(--primary); padding:12px; border-radius:14px; text-align:center;">
+          <div style="background:rgba(0,255,135,0.12); border:2px dashed var(--primary); padding:12px; border-radius:14px; text-align:center; margin-top:10px;">
             <span style="font-size:0.72rem; color:var(--text-muted);">DALE ESTE PIN AL CHOFER AL SUBIRTE:</span>
             <div style="font-size:2.2rem; font-weight:900; letter-spacing:8px; color:var(--primary);" id="passenger-otp-val">0000</div>
           </div>
@@ -266,7 +292,7 @@
         </div>
       </section>
 
-      <!-- Pestaña RECARGAS -->
+      <!-- Pestaña RECARGAS (CON DOBLE VALIDACIÓN FIRESTORE) -->
       <section class="tab-content animate-fade" id="tab-recargas" style="display:none;">
         <div class="card-neon" style="display:flex; align-items:center; justify-content:space-between; padding:20px; margin-bottom:14px; background:linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(15,23,42,0.95) 100%); border:1.5px solid var(--primary); box-shadow:0 0 24px rgba(0,255,135,0.18);">
           <div style="display:flex; align-items:center; gap:16px;">
@@ -310,10 +336,14 @@
 
           <form onsubmit="verifyPaymentReference(event)">
             <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-ref">Últimos 6 dígitos de la referencia:</label>
-            <input type="text" id="pay-ref-input" maxlength="8" placeholder="Ej. 466324" required>
+            <input type="text" id="pay-ref-input" maxlength="12" placeholder="Ej. 466324" required>
+            
             <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-amount">Monto pagado en Bs.:</label>
-            <input type="number" step="0.01" id="pay-amount-input" placeholder="Ej. 1380.00" required>
-            <button type="submit" class="btn-primary-neon" style="width:100%; margin-top:4px;">Acreditar Saldo a la Billetera</button>
+            <input type="text" id="pay-amount-input" placeholder="Ej. 4444,41" required>
+            
+            <button type="submit" class="btn-primary-neon" style="width:100%; margin-top:4px;" id="btn-submit-recharge">
+              Verificar y Acreditar Saldo
+            </button>
           </form>
         </div>
 
@@ -406,7 +436,7 @@
         </div>
       </section>
 
-      <!-- Pestaña CONDUCTOR - GANANCIAS (CON CARTERA PROMINENTE Y LISTA CONECTADA) -->
+      <!-- Pestaña CONDUCTOR - GANANCIAS -->
       <section class="tab-content animate-fade" id="tab-driver-ganancias" style="display:none;">
         <div class="driver-earnings-hero">
           <div style="display:flex; align-items:center; gap:16px;">
@@ -468,7 +498,7 @@
         </div>
       </section>
 
-      <!-- Pestaña PERFIL (INCLUYE TARJETA DE EMERGENCIA SOS) -->
+      <!-- Pestaña PERFIL -->
       <section class="tab-content animate-fade" id="tab-perfil" style="display:none;">
         <div class="profile-header-card">
           <div class="profile-user-row">
@@ -487,12 +517,26 @@
             </div>
           </div>
 
+          <!-- MANTENIMIENTO Y FOTO DE UNIDAD PARA CHOFER -->
           <div id="driver-maintenance-hud" style="display:none; margin-top:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border-glow); padding:12px; border-radius:16px;">
-            <div class="panel-header-row" style="margin-bottom:6px;">
-              <span style="font-size:0.75rem; color:#38bdf8; font-weight:800;">🔧 Mantenimiento de Unidad (<span id="profile-driver-veh-type">---</span>)</span>
+            <div class="panel-header-row" style="margin-bottom:8px;">
+              <span style="font-size:0.75rem; color:#38bdf8; font-weight:800;">🔧 Unidad Registrada (<span id="profile-driver-veh-type">---</span>)</span>
               <span style="font-size:0.72rem; color:var(--primary); font-weight:800;" id="profile-driver-plate-tag">---</span>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.72rem;">
+
+            <div class="driver-veh-profile-card">
+              <div class="driver-veh-thumb-wrap" onclick="triggerVehiclePhotoUpload()" title="Toca para cambiar foto de la unidad">
+                <img id="profile-driver-veh-img" src="https://files.catbox.moe/lkxyw7.png" alt="Vehículo Chofer">
+                <span class="veh-edit-tag">EDITAR</span>
+              </div>
+              <div style="flex:1;">
+                <strong id="profile-driver-veh-model" style="font-size:0.82rem; color:#fff; display:block;">Modelo de Unidad</strong>
+                <small style="font-size:0.68rem; color:var(--text-muted);">Foto visible para los pasajeros</small>
+                <button type="button" class="btn-sm btn-secondary-dim" style="margin-top:6px; font-size:0.68rem; padding:4px 8px;" onclick="openDriverVehicleEditModal()">Cambiar Vehículo</button>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.72rem; margin-top:10px;">
               <div style="background:rgba(0,0,0,0.3); padding:8px; border-radius:10px;">
                 <span style="color:var(--text-muted); display:block;">Cambio de Aceite:</span>
                 <strong style="color:#fbbf24;">Dentro de 850 km</strong>
@@ -504,13 +548,25 @@
             </div>
           </div>
 
+          <!-- BARRA DE NIVEL DEL PASAJERO -->
           <div class="tier-progress-section" id="passenger-tier-hud">
             <div class="tier-progress-header">
-              <span>Progreso de Nivel</span>
+              <span>Progreso de Nivel (Pasajero)</span>
               <strong id="profile-tier-exp-text">0 / 5 Viajes</strong>
             </div>
             <div class="tier-bar-track">
               <div class="tier-bar-fill" id="profile-tier-progress-bar" style="width: 10%;"></div>
+            </div>
+          </div>
+
+          <!-- BARRA DE NIVEL DEL CONDUCTOR -->
+          <div class="tier-progress-section" id="driver-tier-hud" style="display:none;">
+            <div class="tier-progress-header">
+              <span style="color:#38bdf8;">Progreso de Rango (Chofer)</span>
+              <strong id="driver-tier-exp-text" style="color:#38bdf8;">0 / 10 Carreras</strong>
+            </div>
+            <div class="tier-bar-track">
+              <div class="tier-bar-fill driver-bar-fill" id="driver-tier-progress-bar" style="width: 10%;"></div>
             </div>
           </div>
 
@@ -530,7 +586,7 @@
           </div>
         </div>
 
-        <!-- TARJETA DESTACADA SOS REUBICADA -->
+        <!-- TARJETA DESTACADA SOS -->
         <div class="profile-sos-card" onclick="triggerPanicSOS()">
           <div style="display:flex; align-items:center; gap:12px;">
             <div class="profile-sos-icon-circle">🚨</div>
@@ -766,7 +822,7 @@
     </div>
   </div>
 
-  <!-- MODAL SELECTOR DE KILÓMETROS CON Z-INDEX SUPERIOR -->
+  <!-- MODAL SELECTOR DE KILÓMETROS -->
   <div class="modal" id="modal-km-picker" style="z-index: 100000 !important;">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
