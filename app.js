@@ -215,8 +215,8 @@ function checkSessionAndAuth() {
         if (roleSelectScreen) roleSelectScreen.style.display = 'none';
         if (mainApp) mainApp.style.setProperty('display', 'block', 'important');
 
-        updateUIProfile();
         renderDynamicBottomNav();
+        updateUIProfile();
         requestStartupGpsLocation();
         listenRoadAlertsRealtime();
         listenTripsRealtime();
@@ -354,18 +354,18 @@ async function handleAuthSubmit(e) {
       role: 'passenger',
       isRegistered: false,
       verifiedDriver: false,
-      kmBalance: 1.00, // Bono de bienvenida inicial de $1.00 USD
+      kmBalance: 1.00,
       
       // DATOS AISLADOS DE PASAJERO
       passengerTrips: 0,
-      passengerTokens: 100, // Tokens iniciales de pasajero
+      passengerTokens: 100,
       passengerRating: 5.00,
       passengerRatingCount: 1,
 
       // DATOS AISLADOS DE CHOFER
       driverEarnings: 0.00,
       driverTrips: 0,
-      driverTokens: 100, // Tokens iniciales de chofer
+      driverTokens: 100,
       driverRating: 5.00,
       driverRatingCount: 1,
 
@@ -392,6 +392,7 @@ async function handleAuthSubmit(e) {
       return;
     }
 
+    let userDoc = null;
     try {
       const snapshot = await db.collection('users')
         .where('phone', '==', phone)
@@ -405,63 +406,61 @@ async function handleAuthSubmit(e) {
         return;
       }
 
-      let userDoc = null;
       snapshot.forEach(doc => {
         userDoc = { ...doc.data(), id: doc.id };
       });
-
-      currentUserId = userDoc.id;
-      localStorage.setItem('jr_session_uid', currentUserId);
-
-      userData = {
-        id: currentUserId,
-        name: userDoc.name || 'Usuario',
-        lastname: userDoc.lastname || '',
-        phone: userDoc.phone || phone,
-        email: userDoc.email || email,
-        referralCode: userDoc.referralCode || 'JUNRIDE',
-        role: userDoc.role || 'passenger',
-        isRegistered: true,
-        verifiedDriver: (userDoc.verifiedDriver === true),
-        vehicleType: userDoc.vehicleType || 'Moto',
-        vehicleModel: userDoc.vehicleModel || 'S/M',
-        vehiclePlate: userDoc.vehiclePlate || 'S/P',
-        kmBalance: typeof userDoc.kmBalance === 'number' ? userDoc.kmBalance : 1.00,
-        
-        // RECUPERACIÓN ESTRICTA Y AISLADA DE PASAJERO
-        passengerTrips: typeof userDoc.passengerTrips === 'number' ? userDoc.passengerTrips : (userDoc.totalTrips || 0),
-        passengerTokens: typeof userDoc.passengerTokens === 'number' ? userDoc.passengerTokens : (userDoc.tokens || 100),
-        passengerRating: typeof userDoc.passengerRating === 'number' ? userDoc.passengerRating : 5.00,
-        passengerRatingCount: userDoc.passengerRatingCount || 1,
-
-        // RECUPERACIÓN ESTRICTA Y AISLADA DE CHOFER
-        driverEarnings: typeof userDoc.driverEarnings === 'number' ? userDoc.driverEarnings : 0.00,
-        driverTrips: typeof userDoc.driverTrips === 'number' ? userDoc.driverTrips : (userDoc.driverTripsCount || 0),
-        driverTokens: typeof userDoc.driverTokens === 'number' ? userDoc.driverTokens : 100,
-        driverRating: typeof userDoc.driverRating === 'number' ? userDoc.driverRating : (userDoc.rating || 5.00),
-        driverRatingCount: userDoc.driverRatingCount || 1,
-
-        avatar: userDoc.avatar || 'https://files.catbox.moe/oh53r9.png',
-        batterySaver: userDoc.batterySaver || false,
-        walletLedger: userDoc.walletLedger || [{ type: 'credit', title: 'Cuenta Restaurada', amount: 1.00, date: 'Hoy' }]
-      };
-
-      localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
-
-      submitBtn.disabled = false;
-      closeAuthModal();
-
-      launchMainApplication();
-
-      if (userData.role === 'driver') {
-        switchTab('driver-panel');
-      }
-
     } catch (err) {
-      console.error("Error en consulta de login:", err);
+      console.error("Error en consulta de base de datos:", err);
       showNeonToast('error', 'Error al verificar credenciales en la base de datos.');
       submitBtn.disabled = false;
       submitBtn.innerText = 'Verificar y Entrar';
+      return;
+    }
+
+    // SI LLEGÓ AQUÍ, LAS CREDENCIALES FUERON 100% VALIDADAS
+    currentUserId = userDoc.id;
+    localStorage.setItem('jr_session_uid', currentUserId);
+
+    userData = {
+      id: currentUserId,
+      name: userDoc.name || 'Usuario',
+      lastname: userDoc.lastname || '',
+      phone: userDoc.phone || phone,
+      email: userDoc.email || email,
+      referralCode: userDoc.referralCode || 'JUNRIDE',
+      role: userDoc.role || 'passenger',
+      isRegistered: true,
+      verifiedDriver: (userDoc.verifiedDriver === true),
+      vehicleType: userDoc.vehicleType || 'Moto',
+      vehicleModel: userDoc.vehicleModel || 'S/M',
+      vehiclePlate: userDoc.vehiclePlate || 'S/P',
+      kmBalance: parseFloat(userDoc.kmBalance !== undefined ? userDoc.kmBalance : 1.00) || 1.00,
+      
+      passengerTrips: parseInt(userDoc.passengerTrips !== undefined ? userDoc.passengerTrips : (userDoc.totalTrips || 0)) || 0,
+      passengerTokens: parseInt(userDoc.passengerTokens !== undefined ? userDoc.passengerTokens : (userDoc.tokens || 100)) || 100,
+      passengerRating: parseFloat(userDoc.passengerRating !== undefined ? userDoc.passengerRating : 5.00) || 5.00,
+      passengerRatingCount: parseInt(userDoc.passengerRatingCount || 1) || 1,
+
+      driverEarnings: parseFloat(userDoc.driverEarnings !== undefined ? userDoc.driverEarnings : 0.00) || 0.00,
+      driverTrips: parseInt(userDoc.driverTrips !== undefined ? userDoc.driverTrips : (userDoc.driverTripsCount || 0)) || 0,
+      driverTokens: parseInt(userDoc.driverTokens !== undefined ? userDoc.driverTokens : 100) || 100,
+      driverRating: parseFloat(userDoc.driverRating !== undefined ? userDoc.driverRating : (userDoc.rating || 5.00)) || 5.00,
+      driverRatingCount: parseInt(userDoc.driverRatingCount || 1) || 1,
+
+      avatar: userDoc.avatar || 'https://files.catbox.moe/oh53r9.png',
+      batterySaver: userDoc.batterySaver || false,
+      walletLedger: userDoc.walletLedger || [{ type: 'credit', title: 'Cuenta Restaurada', amount: 1.00, date: 'Hoy' }]
+    };
+
+    localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
+
+    submitBtn.disabled = false;
+    closeAuthModal();
+
+    launchMainApplication();
+
+    if (userData.role === 'driver') {
+      switchTab('driver-panel');
     }
   }
 }
@@ -523,8 +522,16 @@ function launchMainApplication() {
     db.collection('users').doc(currentUserId).set(userData, { merge: true }).catch(() => {});
   }
 
-  updateUIProfile();
+  // 1. DIBUJAR PRIMERO LA BARRA DE NAVEGACIÓN INFERIOR
   renderDynamicBottomNav();
+
+  // 2. ACTUALIZAR ELEMENTOS DE PERFIL PROTEGIDAMENTE
+  try {
+    updateUIProfile();
+  } catch(e) {
+    console.warn("Aviso en renderizado de perfil:", e);
+  }
+
   playChimeSound();
   showNeonToast('success', `¡Bienvenido, ${userData.name}!`);
 
@@ -818,7 +825,6 @@ function redeemTokensForWallet() {
 
   logWalletMovement('credit', `Canje de ${tokensUsed} Tokens (${isDriver ? 'Chofer' : 'Pasajero'})`, dollarsToAdd);
 
-  // PERSISTENCIA INMEDIATA EN FIRESTORE
   if (db && currentUserId) {
     db.collection('users').doc(currentUserId).update({
       passengerTokens: userData.passengerTokens || 0,
@@ -943,7 +949,7 @@ function openReceiptModal(tripData = null) {
   document.getElementById('rec-driver-veh').innerText = trip.driverVehicle || 'Vehículo Registrado';
   document.getElementById('rec-route-text').innerText = `${trip.pickup || JUNQUITO_ALL_KMS[selectedOriginIdx].name} ➔ ${trip.dropoff || JUNQUITO_ALL_KMS[selectedDestIdx].name}`;
   
-  const fare = parseFloat(trip.price || offeredOrderPrice);
+  const fare = parseFloat(trip.price || offeredOrderPrice) || 0;
   document.getElementById('rec-amount-text').innerText = `$${fare.toFixed(2)} USD`;
   document.getElementById('rec-amount-ves').innerText = `(Bs. ${(fare * currentBcvRate).toFixed(2)})`;
   document.getElementById('rec-date-text').innerText = new Date().toLocaleString();
@@ -973,14 +979,13 @@ async function submitTripRatingAndReview() {
         ratedAt: new Date().toISOString()
       });
 
-      // Recalcular promedio de estrellas del conductor en Firestore
       if (currentTripData && currentTripData.driverId) {
         const driverRef = db.collection('users').doc(currentTripData.driverId);
         const driverDoc = await driverRef.get();
         if (driverDoc.exists) {
           const dData = driverDoc.data();
-          const prevCount = dData.driverRatingCount || 1;
-          const prevRating = dData.driverRating || 5.0;
+          const prevCount = parseInt(dData.driverRatingCount || 1) || 1;
+          const prevRating = parseFloat(dData.driverRating || 5.0) || 5.0;
           const newCount = prevCount + 1;
           const newRating = Number(((prevRating * prevCount + currentRatingStars) / newCount).toFixed(2));
 
@@ -1002,11 +1007,11 @@ async function submitTripRatingAndReview() {
 
 function shareReceiptWhatsApp() {
   const trip = currentTripData;
-  const fare = trip ? trip.price : offeredOrderPrice.toFixed(2);
+  const fare = parseFloat(trip ? trip.price : offeredOrderPrice) || 0;
   const driver = trip ? trip.driverName : 'Conductor Asignado';
   const route = trip ? `${trip.pickup} a ${trip.dropoff}` : `${JUNQUITO_ALL_KMS[selectedOriginIdx].name} a ${JUNQUITO_ALL_KMS[selectedDestIdx].name}`;
 
-  const msg = encodeURIComponent(`🧾 Recibo Oficial JunRide:\n🚗 Conductor: ${driver}\n💵 Tarifa: $${fare} USD (Bs. ${(fare * currentBcvRate).toFixed(2)})\n🛣️ Ruta: ${route}\n⭐ Calificación: ${currentRatingStars} Estrellas\nEstado: Viaje Completado con Seguridad Satelital 🏔️`);
+  const msg = encodeURIComponent(`🧾 Recibo Oficial JunRide:\n🚗 Conductor: ${driver}\n💵 Tarifa: $${fare.toFixed(2)} USD (Bs. ${(fare * currentBcvRate).toFixed(2)})\n🛣️ Ruta: ${route}\n⭐ Calificación: ${currentRatingStars} Estrellas\nEstado: Viaje Completado con Seguridad Satelital 🏔️`);
   window.location.href = `https://wa.me/?text=${msg}`;
 }
 
@@ -1053,7 +1058,7 @@ async function fetchUserTripHistory() {
       const stars = t.clientRating ? '★'.repeat(t.clientRating) + '☆'.repeat(5 - t.clientRating) : '★★★★★';
       const commentHtml = t.clientComment ? `<div class="history-comment-box">"${t.clientComment}"</div>` : '';
       const driverName = t.driverName || 'Conductor';
-      const fareUsd = parseFloat(t.price || 0).toFixed(2);
+      const fareUsd = (parseFloat(t.price || 0) || 0).toFixed(2);
       const fareBs = (fareUsd * currentBcvRate).toFixed(2);
       const dateStr = t.completedAt || t.createdAt ? (new Date(t.completedAt || t.createdAt).toLocaleDateString() + ' ' + new Date(t.completedAt || t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : 'Reciente';
 
@@ -1124,7 +1129,7 @@ async function fetchDriverTripHistory() {
 
     container.innerHTML = '';
     trips.forEach(t => {
-      const fareTotal = parseFloat(t.price || 0);
+      const fareTotal = parseFloat(t.price || 0) || 0;
       const netUsd = (fareTotal * 0.90).toFixed(2);
       const netBs = (netUsd * currentBcvRate).toFixed(2);
       const stars = t.clientRating ? '★'.repeat(t.clientRating) + '☆'.repeat(5 - t.clientRating) : '★★★★★';
@@ -1167,11 +1172,11 @@ function verifyPaymentReference(e) {
   triggerHaptic(50);
   if (!userData) return;
   const ref = document.getElementById('pay-ref-input').value.trim();
-  const amount = parseFloat(document.getElementById('pay-amount-input').value);
+  const amount = parseFloat(document.getElementById('pay-amount-input').value) || 0;
   let usdVal = amount;
   if (selectedRechargeMethodKey === 'bdv') usdVal = (amount / currentBcvRate);
   
-  userData.kmBalance = (userData.kmBalance || 0) + usdVal;
+  userData.kmBalance = (parseFloat(userData.kmBalance) || 0) + usdVal;
   logWalletMovement('credit', `Recarga ${selectedRechargeMethodKey.toUpperCase()} (#${ref})`, usdVal);
 
   if (db && currentUserId) {
@@ -1190,7 +1195,7 @@ function logWalletMovement(type, title, amount) {
   if (!userData) return;
   if (!userData.walletLedger) userData.walletLedger = [];
   userData.walletLedger.unshift({
-    type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
+    type: type, title: title, amount: parseFloat(amount) || 0, date: new Date().toLocaleTimeString()
   });
   localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
   renderWalletLedger();
@@ -1204,10 +1209,11 @@ function renderWalletLedger() {
   ledger.slice(0, 5).forEach(item => {
     let sign = item.type === 'debit' ? '-' : '+';
     let color = item.type === 'debit' ? '#ef4444' : '#00ff87';
+    const numAmt = parseFloat(item.amount) || 0;
     container.innerHTML += `
       <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:6px; font-size:0.78rem;">
         <div><strong>${item.title}</strong><p style="font-size:0.68rem; color:#94a3b8;">${item.date}</p></div>
-        <strong style="color:${color};">${sign}$${item.amount.toFixed(2)}</strong>
+        <strong style="color:${color};">${sign}$${numAmt.toFixed(2)}</strong>
       </div>`;
   });
 }
@@ -1493,8 +1499,9 @@ async function confirmOrderTrip() {
   triggerHaptic(80);
   if (!userData) return;
   const payMode = document.getElementById('order-pay-mode').value;
+  const currentBalance = parseFloat(userData.kmBalance) || 0;
 
-  if (payMode === 'cartera' && (userData.kmBalance || 0) < offeredOrderPrice) {
+  if (payMode === 'cartera' && currentBalance < offeredOrderPrice) {
     showNeonToast('error', 'Saldo insuficiente en tu cartera digital. Recarga saldo o selecciona pagar en efectivo.');
     return;
   }
@@ -1505,10 +1512,9 @@ async function confirmOrderTrip() {
 
   if (payMode === 'cartera') {
     escrowHeldAmount = offeredOrderPrice;
-    userData.kmBalance -= offeredOrderPrice;
+    userData.kmBalance = currentBalance - offeredOrderPrice;
     logWalletMovement('debit', `Retención Carrera (${JUNQUITO_ALL_KMS[selectedOriginIdx].name})`, offeredOrderPrice);
     
-    // GUARDADO DIRECTO EN FIRESTORE
     if (db && currentUserId) {
       db.collection('users').doc(currentUserId).update({
         kmBalance: userData.kmBalance,
@@ -1566,7 +1572,7 @@ async function cancelTrip(isManual = false) {
   triggerHaptic(50);
   if (activeTripId) {
     if (escrowHeldAmount > 0 && userData) {
-      userData.kmBalance += escrowHeldAmount;
+      userData.kmBalance = (parseFloat(userData.kmBalance) || 0) + escrowHeldAmount;
       logWalletMovement('refund', 'Reembolso por Cancelación', escrowHeldAmount);
       escrowHeldAmount = 0.00;
       
@@ -1605,9 +1611,8 @@ function toggleDriverStatus() {
   triggerHaptic();
   if (!userData) return;
 
-  // CONTROL DE CALIDAD: SUSPENSIÓN POR CALIFICACIÓN < 3.0
-  const driverRating = userData.driverRating !== undefined ? userData.driverRating : 5.00;
-  const ratingCount = userData.driverRatingCount || 1;
+  const driverRating = parseFloat(userData.driverRating !== undefined ? userData.driverRating : 5.00) || 5.00;
+  const ratingCount = parseInt(userData.driverRatingCount || 1) || 1;
   if (driverRating < 3.00 && ratingCount >= 2) {
     showNeonToast('error', 'Tu cuenta está suspendida por tener calificación menor a 3.0 estrellas.');
     return;
@@ -1777,22 +1782,21 @@ async function completeActiveTripDriver() {
   triggerHaptic(100);
   playChimeSound();
 
-  const fareVal = parseFloat(currentTripData ? currentTripData.price : 2.50);
+  const fareVal = parseFloat(currentTripData ? currentTripData.price : 2.50) || 2.50;
   const netEarnings = fareVal * 0.90;
   const serviceType = currentTripData ? currentTripData.service : 'Carro';
 
-  // REGLAS DINÁMICAS DE TOKENS POR TIPO DE TRANSPORTE
   let tokensAwarded = 100;
   if (serviceType === 'Moto') tokensAwarded = 100;
   else if (serviceType === 'Carro') tokensAwarded = 100;
   else if (serviceType === 'Colectivo') tokensAwarded = 50;
   else if (serviceType === 'Carga') tokensAwarded = 250;
 
-  // 1. ACTUALIZAR CHOFER EN LOCAL Y EN FIRESTORE (SOLO ESTADÍSTICAS DE CHOFER)
+  // 1. ACTUALIZAR CHOFER EN LOCAL Y EN FIRESTORE
   if (userData) {
-    userData.driverEarnings = (userData.driverEarnings || 0) + netEarnings;
-    userData.driverTrips = (userData.driverTrips || 0) + 1;
-    userData.driverTokens = (userData.driverTokens || 100) + tokensAwarded;
+    userData.driverEarnings = (parseFloat(userData.driverEarnings) || 0) + netEarnings;
+    userData.driverTrips = (parseInt(userData.driverTrips) || 0) + 1;
+    userData.driverTokens = (parseInt(userData.driverTokens) || 100) + tokensAwarded;
     localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
     updateUIProfile();
 
@@ -1805,15 +1809,15 @@ async function completeActiveTripDriver() {
     }
   }
 
-  // 2. ACTUALIZAR PASAJERO EN FIRESTORE (SOLO ESTADÍSTICAS DE PASAJERO)
+  // 2. ACTUALIZAR PASAJERO EN FIRESTORE
   if (db && currentTripData && currentTripData.clientId) {
     try {
       const passengerRef = db.collection('users').doc(currentTripData.clientId);
       const passDoc = await passengerRef.get();
       if (passDoc.exists) {
         const pData = passDoc.data();
-        const pTrips = (pData.passengerTrips || pData.totalTrips || 0) + 1;
-        const pTokens = (pData.passengerTokens || pData.tokens || 100) + tokensAwarded;
+        const pTrips = (parseInt(pData.passengerTrips !== undefined ? pData.passengerTrips : (pData.totalTrips || 0)) || 0) + 1;
+        const pTokens = (parseInt(pData.passengerTokens !== undefined ? pData.passengerTokens : (pData.tokens || 100)) || 100) + tokensAwarded;
         await passengerRef.update({
           passengerTrips: pTrips,
           passengerTokens: pTokens
@@ -2011,7 +2015,7 @@ async function confirmScheduleTrip() {
   const service = document.getElementById('schedule-service-val').value;
   const pickup = document.getElementById('trigger-sched-origin-name').innerText;
   const dest = document.getElementById('trigger-sched-dest-name').innerText;
-  const fare = parseFloat(document.getElementById('schedule-fare-input').value || 4.0);
+  const fare = parseFloat(document.getElementById('schedule-fare-input').value || 4.0) || 4.0;
 
   if (db) {
     await db.collection('trips_programados').add({
@@ -2062,7 +2066,7 @@ function sendKycToWhatsApp() {
 function requestWeeklyPayout() {
   triggerHaptic();
   if (!userData) return;
-  const payoutVal = (userData.driverEarnings || 0);
+  const payoutVal = parseFloat(userData.driverEarnings) || 0;
   if (payoutVal <= 0) { showNeonToast('warning', 'No tienes ganancias pendientes por liquidar.'); return; }
   const bcvVal = (payoutVal * currentBcvRate).toFixed(2);
   const msg = encodeURIComponent(`Hola Administración JunRide 🏔️.\nSolicito liquidación de mis ganancias:\n👤 Chofer: ${userData.name}\n💵 Monto Neto: $${payoutVal.toFixed(2)} USD (Bs. ${bcvVal})`);
@@ -2190,13 +2194,13 @@ function updateUIProfile() {
 
   try {
     const isDriver = (userData.role === 'driver');
+    const kmBalanceNum = parseFloat(userData.kmBalance) || 0;
 
-    // SALDOS MONETARIOS
     const kmBal = document.getElementById('ui-km-balance');
-    if (kmBal) kmBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
+    if (kmBal) kmBal.innerText = `$${kmBalanceNum.toFixed(2)}`;
     
     const recBal = document.getElementById('recarga-km-val');
-    if (recBal) recBal.innerText = `$${(userData.kmBalance || 0).toFixed(2)}`;
+    if (recBal) recBal.innerText = `$${kmBalanceNum.toFixed(2)}`;
 
     const profName = document.getElementById('profile-fullname');
     if (profName) profName.innerText = `${userData.name || ''} ${userData.lastname || ''}`.trim() || 'Usuario';
@@ -2217,9 +2221,8 @@ function updateUIProfile() {
     const unverifiedWarn = document.getElementById('driver-unverified-warning');
     const suspendedWarn = document.getElementById('driver-suspended-warning');
 
-    // CONTROL DE SUSPENSIÓN POR CALIFICACIÓN < 3.0
-    const driverRating = userData.driverRating !== undefined ? userData.driverRating : 5.00;
-    const driverRatingCount = userData.driverRatingCount || 1;
+    const driverRating = parseFloat(userData.driverRating !== undefined ? userData.driverRating : 5.00) || 5.00;
+    const driverRatingCount = parseInt(userData.driverRatingCount || 1) || 1;
     const isSuspended = isDriver && (driverRating < 3.00 && driverRatingCount >= 2);
 
     if (isDriver) {
@@ -2245,8 +2248,7 @@ function updateUIProfile() {
       const levelsTitle = document.getElementById('profile-levels-title');
       if (levelsTitle) levelsTitle.innerText = "Escala de Choferes JunRide";
 
-      // ESTADÍSTICAS PURAS DE CONDUCTOR (AISLADAS)
-      const currentDriverTrips = userData.driverTrips || 0;
+      const currentDriverTrips = parseInt(userData.driverTrips) || 0;
       const { current } = getUserCurrentLevel(currentDriverTrips, true);
 
       const tierIconRight = document.getElementById('profile-tier-icon-right');
@@ -2262,16 +2264,17 @@ function updateUIProfile() {
       if (statTrips) statTrips.innerText = currentDriverTrips;
 
       const statTokens = document.getElementById('stats-total-tokens');
-      if (statTokens) statTokens.innerText = (userData.driverTokens !== undefined ? userData.driverTokens : 100).toLocaleString();
+      const driverTok = parseInt(userData.driverTokens !== undefined ? userData.driverTokens : 100) || 100;
+      if (statTokens) statTokens.innerText = driverTok.toLocaleString();
 
       const earnVal = document.getElementById('driver-total-earnings-val');
-      if (earnVal) earnVal.innerText = `$${(userData.driverEarnings || 0).toFixed(2)}`;
+      const driverEarnNum = parseFloat(userData.driverEarnings) || 0;
+      if (earnVal) earnVal.innerText = `$${driverEarnNum.toFixed(2)}`;
 
       const dTripsCount = document.getElementById('driver-trips-count-val');
       if (dTripsCount) dTripsCount.innerText = `${currentDriverTrips}`;
 
     } else {
-      // MODO PASAJERO (ESTADÍSTICAS PURAS DE CLIENTE AISLADAS)
       if (driverMaintHud) driverMaintHud.style.display = 'none';
       if (passengerTierHud) passengerTierHud.style.display = 'block';
       if (unverifiedWarn) unverifiedWarn.style.display = 'none';
@@ -2282,7 +2285,7 @@ function updateUIProfile() {
       const levelsTitle = document.getElementById('profile-levels-title');
       if (levelsTitle) levelsTitle.innerText = "Escala de Niveles JunRide";
 
-      const currentPassengerTrips = userData.passengerTrips || 0;
+      const currentPassengerTrips = parseInt(userData.passengerTrips) || 0;
       const { current, next } = getUserCurrentLevel(currentPassengerTrips, false);
 
       const tierIconRight = document.getElementById('profile-tier-icon-right');
@@ -2304,7 +2307,7 @@ function updateUIProfile() {
         if (tierBar) tierBar.style.width = `100%`;
       }
 
-      const passRating = userData.passengerRating !== undefined ? userData.passengerRating : 5.00;
+      const passRating = parseFloat(userData.passengerRating !== undefined ? userData.passengerRating : 5.00) || 5.00;
       const statRating = document.getElementById('stats-rating-val');
       if (statRating) statRating.innerText = `⭐ ${passRating.toFixed(2)}`;
 
@@ -2312,7 +2315,8 @@ function updateUIProfile() {
       if (statTrips) statTrips.innerText = currentPassengerTrips;
 
       const statTokens = document.getElementById('stats-total-tokens');
-      if (statTokens) statTokens.innerText = (userData.passengerTokens !== undefined ? userData.passengerTokens : 100).toLocaleString();
+      const passTok = parseInt(userData.passengerTokens !== undefined ? userData.passengerTokens : 100) || 100;
+      if (statTokens) statTokens.innerText = passTok.toLocaleString();
     }
 
     const headerBadge = document.getElementById('header-driver-badge');
@@ -2332,7 +2336,7 @@ function renderLevelsBreakdownList() {
   container.innerHTML = '';
   const isDriver = (userData && userData.role === 'driver');
   const levels = isDriver ? JUNRIDE_LEVELS_DRIVER : JUNRIDE_LEVELS_PASSENGER;
-  const tripsCount = isDriver ? (userData ? userData.driverTrips || 0 : 0) : (userData ? userData.passengerTrips || 0 : 0);
+  const tripsCount = isDriver ? (parseInt(userData ? userData.driverTrips : 0) || 0) : (parseInt(userData ? userData.passengerTrips : 0) || 0);
   const { current } = getUserCurrentLevel(tripsCount, isDriver);
 
   const modalTitle = document.getElementById('levels-modal-main-title');
