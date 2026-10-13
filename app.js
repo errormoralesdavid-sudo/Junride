@@ -61,6 +61,31 @@ function triggerHaptic(duration = 45) {
   }
 }
 
+// ==============================================================
+// VISOR DE FOTOS AMPLIADAS (LIGHTBOX NEÓN)
+// ==============================================================
+function openImageLightbox(src, title = 'Foto Ampliada') {
+  triggerHaptic(30);
+  const modal = document.getElementById('modal-image-lightbox');
+  const targetImg = document.getElementById('lightbox-target-img');
+  const titleEl = document.getElementById('lightbox-image-title');
+  if (targetImg && src) targetImg.src = src;
+  if (titleEl) titleEl.innerText = title;
+  if (modal) modal.classList.add('active');
+}
+
+function closeImageLightbox() {
+  const modal = document.getElementById('modal-image-lightbox');
+  if (modal) modal.classList.remove('active');
+}
+
+function triggerZoomElementImage(elementId, title = 'Foto Ampliada') {
+  const el = document.getElementById(elementId);
+  if (el && el.src) {
+    openImageLightbox(el.src, title);
+  }
+}
+
 // ESCALAS DE NIVELES SEPARADAS (PASAJERO VS CONDUCTOR)
 const JUNRIDE_LEVELS_PASSENGER = [
   { id: 1, name: "Caminante", minTrips: 0, maxTrips: 4, icon: "https://files.catbox.moe/31p0et.png", desc: "Rango de bienvenida. Primeros pasos para nuevos usuarios que inician su recorrido por la montaña." },
@@ -108,7 +133,7 @@ const JUNQUITO_ALL_KMS = [
   { km: 24, name: "Km 24 (Bosque Nublado)", lat: 10.4708, lon: -67.1405, alt: 2010 },
   { km: 25, name: "Km 25 (Sector El Parador)", lat: 10.4668, lon: -67.1485, alt: 2040 },
   { km: 26, name: "Km 26 (Paso de Montaña)", lat: 10.4628, lon: -67.1565, alt: 2070 },
-  { km: 27, name: "Km 27 (Curva Los Sauces)", lat: 10.4588, lon: -67.1655, alt: 2100 },
+  { km: 27, name: "Curva Los Sauces (Km 27)", lat: 10.4588, lon: -67.1655, alt: 2100 },
   { km: 28, name: "Km 28 (Cruce Colonia Tovar)", lat: 10.4548, lon: -67.1745, alt: 2120 }
 ];
 
@@ -263,7 +288,7 @@ function switchTab(tabName) {
   window.scrollTo(0, 0);
 }
 
-// CONTROL DE CAMBIO A MODO CHOFER (VALIDA PRIMERA VEZ Y VEHÍCULO)
+// CONTROL DE CAMBIO A MODO CHOFER
 function handleDriverCtaClick() {
   triggerHaptic(40);
   if (!userData) return;
@@ -1245,7 +1270,7 @@ function shareReceiptWhatsApp() {
 }
 
 // ==============================================================
-// HISTORIAL DE VIAJES DEL PASAJERO (CON AVATAR REAL DEL CHOFER)
+// HISTORIAL DE VIAJES DEL PASAJERO (CON AVATAR REAL AMPLIABLE)
 // ==============================================================
 async function fetchUserTripHistory() {
   const container = document.getElementById('history-cards-container');
@@ -1296,7 +1321,7 @@ async function fetchUserTripHistory() {
         <div class="history-trip-card">
           <div class="history-card-header">
             <div class="history-driver-info-wrap">
-              <img src="${driverAvatar}" class="history-driver-avatar-thumb" alt="${driverName}">
+              <img src="${driverAvatar}" class="history-driver-avatar-thumb" alt="${driverName}" onclick="openImageLightbox('${driverAvatar}', 'Chofer: ${driverName}')" title="Toca para ampliar foto">
               <div>
                 <span class="badge-tag-neon">${t.service || 'Carrera'}</span>
                 <strong style="margin-left:4px; font-size:0.85rem; color:#fff;">Chofer: ${driverName}</strong>
@@ -1367,14 +1392,18 @@ async function fetchDriverTripHistory() {
       const netBs = (netUsd * currentBcvRate).toFixed(2);
       const stars = t.clientRating ? '★'.repeat(t.clientRating) + '☆'.repeat(5 - t.clientRating) : '★★★★★';
       const commentHtml = t.clientComment ? `<div class="history-comment-box">"${t.clientComment}"</div>` : '';
+      const clientAvatar = t.clientAvatar || 'https://files.catbox.moe/oh53r9.png';
       const dateStr = t.completedAt || t.createdAt ? (new Date(t.completedAt || t.createdAt).toLocaleDateString() + ' ' + new Date(t.completedAt || t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : 'Reciente';
 
       container.innerHTML += `
         <div class="driver-history-card" style="margin-bottom:8px;">
           <div class="history-card-header">
-            <div>
-              <span class="badge-tag-neon">${t.service || 'Viaje'}</span>
-              <strong style="margin-left:6px; font-size:0.85rem; color:#fff;">👤 ${t.clientName || 'Pasajero'}</strong>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <img src="${clientAvatar}" class="history-driver-avatar-thumb" alt="${t.clientName || 'Pasajero'}" onclick="openImageLightbox('${clientAvatar}', 'Pasajero: ${t.clientName || 'Cliente'}')" title="Toca para ampliar foto">
+              <div>
+                <span class="badge-tag-neon">${t.service || 'Viaje'}</span>
+                <strong style="margin-left:4px; font-size:0.85rem; color:#fff;">👤 ${t.clientName || 'Pasajero'}</strong>
+              </div>
             </div>
             <strong style="color:var(--primary); font-size:0.95rem;">+$${netUsd} USD</strong>
           </div>
@@ -1865,6 +1894,7 @@ async function confirmOrderTrip() {
     clientId: currentUserId,
     clientName: `${userData.name || 'Usuario'} ${userData.lastname || ''}`.trim(),
     clientPhone: userData.phone,
+    clientAvatar: userData.avatar || 'https://files.catbox.moe/oh53r9.png',
     service: selectedOrderCategory,
     pickup: JUNQUITO_ALL_KMS[selectedOriginIdx].name,
     pickupCoords: { lat: origPt.lat, lon: origPt.lon },
@@ -2037,6 +2067,7 @@ function renderSingleDriverTripCard(tripId, trip) {
 
   const pLat = trip.pickupCoords ? trip.pickupCoords.lat : 10.4614;
   const pLon = trip.pickupCoords ? trip.pickupCoords.lon : -67.0420;
+  const pAvatar = trip.clientAvatar || 'https://files.catbox.moe/oh53r9.png';
 
   driverList.innerHTML += `
     <li style="display:flex; flex-direction:column; gap:8px; padding:14px; background:rgba(255,255,255,0.03); border-radius:16px; border:1px solid var(--border-glow); margin-bottom:8px;">
@@ -2044,7 +2075,10 @@ function renderSingleDriverTripCard(tripId, trip) {
         <strong style="color:#00ff87; font-size:1rem;">${trip.service} ($${trip.price})</strong>
         <button onclick="acceptTrip('${tripId}')" class="btn-primary-neon btn-sm">Aceptar Carrera</button>
       </div>
-      <p style="font-size:0.78rem; color:#cbd5e1;">👤 <strong>${trip.clientName || 'Pasajero'}</strong>: ${trip.pickup} ➔ ${trip.dropoff}</p>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img src="${pAvatar}" style="width:34px; height:34px; border-radius:50%; border:1.5px solid var(--primary); object-fit:cover; cursor:pointer;" onclick="openImageLightbox('${pAvatar}', 'Pasajero: ${trip.clientName || 'Cliente'}')" title="Toca para ampliar foto">
+        <p style="font-size:0.78rem; color:#cbd5e1; flex:1;">👤 <strong>${trip.clientName || 'Pasajero'}</strong>: ${trip.pickup} ➔ ${trip.dropoff}</p>
+      </div>
       <button class="btn-sm btn-secondary-dim" style="width:100%; font-size:0.72rem;" onclick="openDriverNavExternal(${pLat}, ${pLon})">🗺️ Ver Ubicación en Google Maps</button>
     </li>`;
 }
@@ -2408,7 +2442,7 @@ function requestWeeklyPayout() {
   window.location.href = `https://wa.me/584123167126?text=${msg}`;
 }
 
-// SINCRONIZACIÓN AUTOMÁTICA DE VIAJES EN CURSO (CON FOTOS DE CHOFER Y UNIDAD)
+// SINCRONIZACIÓN AUTOMÁTICA DE VIAJES EN CURSO (CON AVATARES DE AMBOS ROLES)
 function listenTripsRealtime() {
   if (!db || !currentUserId || !userData) return;
   db.collection('trips').onSnapshot(snapshot => {
@@ -2418,6 +2452,7 @@ function listenTripsRealtime() {
       const trip = doc.data();
       const tripId = doc.id;
 
+      // CHOFER: VIAJE ASIGNADO O EN TRAYECTO
       if (trip.driverId === currentUserId && (trip.status === 'Conductor asignado' || trip.status === 'En trayecto')) {
         activeTripId = tripId;
         currentTripData = { ...trip, id: tripId };
@@ -2432,6 +2467,12 @@ function listenTripsRealtime() {
           document.getElementById('driver-trip-fare-badge').innerText = `$${trip.price}`;
           document.getElementById('driver-trip-route-info').innerText = `${trip.pickup} ➔ ${trip.dropoff}`;
           
+          const passNameEl = document.getElementById('driver-passenger-name');
+          if (passNameEl) passNameEl.innerText = `${trip.clientName || 'Pasajero en espera'}`;
+
+          const passAvatarImg = document.getElementById('driver-passenger-avatar-img');
+          if (passAvatarImg) passAvatarImg.src = trip.clientAvatar || 'https://files.catbox.moe/oh53r9.png';
+
           if (trip.status === 'En trayecto') {
             document.getElementById('driver-otp-input-area').style.display = 'none';
             document.getElementById('driver-in-route-area').style.display = 'block';
@@ -2441,6 +2482,7 @@ function listenTripsRealtime() {
         }
       }
 
+      // PASAJERO: VIAJE ASIGNADO, EN TRAYECTO O COMPLETADO
       if (activeTripId === tripId && userData.role === 'passenger') {
         currentTripData = { ...trip, id: tripId };
 
