@@ -137,7 +137,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   border-radius: 18px;
 }
 
-/* Cabecera */
+/* Cabecera Despejada */
 .top-bar {
   position: fixed; top: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto;
   padding: calc(10px + var(--safe-top)) 16px 10px 16px;
@@ -148,7 +148,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   backdrop-filter: blur(16px);
   height: 74px;
 }
-.top-bar-left { display: flex; align-items: center; gap: 8px; }
+.top-bar-left { display: flex; align-items: center; gap: 10px; }
 
 .brand-logo-lockup { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .brand-logo-img {
@@ -161,30 +161,30 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 
 .driver-badge-header {
   display: none; align-items: center; gap: 6px; background: rgba(0, 255, 135, 0.12);
-  border: 1px solid var(--primary); padding: 4px 10px; border-radius: 14px;
+  border: 1px solid var(--primary); padding: 5px 12px; border-radius: 14px;
   cursor: pointer; box-shadow: 0 0 12px rgba(0,255,135,0.25);
+  transition: transform 0.2s ease;
 }
-.driver-badge-header img { width: 20px; height: 20px; object-fit: contain; }
-.driver-badge-header span { font-size: 0.72rem; font-weight: 800; color: var(--primary); }
+.driver-badge-header:active { transform: scale(0.96); }
+.driver-badge-header img { width: 22px; height: 22px; object-fit: contain; }
+.driver-badge-header span { font-size: 0.76rem; font-weight: 800; color: var(--primary); }
 
-.top-bar-right { display: flex; align-items: center; gap: 6px; }
+.top-bar-right { display: flex; align-items: center; gap: 8px; }
 
 .bcv-rate-pill {
   text-align: right; background: rgba(0, 255, 135, 0.08);
   border: 1.5px solid var(--primary); border-radius: 14px;
-  padding: 5px 10px; cursor: pointer; box-shadow: 0 0 12px rgba(0, 255, 135, 0.2);
+  padding: 6px 12px; cursor: pointer; box-shadow: 0 0 12px rgba(0, 255, 135, 0.2);
 }
 .bcv-rate-pill span { font-size: 0.62rem; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 700; }
-.bcv-rate-pill strong { font-size: 0.88rem; color: #ffffff; font-weight: 800; }
+.bcv-rate-pill strong { font-size: 0.9rem; color: #ffffff; font-weight: 800; }
 
 .btn-icon-top {
   background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-card);
-  border-radius: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  border-radius: 12px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
   cursor: pointer; fill: var(--text-muted);
 }
 .btn-icon-top.active { background: rgba(245, 158, 11, 0.2); border-color: var(--warning); fill: #fbbf24; }
-.btn-icon-top.recording { background: rgba(239, 68, 68, 0.3) !important; border-color: var(--danger) !important; fill: #ef4444 !important; animation: pulseAlert 1s infinite; }
-.btn-sos-top { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); fill: #ef4444; }
 
 .content-app { 
   max-width: 500px; margin: 0 auto; 
@@ -277,14 +277,23 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 }
 .wallet-balance-num { font-size: 1.45rem; font-weight: 900; color: var(--primary); text-shadow: 0 0 14px var(--primary-glow); }
 
+/* CARTERA DE GANANCIAS DEL CHOFER (AMPLIADA Y DESTACADA) */
 .driver-earnings-hero {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px; border-radius: 20px; margin-bottom: 14px;
-  background: linear-gradient(135deg, rgba(0,255,135,0.12) 0%, rgba(15,23,42,0.95) 100%);
-  border: 1.5px solid var(--primary); box-shadow: 0 0 24px rgba(0,255,135,0.18);
+  padding: 20px; border-radius: 22px; margin-bottom: 14px;
+  background: linear-gradient(135deg, rgba(0,255,135,0.14) 0%, rgba(15,23,42,0.96) 100%);
+  border: 1.5px solid var(--primary); box-shadow: 0 0 28px rgba(0,255,135,0.22);
 }
-.driver-wallet-logo-wrap { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; }
-.driver-wallet-logo-wrap img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px var(--primary-glow)); }
+.driver-wallet-hero-box {
+  width: 72px; height: 72px; border-radius: 20px;
+  background: rgba(0, 255, 135, 0.1); border: 1.5px solid var(--primary);
+  box-shadow: 0 0 20px rgba(0, 255, 135, 0.35);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.driver-wallet-hero-box img {
+  width: 58px; height: 58px; object-fit: contain;
+  filter: drop-shadow(0 4px 12px var(--primary-glow));
+}
 
 .driver-toggle-image-btn {
   width: 100%; max-width: 280px; height: 60px;
@@ -376,7 +385,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   padding: 22px 18px; border-radius: 24px; position: relative; overflow: hidden;
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(5, 8, 17, 0.98) 100%);
   border: 1.5px solid var(--border-glow); box-shadow: 0 0 30px rgba(0, 255, 135, 0.15);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .profile-user-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .profile-avatar-wrap {
@@ -429,6 +438,21 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 }
 .stat-val-bold { font-size: 1.15rem; font-weight: 900; color: #ffffff; }
 .stat-lbl-dim { font-size: 0.68rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+
+/* TARJETA DESTACADA SOS DENTRO DE PERFIL */
+.profile-sos-card {
+  padding: 14px 16px; border-radius: 18px; margin-bottom: 12px;
+  background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.4);
+  display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer; box-shadow: 0 0 18px rgba(239, 68, 68, 0.15);
+  transition: all 0.2s ease;
+}
+.profile-sos-card:active { transform: scale(0.98); background: rgba(239, 68, 68, 0.16); }
+.profile-sos-icon-circle {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444;
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
 
 .profile-menu-group {
   border-radius: 20px; background: var(--surface-card);
@@ -526,7 +550,6 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   visibility: hidden !important;
 }
 
-/* PIN QUE TOCA EXACTAMENTE EL PAVIMENTO */
 .custom-neon-pin {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
@@ -537,7 +560,6 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   white-space: nowrap; margin-top: -4px; box-shadow: 0 2px 8px rgba(0,0,0,0.8);
 }
 
-/* Choferes reales conectados */
 .driver-real-marker-box {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   width: 40px; height: 40px; border-radius: 50%;
@@ -607,7 +629,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 }
 .cash-calc-btn:active { border-color: var(--primary); background: rgba(0,255,135,0.1); color: var(--primary); }
 
-/* Burbujas de Chat */
+/* Chat y Notas de Voz */
 .quick-replies-bar {
   display: flex; gap: 6px; overflow-x: auto; padding: 6px 0; margin-bottom: 6px;
   scrollbar-width: none;
@@ -626,11 +648,8 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   align-self: flex-start; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-card);
   color: #e2e8f0; border-bottom-left-radius: 4px;
 }
-.chat-audio-player {
-  display: flex; align-items: center; gap: 8px;
-}
+.chat-audio-player { display: flex; align-items: center; gap: 8px; }
 
-/* MICRÓFONO ERGONÓMICO GRANDE */
 .chat-mic-large-btn {
   width: 48px; height: 48px; border-radius: 50%;
   background: rgba(15, 23, 42, 0.95); border: 1.5px solid var(--primary);
@@ -646,7 +665,6 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 }
 .chat-mic-large-btn.recording svg { fill: #ef4444 !important; }
 
-/* PUNTO ROJO DENTRO DEL BOTÓN DE CHAT ACTIVO */
 .chat-btn-unread-dot {
   position: absolute; top: -3px; right: -3px;
   width: 11px; height: 11px; border-radius: 50%;
@@ -656,7 +674,7 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
   display: none;
 }
 
-/* ESTRELLAS INTERACTIVAS Y RESEÑAS EN EL COMPROBANTE */
+/* Estrellas Interactivas y Reseñas */
 .star-rating-box {
   display: flex; justify-content: center; gap: 10px; font-size: 2.2rem;
   margin: 6px 0; user-select: none;
@@ -675,8 +693,8 @@ body.battery-saver * { backdrop-filter: none !important; -webkit-backdrop-filter
 }
 .review-textarea:focus { border-color: var(--primary); }
 
-/* TARJETAS DEL HISTORIAL DE CARRERAS */
-.history-trip-card {
+/* TARJETAS DE HISTORIAL DE CARRERAS (PASAJERO Y CHOFER) */
+.history-trip-card, .driver-history-card {
   padding: 16px; border-radius: 18px; background: rgba(255,255,255,0.03);
   border: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4);
