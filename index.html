@@ -57,7 +57,7 @@
     </div>
   </section>
 
-  <!-- 2. PANTALLA DE SELECCIÓN DE ROL -->
+  <!-- 2. PANTALLA DE SELECCIÓN DE ROL (CON ICONO OFICIAL DE CLIENTE) -->
   <section id="screen-role-select" class="welcome-screen-wrap animate-fade" style="display:none;">
     <div class="welcome-hero-content">
       <h2 style="font-size:1.6rem; color:#fff; font-weight:900;">¿Cómo deseas usar JunRide?</h2>
@@ -69,7 +69,7 @@
         </div>
         <div style="text-align:left;">
           <h3 style="color:#00ff87; font-size:1.15rem; font-weight:900;">Modo Pasajero / Cliente</h3>
-          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, puestos compartidos y mudanzas en la montaña.</p>
+          <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">Solicita traslados particulares, colectivos y mudanzas en la montaña.</p>
         </div>
       </div>
 
@@ -262,7 +262,7 @@
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:10px;">
             <button class="btn-primary-neon btn-sm" style="position:relative;" onclick="openActiveChatModal()">
               💬 Abrir Chat y Voz
-              <span id="passenger-trip-unread-dot" class="chat-btn-unread-dot"></span>
+              <span id="passenger-live-chat-dot" class="chat-btn-unread-dot"></span>
             </button>
             <button class="btn-sm btn-secondary-dim" onclick="shareLiveTripStatus()">📲 Compartir Viaje</button>
           </div>
@@ -326,17 +326,16 @@
         </div>
       </section>
 
-      <!-- Pestaña HISTORIAL -->
+      <!-- Pestaña HISTORIAL DE CARRERAS CON DETALLE REAL -->
       <section class="tab-content animate-fade" id="tab-historial" style="display:none;">
         <div class="card-neon" style="padding:20px;">
-          <div class="panel-header-row" style="margin-bottom:8px;">
+          <div class="panel-header-row" style="margin-bottom:12px;">
             <h3 style="color:white; font-size:1.15rem;">Historial de Carreras</h3>
-            <button class="btn-sm btn-secondary-dim" onclick="fetchTripsHistory()">🔄 Actualizar</button>
+            <button class="btn-sm btn-secondary-dim" onclick="fetchUserTripHistory()">↻ Actualizar</button>
           </div>
-          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Registro oficial de tus viajes completados en El Junquito:</p>
-          <ul id="history-list" style="list-style:none; display:flex; flex-direction:column; gap:10px;">
-            <p style="font-size:0.78rem; color:var(--text-muted); text-align:center; padding:20px 0;">Cargando carreras...</p>
-          </ul>
+          <div id="history-loading-msg" style="text-align:center; font-size:0.8rem; color:var(--text-muted); padding:10px;">Cargando historial...</div>
+          <div id="history-empty-msg" style="display:none; text-align:center; font-size:0.8rem; color:var(--text-muted); padding:20px;">No tienes viajes completados registrados aún.</div>
+          <div id="history-cards-container" style="display:flex; flex-direction:column; gap:10px;"></div>
         </div>
       </section>
 
@@ -348,6 +347,7 @@
             <button class="btn-sm btn-secondary-dim" onclick="switchPassengerMode()">Salir a Pasajero</button>
           </div>
 
+          <!-- BANNER DE VERIFICACIÓN PENDIENTE -->
           <div id="driver-unverified-warning" style="display:none; background:rgba(245,158,11,0.12); border:1.5px dashed var(--warning); border-radius:16px; padding:12px; margin:10px 0; text-align:center;">
             <strong style="color:#fbbf24; font-size:0.85rem; display:block;">⚠️ Cuenta Pendiente de Verificación</strong>
             <p style="font-size:0.72rem; color:#cbd5e1; margin:4px 0 8px 0;">Envía tu Licencia y Carnet de Circulación a soporte para poder conectarte y aceptar carreras.</p>
@@ -719,7 +719,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE CHAT -->
+  <!-- MODAL DE CHAT CON MICRÓFONO ERGONÓMICO -->
   <div class="modal" id="modal-active-chat">
     <div class="modal-content card-neon animate-fade" style="height:80vh; max-height:550px; display:flex; flex-direction:column; padding:16px;">
       <div class="panel-header-row" style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
@@ -753,7 +753,7 @@
     </div>
   </div>
 
-  <!-- MODAL SELECTOR DE KILÓMETROS -->
+  <!-- MODAL SELECTOR DE KILÓMETROS CON Z-INDEX SUPERIOR -->
   <div class="modal" id="modal-km-picker" style="z-index: 100000 !important;">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -856,7 +856,7 @@
     </div>
   </div>
 
-  <!-- MODAL COMPROBANTE OFICIAL Y CALIFICACIÓN CON ESTRELLAS Y RESEÑA -->
+  <!-- MODAL COMPROBANTE CON ESTRELLAS INTERACTIVAS Y COMENTARIO PÚBLICO -->
   <div class="modal" id="modal-trip-receipt">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -865,48 +865,48 @@
       </div>
       
       <div style="background:rgba(255,255,255,0.03); padding:14px; border-radius:16px; border:1px solid var(--border-glow); font-size:0.8rem; line-height:1.7;">
-        <div><strong>Conductor:</strong> <span id="rec-driver-name" style="color:var(--primary); font-weight:800;">---</span></div>
         <div><strong>Servicio:</strong> <span id="rec-service-name">---</span></div>
+        <div><strong>Conductor:</strong> <strong style="color:#00ff87;" id="rec-driver-name">---</strong> (<span id="rec-driver-veh">---</span>)</div>
         <div><strong>Ruta:</strong> <span id="rec-route-text">--- ➔ ---</span></div>
         <div><strong>Monto Abonado:</strong> <span id="rec-amount-text">$0.00</span> <small id="rec-amount-ves" style="color:var(--text-muted);"></small></div>
-        <div><strong>Fecha y Hora:</strong> <span id="rec-date-text">Hoy</span></div>
-        <div><strong>Seguridad:</strong> <span style="color:var(--primary); font-weight:800;">✓ PIN Validado</span></div>
+        <div><strong>Fecha y Hora:</strong> <span id="rec-date-text">---</span></div>
+        <div><strong>Seguridad:</strong> <span style="color:var(--primary); font-weight:800;">✓ PIN Validado con Éxito</span></div>
       </div>
 
-      <!-- SISTEMA INTERACTIVO DE 5 ESTRELLAS -->
+      <!-- SISTEMA INTERACTIVO DE CALIFICACIÓN POR ESTRELLAS -->
       <div style="margin-top:10px; text-align:center;">
-        <label style="font-size:0.78rem; color:var(--text-muted); font-weight:700;">Califica al conductor:</label>
-        <div class="star-rating-box" id="rating-stars-container">
-          <span class="star-rating-item active" onclick="setRatingStars(1)">★</span>
-          <span class="star-rating-item active" onclick="setRatingStars(2)">★</span>
-          <span class="star-rating-item active" onclick="setRatingStars(3)">★</span>
-          <span class="star-rating-item active" onclick="setRatingStars(4)">★</span>
-          <span class="star-rating-item active" onclick="setRatingStars(5)">★</span>
+        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Califica a tu conductor (1 a 5 estrellas):</span>
+        <div class="star-rating-box" id="receipt-stars-box">
+          <span class="star-item active" onclick="setTripRating(1)">★</span>
+          <span class="star-item active" onclick="setTripRating(2)">★</span>
+          <span class="star-item active" onclick="setTripRating(3)">★</span>
+          <span class="star-item active" onclick="setTripRating(4)">★</span>
+          <span class="star-item active" onclick="setTripRating(5)">★</span>
         </div>
-        <input type="hidden" id="selected-rating-val" value="5">
+        <small id="receipt-stars-label" style="font-size:0.72rem; color:#fbbf24; font-weight:800;">5 Estrellas (Excelente)</small>
       </div>
 
-      <!-- COMENTARIO PÚBLICO VISIBLE PARA LA COMUNIDAD -->
-      <div style="margin-top:4px;">
-        <label style="font-size:0.72rem; color:var(--text-muted);">Comentario público sobre el conductor:</label>
-        <textarea id="trip-review-comment" placeholder="Ej. Manejo muy prudente en las curvas, respetuoso y puntual..." class="review-comment-textarea"></textarea>
+      <!-- COMENTARIO PÚBLICO -->
+      <div style="margin-top:8px;">
+        <label style="font-size:0.75rem; color:var(--text-muted);">Deja una reseña pública sobre el chofer:</label>
+        <textarea id="receipt-public-comment" class="review-textarea" rows="2" placeholder="Ej. Muy educado, prudente en las curvas de la montaña y puntual."></textarea>
       </div>
 
+      <!-- ETIQUETAS RÁPIDAS -->
       <div style="margin-top:4px;">
-        <label style="font-size:0.72rem; color:var(--text-muted);">Etiquetas rápidas:</label>
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
-          <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this)">🛡️ Prudente en curvas</span>
-          <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this)">🌫️ Puntual en la neblina</span>
-          <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this)">✨ Vehículo limpio</span>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this, 'Manejo prudente en curvas')">🛡️ Manejo prudente</span>
+          <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this, 'Puntual en la neblina')">🌫️ Puntual en la neblina</span>
+          <span class="badge-tag-neon" style="cursor:pointer;" onclick="selectTagBadge(this, 'Vehículo limpio')">✨ Vehículo limpio</span>
         </div>
       </div>
 
       <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
-        <button class="btn-primary-neon" style="width:100%; padding:14px;" onclick="submitTripRatingAndSave()">
-          ⭐ Calificar y Guardar en Historial
+        <button class="btn-primary-neon" style="width:100%; padding:14px;" onclick="submitTripRatingAndReview()">
+          Guardar Calificación en Historial
         </button>
-        <button class="btn-secondary-dim btn-sm" onclick="shareReceiptWhatsApp()">
-          📲 Compartir Recibo por WhatsApp
+        <button class="btn-sm btn-secondary-dim" style="width:100%;" onclick="shareReceiptWhatsApp()">
+          Compartir Recibo por WhatsApp
         </button>
       </div>
     </div>
