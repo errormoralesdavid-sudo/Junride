@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=39">
+  <link rel="manifest" href="manifest.json?v=40">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -147,9 +147,10 @@
 
   <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
 
-  <!-- 5. INTERFAZ PRINCIPAL (PROTEGIDA) -->
+  <!-- 5. INTERFAZ PRINCIPAL -->
   <div id="app-main-interface" style="display:none !important;">
     
+    <!-- CABECERA LIMPIA: SIN SOS AMONTONADO, CON TASA BCV Y CHOFER DESTACADOS -->
     <header class="top-bar" id="main-header">
       <div class="top-bar-left">
         <div class="brand-logo-lockup" onclick="handleHeaderHomeClick()">
@@ -166,10 +167,6 @@
       </div>
       
       <div class="top-bar-right">
-        <div class="btn-icon-top btn-sos-top" onclick="triggerPanicSOS()" title="Botón de Pánico SOS">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-        </div>
-
         <div class="bcv-rate-pill" onclick="fetchBCVRate(true)" title="Tasa oficial del BCV">
           <span>Tasa BCV</span>
           <strong id="bcv-rate-val">876.80 Bs.</strong>
@@ -409,31 +406,34 @@
         </div>
       </section>
 
-      <!-- Pestaña CONDUCTOR - GANANCIAS (SIN CAJA DE COMISIÓN DE EMPRESA) -->
+      <!-- Pestaña CONDUCTOR - GANANCIAS (CON CARTERA PROMINENTE Y LISTA CONECTADA) -->
       <section class="tab-content animate-fade" id="tab-driver-ganancias" style="display:none;">
         <div class="driver-earnings-hero">
-          <div style="display:flex; align-items:center; gap:14px;">
-            <div class="driver-wallet-logo-wrap">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div class="driver-wallet-hero-box">
               <img src="https://files.catbox.moe/r7k3mk.png" alt="Cartera del Conductor">
             </div>
             <div>
               <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:800;">Ganancias Netas</span>
-              <div style="font-size:2rem; font-weight:900; color:var(--primary);" id="driver-total-earnings-val">$0.00</div>
+              <div style="font-size:2.2rem; font-weight:900; color:var(--primary); line-height:1.1;" id="driver-total-earnings-val">$0.00</div>
             </div>
           </div>
           <button class="btn-primary-neon btn-sm" onclick="requestWeeklyPayout()">Cobrar</button>
         </div>
 
         <div class="card-neon" style="padding:18px; margin-bottom:12px;">
-          <h4 style="color:white; margin-bottom:8px;">Resumen Semanal de Actividad</h4>
+          <h4 style="color:white; margin-bottom:8px;">Resumen de Actividad</h4>
           <div style="background:rgba(255,255,255,0.03); padding:16px; border-radius:16px; text-align:center;">
-            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:800;">Viajes Completados</span>
+            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:800;">Carreras Completadas al Volante</span>
             <h4 style="font-size:1.8rem; color:#fff; font-weight:900; margin-top:4px;" id="driver-trips-count-val">0</h4>
           </div>
         </div>
 
         <div class="card-flat" style="padding:18px;">
-          <h4 style="color:white; margin-bottom:8px;">Registro Detallado de Viajes</h4>
+          <div class="panel-header-row" style="margin-bottom:8px;">
+            <h4 style="color:white;">Registro Detallado de Carreras</h4>
+            <button class="btn-sm btn-secondary-dim" style="font-size:0.7rem;" onclick="fetchDriverTripHistory()">↻ Actualizar</button>
+          </div>
           <div id="driver-completed-rides-list">
             <p style="font-size:0.78rem; color:var(--text-muted);">Aún no has completado carreras en este turno.</p>
           </div>
@@ -468,7 +468,7 @@
         </div>
       </section>
 
-      <!-- Pestaña PERFIL -->
+      <!-- Pestaña PERFIL (INCLUYE TARJETA DE EMERGENCIA SOS) -->
       <section class="tab-content animate-fade" id="tab-perfil" style="display:none;">
         <div class="profile-header-card">
           <div class="profile-user-row">
@@ -528,6 +528,18 @@
               <div class="stat-lbl-dim">🪙 Tokens (Canjear)</div>
             </div>
           </div>
+        </div>
+
+        <!-- TARJETA DESTACADA SOS REUBICADA -->
+        <div class="profile-sos-card" onclick="triggerPanicSOS()">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="profile-sos-icon-circle">🚨</div>
+            <div>
+              <strong style="color:#f87171; font-size:0.9rem; display:block;">Botón de Pánico SOS (Emergencias)</strong>
+              <small style="color:#cbd5e1; font-size:0.7rem;">Envía tu ubicación satelital en vivo por WhatsApp</small>
+            </div>
+          </div>
+          <span class="badge-tag-neon" style="background:rgba(239,68,68,0.2); color:#ef4444;">SOS</span>
         </div>
 
         <div class="profile-menu-group">
