@@ -196,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const avatarInput = document.getElementById('profile-avatar-input');
   if (avatarInput) avatarInput.addEventListener('change', handleAvatarFileSelected);
 
-  // Verificación estricta de sesión al iniciar
   checkSessionAndAuth();
 });
 
@@ -204,7 +203,7 @@ function checkSessionAndAuth() {
   const welcomeScreen = document.getElementById('screen-welcome');
   const roleSelectScreen = document.getElementById('screen-role-select');
   const mainApp = document.getElementById('app-main-interface');
-  const saved = localStorage.getItem('jr_user_profile_data');
+  const saved = localStorage.getItem('jr_user_profile_data_v40');
 
   if (saved && currentUserId) {
     try {
@@ -212,7 +211,6 @@ function checkSessionAndAuth() {
       if (parsed && parsed.isRegistered && parsed.phone && parsed.email) {
         userData = parsed;
         
-        // Desbloquear vista principal
         if (welcomeScreen) welcomeScreen.style.display = 'none';
         if (roleSelectScreen) roleSelectScreen.style.display = 'none';
         if (mainApp) mainApp.style.setProperty('display', 'block', 'important');
@@ -231,10 +229,9 @@ function checkSessionAndAuth() {
     }
   }
 
-  // SI NO HAY USUARIO AUTENTICADO: BLOQUEO TOTAL AFUERA
   userData = null;
   currentUserId = null;
-  localStorage.removeItem('jr_user_profile_data');
+  localStorage.removeItem('jr_user_profile_data_v40');
   localStorage.removeItem('jr_session_uid');
 
   if (mainApp) mainApp.style.setProperty('display', 'none', 'important');
@@ -248,14 +245,14 @@ function syncUserWithFirestore() {
     if (doc.exists) {
       const remote = doc.data();
       userData = { ...userData, ...remote };
-      localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
       updateUIProfile();
     }
   }).catch(() => {});
 }
 
 // ==============================================================
-// MODAL DE AUTENTICACIÓN Y ENTRADA ESTRICTA
+// MODAL DE ACCESO Y ENTRADA ESTRICTA
 // ==============================================================
 function openAuthModal(mode = 'register') {
   triggerHaptic(30);
@@ -306,7 +303,7 @@ async function handleAuthSubmit(e) {
   submitBtn.disabled = true;
   submitBtn.innerText = 'Verificando con el servidor...';
 
-  // 1. REGISTRO (CREAR CUENTA NUEVA)
+  // 1. REGISTRO (PARÁMETROS DE BIENVENIDA ACTUALIZADOS: $1.00 USD Y 100 TOKENS)
   if (authCurrentMode === 'register') {
     const name = document.getElementById('auth-input-name').value.trim();
     const lastname = document.getElementById('auth-input-lastname').value.trim();
@@ -357,17 +354,17 @@ async function handleAuthSubmit(e) {
       role: 'passenger',
       isRegistered: false,
       verifiedDriver: false,
-      kmBalance: 5.00,
+      kmBalance: 1.00, // Bono actualizado: $1.00 USD
       driverEarnings: 0.00,
       driverTripsCount: 0,
       totalTrips: 0,
-      tokens: 500,
+      tokens: 100, // Tokens iniciales actualizados: 100 Tokens
       rating: 5.00,
-      ratingCount: 0,
+      ratingCount: 1,
       avatar: 'https://files.catbox.moe/oh53r9.png',
       batterySaver: false,
       createdAt: new Date().toISOString(),
-      walletLedger: [{ type: 'credit', title: 'Bono Bienvenida JunRide', amount: 5.00, date: 'Hoy' }]
+      walletLedger: [{ type: 'credit', title: 'Bono Bienvenida JunRide', amount: 1.00, date: 'Hoy' }]
     };
 
     submitBtn.disabled = false;
@@ -393,12 +390,11 @@ async function handleAuthSubmit(e) {
         .where('email', '==', email)
         .get();
 
-      // SI NO COINCIDEN AMBOS DATOS: BLOQUEO TOTAL AFUERA
       if (snapshot.empty) {
         showNeonToast('error', 'Credenciales no encontradas. Verifica teléfono y correo o crea una cuenta nueva.');
         submitBtn.disabled = false;
         submitBtn.innerText = 'Verificar y Entrar';
-        return; // SE QUEDA AFUERA, NO ENTRA
+        return;
       }
 
       let userDoc = null;
@@ -422,19 +418,19 @@ async function handleAuthSubmit(e) {
         vehicleType: userDoc.vehicleType || 'Moto',
         vehicleModel: userDoc.vehicleModel || 'S/M',
         vehiclePlate: userDoc.vehiclePlate || 'S/P',
-        kmBalance: typeof userDoc.kmBalance === 'number' ? userDoc.kmBalance : 5.00,
+        kmBalance: typeof userDoc.kmBalance === 'number' ? userDoc.kmBalance : 1.00,
         driverEarnings: typeof userDoc.driverEarnings === 'number' ? userDoc.driverEarnings : 0.00,
         driverTripsCount: userDoc.driverTripsCount || 0,
         totalTrips: userDoc.totalTrips || 0,
-        tokens: userDoc.tokens || 500,
-        rating: userDoc.rating || 5.00,
-        ratingCount: userDoc.ratingCount || 0,
+        tokens: typeof userDoc.tokens === 'number' ? userDoc.tokens : 100,
+        rating: typeof userDoc.rating === 'number' ? userDoc.rating : 5.00,
+        ratingCount: userDoc.ratingCount || 1,
         avatar: userDoc.avatar || 'https://files.catbox.moe/oh53r9.png',
         batterySaver: userDoc.batterySaver || false,
-        walletLedger: userDoc.walletLedger || [{ type: 'credit', title: 'Cuenta Restaurada', amount: 5.00, date: 'Hoy' }]
+        walletLedger: userDoc.walletLedger || [{ type: 'credit', title: 'Cuenta Restaurada', amount: 1.00, date: 'Hoy' }]
       };
 
-      localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+      localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
 
       submitBtn.disabled = false;
       closeAuthModal();
@@ -464,7 +460,7 @@ function chooseAppRole(role) {
     document.getElementById('modal-driver-vehicle-setup').classList.add('active');
   } else {
     userData.isRegistered = true;
-    localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+    localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
     document.getElementById('screen-role-select').style.display = 'none';
     launchMainApplication();
   }
@@ -490,7 +486,7 @@ function finishDriverRegistration() {
   userData.vehiclePlate = vehPlate;
   userData.verifiedDriver = false;
 
-  localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
   document.getElementById('modal-driver-vehicle-setup').classList.remove('active');
   launchMainApplication();
   switchTab('driver-panel');
@@ -802,6 +798,17 @@ function redeemTokensForWallet() {
   }
 
   logWalletMovement('credit', `Canje de ${tokensUsed} Tokens`, dollarsToAdd);
+
+  // PERSISTENCIA INMEDIATA EN FIRESTORE
+  if (db && currentUserId) {
+    db.collection('users').doc(currentUserId).update({
+      tokens: userData.tokens,
+      kmBalance: userData.kmBalance,
+      driverEarnings: userData.driverEarnings || 0,
+      walletLedger: userData.walletLedger
+    }).catch(() => {});
+  }
+
   updateUIProfile();
 }
 
@@ -816,7 +823,7 @@ function toggleBatterySaverMode() {
   triggerHaptic();
   if (!userData) return;
   userData.batterySaver = !userData.batterySaver;
-  localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
   applyBatterySaverUI();
   showNeonToast('info', `Modo Batería Baja: ${userData.batterySaver ? 'Activado' : 'Desactivado'}`);
 }
@@ -932,6 +939,7 @@ function closeReceiptModal() {
   document.getElementById('modal-trip-receipt').classList.remove('active'); 
 }
 
+// GUARDAR CALIFICACIÓN, ACTUALIZAR PROMEDIO DEL CHOFER EN FIRESTORE
 async function submitTripRatingAndReview() {
   triggerHaptic(60);
   const comment = document.getElementById('receipt-public-comment').value.trim();
@@ -945,6 +953,7 @@ async function submitTripRatingAndReview() {
         ratedAt: new Date().toISOString()
       });
 
+      // Recalcular promedio de estrellas del conductor en Firestore
       if (currentTripData && currentTripData.driverId) {
         const driverRef = db.collection('users').doc(currentTripData.driverId);
         const driverDoc = await driverRef.get();
@@ -1131,7 +1140,7 @@ function handleAvatarFileSelected(event) {
 
       if (userData) {
         userData.avatar = compressedDataUrl;
-        localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+        localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
         if (currentUserId && db) {
           db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
         }
@@ -1193,7 +1202,7 @@ function switchDriverMode() {
   triggerHaptic();
   if (!userData) return;
   userData.role = 'driver';
-  localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('driver-panel');
@@ -1204,7 +1213,7 @@ function switchPassengerMode() {
   triggerHaptic();
   if (!userData) return;
   userData.role = 'passenger';
-  localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
   updateUIProfile();
   renderDynamicBottomNav();
   switchTab('inicio');
@@ -1305,6 +1314,7 @@ function getUserCurrentLevel(tripsCount, isDriver = false) {
   return { current, next };
 }
 
+// ACTUALIZACIÓN DE UI BLINDADA CON SUSPENSIÓN POR RATING < 3.0
 function updateUIProfile() {
   if (!userData) {
     const pName = document.getElementById('profile-fullname');
@@ -1342,6 +1352,10 @@ function updateUIProfile() {
     const passengerTierHud = document.getElementById('passenger-tier-hud');
     const verifiedBadgeTag = document.getElementById('profile-driver-verified-tag');
     const unverifiedWarn = document.getElementById('driver-unverified-warning');
+    const suspendedWarn = document.getElementById('driver-suspended-warning');
+
+    // CONTROL DE CALIDAD: SUSPENSIÓN SI RATING < 3.0
+    const isSuspended = isDriver && (userData.rating < 3.00 && (userData.ratingCount || 1) >= 2);
 
     if (isDriver) {
       if (driverMaintHud) driverMaintHud.style.display = 'block';
@@ -1353,11 +1367,13 @@ function updateUIProfile() {
 
       const isVerified = (userData.verifiedDriver === true);
       if (verifiedBadgeTag) {
-        verifiedBadgeTag.innerText = isVerified ? 'Verificado ✓' : 'Pendiente';
-        verifiedBadgeTag.style.background = isVerified ? 'rgba(0,255,135,0.2)' : 'rgba(245,158,11,0.2)';
-        verifiedBadgeTag.style.color = isVerified ? 'var(--primary)' : '#fbbf24';
+        verifiedBadgeTag.innerText = isSuspended ? 'Suspendido' : (isVerified ? 'Verificado ✓' : 'Pendiente');
+        verifiedBadgeTag.style.background = isSuspended ? 'rgba(239,68,68,0.2)' : (isVerified ? 'rgba(0,255,135,0.2)' : 'rgba(245,158,11,0.2)');
+        verifiedBadgeTag.style.color = isSuspended ? '#ef4444' : (isVerified ? 'var(--primary)' : '#fbbf24');
       }
-      if (unverifiedWarn) unverifiedWarn.style.display = isVerified ? 'none' : 'block';
+      
+      if (suspendedWarn) suspendedWarn.style.display = isSuspended ? 'block' : 'none';
+      if (unverifiedWarn) unverifiedWarn.style.display = (!isVerified && !isSuspended) ? 'block' : 'none';
 
       const redeemTitle = document.getElementById('profile-redeem-title');
       if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo / Gasolina";
@@ -1367,6 +1383,7 @@ function updateUIProfile() {
       if (driverMaintHud) driverMaintHud.style.display = 'none';
       if (passengerTierHud) passengerTierHud.style.display = 'block';
       if (unverifiedWarn) unverifiedWarn.style.display = 'none';
+      if (suspendedWarn) suspendedWarn.style.display = 'none';
 
       const redeemTitle = document.getElementById('profile-redeem-title');
       if (redeemTitle) redeemTitle.innerText = "Canjear Tokens por Saldo";
@@ -1396,11 +1413,14 @@ function updateUIProfile() {
       if (tierBar) tierBar.style.width = `100%`;
     }
 
+    const statRating = document.getElementById('stats-rating-val');
+    if (statRating) statRating.innerText = `⭐ ${(userData.rating || 5.00).toFixed(2)}`;
+
     const statTrips = document.getElementById('stats-total-trips');
     if (statTrips) statTrips.innerText = totalTrips;
 
     const statTokens = document.getElementById('stats-total-tokens');
-    if (statTokens) statTokens.innerText = (userData.tokens || 500).toLocaleString();
+    if (statTokens) statTokens.innerText = (userData.tokens || 100).toLocaleString();
 
     const headerBadge = document.getElementById('header-driver-badge');
     if (headerBadge) {
@@ -1412,9 +1432,6 @@ function updateUIProfile() {
 
     const dTripsCount = document.getElementById('driver-trips-count-val');
     if (dTripsCount) dTripsCount.innerText = `${userData.driverTripsCount || 0}`;
-
-    const commFee = document.getElementById('driver-commission-fee-val');
-    if (commFee) commFee.innerText = `$${((userData.driverEarnings || 0) * 0.10).toFixed(2)}`;
 
     renderWalletLedger();
   } catch(e) {
@@ -1568,6 +1585,7 @@ function copyToClipboard(txt, label) {
   document.body.removeChild(tempTextArea);
 }
 
+// PERSISTENCIA REAL AL RECARGAR SALDO
 function verifyPaymentReference(e) {
   e.preventDefault();
   triggerHaptic(50);
@@ -1579,6 +1597,14 @@ function verifyPaymentReference(e) {
   
   userData.kmBalance = (userData.kmBalance || 0) + usdVal;
   logWalletMovement('credit', `Recarga ${selectedRechargeMethodKey.toUpperCase()} (#${ref})`, usdVal);
+
+  if (db && currentUserId) {
+    db.collection('users').doc(currentUserId).update({
+      kmBalance: userData.kmBalance,
+      walletLedger: userData.walletLedger
+    }).catch(() => {});
+  }
+
   updateUIProfile();
   showNeonToast('success', `✅ ¡Recarga acreditada por $${usdVal.toFixed(2)} USD!`);
   e.target.reset();
@@ -1590,7 +1616,7 @@ function logWalletMovement(type, title, amount) {
   userData.walletLedger.unshift({
     type: type, title: title, amount: parseFloat(amount), date: new Date().toLocaleTimeString()
   });
-  localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+  localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
   renderWalletLedger();
 }
 
@@ -1886,6 +1912,7 @@ function adjustOrderPrice(delta) {
   document.getElementById('order-fare-ves').innerText = (offeredOrderPrice * currentBcvRate).toFixed(2);
 }
 
+// PERSISTENCIA REAL AL PAGAR CON BILLETERA
 async function confirmOrderTrip() {
   triggerHaptic(80);
   if (!userData) return;
@@ -1904,6 +1931,14 @@ async function confirmOrderTrip() {
     escrowHeldAmount = offeredOrderPrice;
     userData.kmBalance -= offeredOrderPrice;
     logWalletMovement('debit', `Retención Carrera (${JUNQUITO_ALL_KMS[selectedOriginIdx].name})`, offeredOrderPrice);
+    
+    // GUARDADO DIRECTO EN FIRESTORE
+    if (db && currentUserId) {
+      db.collection('users').doc(currentUserId).update({
+        kmBalance: userData.kmBalance,
+        walletLedger: userData.walletLedger
+      }).catch(() => {});
+    }
     updateUIProfile();
   } else {
     escrowHeldAmount = 0.00;
@@ -1958,6 +1993,13 @@ async function cancelTrip(isManual = false) {
       userData.kmBalance += escrowHeldAmount;
       logWalletMovement('refund', 'Reembolso por Cancelación', escrowHeldAmount);
       escrowHeldAmount = 0.00;
+      
+      if (db && currentUserId) {
+        db.collection('users').doc(currentUserId).update({
+          kmBalance: userData.kmBalance,
+          walletLedger: userData.walletLedger
+        }).catch(() => {});
+      }
       updateUIProfile();
     }
 
@@ -1986,6 +2028,12 @@ async function cancelTrip(isManual = false) {
 function toggleDriverStatus() {
   triggerHaptic();
   if (!userData) return;
+
+  // VERIFICAR SUSPENSIÓN POR RATING
+  if (userData.rating < 3.00 && (userData.ratingCount || 1) >= 2) {
+    showNeonToast('error', 'Tu cuenta está suspendida por tener calificación menor a 3.0 estrellas.');
+    return;
+  }
 
   if (userData.verifiedDriver !== true) {
     showNeonToast('warning', 'Tu cuenta debe estar verificada por soporte antes de conectarte.');
@@ -2146,30 +2194,71 @@ async function validatePassengerOTP() {
   }
 }
 
+// FINALIZAR VIAJE: PERSISTENCIA EN FIRESTORE, SUMA DE VIAJES Y ASIGNACIÓN DINÁMICA DE TOKENS
 async function completeActiveTripDriver() {
   triggerHaptic(100);
   playChimeSound();
 
   const fareVal = parseFloat(currentTripData ? currentTripData.price : 2.50);
   const netEarnings = fareVal * 0.90;
+  const serviceType = currentTripData ? currentTripData.service : 'Carro';
 
+  // REGLA DE TOKENS POR TIPO DE SERVICIO
+  let tokensAwarded = 100;
+  if (serviceType === 'Moto') tokensAwarded = 100;
+  else if (serviceType === 'Carro') tokensAwarded = 100;
+  else if (serviceType === 'Colectivo') tokensAwarded = 50;
+  else if (serviceType === 'Carga') tokensAwarded = 250;
+
+  // 1. ACTUALIZAR CHOFER EN LOCAL Y EN FIRESTORE
   if (userData) {
     userData.driverEarnings = (userData.driverEarnings || 0) + netEarnings;
     userData.driverTripsCount = (userData.driverTripsCount || 0) + 1;
     userData.totalTrips = (userData.totalTrips || 0) + 1;
-    localStorage.setItem('jr_user_profile_data', JSON.stringify(userData));
+    userData.tokens = (userData.tokens || 100) + tokensAwarded;
+    localStorage.setItem('jr_user_profile_data_v40', JSON.stringify(userData));
     updateUIProfile();
+
+    if (db && currentUserId) {
+      db.collection('users').doc(currentUserId).update({
+        driverEarnings: userData.driverEarnings,
+        driverTripsCount: userData.driverTripsCount,
+        totalTrips: userData.totalTrips,
+        tokens: userData.tokens
+      }).catch(() => {});
+    }
   }
 
+  // 2. ACTUALIZAR PASAJERO EN FIRESTORE (+1 VIAJE Y TOKENS CORRESPONDIENTES)
+  if (db && currentTripData && currentTripData.clientId) {
+    try {
+      const passengerRef = db.collection('users').doc(currentTripData.clientId);
+      const passDoc = await passengerRef.get();
+      if (passDoc.exists) {
+        const pData = passDoc.data();
+        const pTotalTrips = (pData.totalTrips || 0) + 1;
+        const pTokens = (pData.tokens || 100) + tokensAwarded;
+        await passengerRef.update({
+          totalTrips: pTotalTrips,
+          tokens: pTokens
+        });
+      }
+    } catch(err) {
+      console.warn("Fallo al actualizar pasajero en Firestore:", err);
+    }
+  }
+
+  // 3. ACTUALIZAR ESTADO DE LA CARRERA
   if (db && activeTripId) {
     await db.collection('trips').doc(activeTripId).update({
       status: 'Completado',
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
+      tokensAwarded: tokensAwarded
     }).catch(() => {});
   }
 
-  speakDriverAlert("Viaje completado. Ganancia acreditada.");
-  showNeonToast('success', `🏁 ¡Viaje completado! Ganaste +$${netEarnings.toFixed(2)} USD.`);
+  speakDriverAlert("Viaje completado. Ganancia y tokens acreditados.");
+  showNeonToast('success', `🏁 ¡Viaje completado! Ganaste +$${netEarnings.toFixed(2)} USD y +${tokensAwarded} Tokens.`);
 
   document.getElementById('driver-active-trip-box').style.display = 'none';
   localStorage.removeItem('jr_active_trip_id');
@@ -2454,8 +2543,11 @@ function listenTripsRealtime() {
           document.getElementById('live-driver-name').innerText = 'Viaje en curso con seguridad satelital';
         } else if (trip.status === 'Completado') {
           document.getElementById('live-tracking-box').style.display = 'none';
-          showNeonToast('success', '🏁 ¡Has llegado a tu destino! Gracias por viajar con JunRide.');
+          showNeonToast('success', `🏁 ¡Has llegado a tu destino! Ganaste +${trip.tokensAwarded || 100} Tokens.`);
           
+          // Sincronizar usuario para reflejar el +1 viaje y tokens ganados
+          syncUserWithFirestore();
+
           openReceiptModal(currentTripData);
           fetchUserTripHistory();
           activeTripId = null;
@@ -2514,7 +2606,7 @@ async function acceptTrip(tripId) {
 
 function logout() {
   triggerHaptic(40);
-  localStorage.removeItem('jr_user_profile_data');
+  localStorage.removeItem('jr_user_profile_data_v40');
   localStorage.removeItem('jr_session_uid');
   localStorage.removeItem('jr_active_trip_id');
   localStorage.removeItem('jr_driver_active_trip_cache');
