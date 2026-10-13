@@ -288,7 +288,7 @@ function switchTab(tabName) {
   window.scrollTo(0, 0);
 }
 
-// CONTROL DE CAMBIO A MODO CHOFER
+// CONTROL DE CAMBIO A MODO CHOFER (VALIDA PRIMERA VEZ Y VEHÍCULO)
 function handleDriverCtaClick() {
   triggerHaptic(40);
   if (!userData) return;
@@ -1354,7 +1354,7 @@ async function fetchUserTripHistory() {
 }
 
 // ==============================================================
-// HISTORIAL DE CARRERAS CONDUCIDAS DEL CHOFER (REGISTRO DETALLADO)
+// HISTORIAL DE CARRERAS CONDUCIDAS DEL CHOFER (JALA FOTO EN VIVO DEL PASAJERO)
 // ==============================================================
 async function fetchDriverTripHistory() {
   const container = document.getElementById('driver-completed-rides-list');
@@ -1385,6 +1385,19 @@ async function fetchDriverTripHistory() {
 
     trips.sort((a, b) => new Date(b.completedAt || b.createdAt || 0) - new Date(a.completedAt || a.createdAt || 0));
 
+    // JALAR LOS AVATARES VIVOS Y ACTUALIZADOS DE CADA PASAJERO
+    const clientIds = [...new Set(trips.map(t => t.clientId).filter(Boolean))];
+    const clientAvatarsMap = {};
+
+    await Promise.all(clientIds.map(async (cId) => {
+      try {
+        const uDoc = await db.collection('users').doc(cId).get();
+        if (uDoc.exists && uDoc.data().avatar) {
+          clientAvatarsMap[cId] = uDoc.data().avatar;
+        }
+      } catch(e) {}
+    }));
+
     container.innerHTML = '';
     trips.forEach(t => {
       const fareTotal = parseFloat(t.price || 0) || 0;
@@ -1392,17 +1405,20 @@ async function fetchDriverTripHistory() {
       const netBs = (netUsd * currentBcvRate).toFixed(2);
       const stars = t.clientRating ? '★'.repeat(t.clientRating) + '☆'.repeat(5 - t.clientRating) : '★★★★★';
       const commentHtml = t.clientComment ? `<div class="history-comment-box">"${t.clientComment}"</div>` : '';
-      const clientAvatar = t.clientAvatar || 'https://files.catbox.moe/oh53r9.png';
+      
+      // Priorizar la foto viva del documento del usuario, si no la congelada en el trip, o la de defecto
+      const liveAvatar = clientAvatarsMap[t.clientId] || t.clientAvatar || 'https://files.catbox.moe/oh53r9.png';
+      const clientName = t.clientName || 'Pasajero';
       const dateStr = t.completedAt || t.createdAt ? (new Date(t.completedAt || t.createdAt).toLocaleDateString() + ' ' + new Date(t.completedAt || t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : 'Reciente';
 
       container.innerHTML += `
         <div class="driver-history-card" style="margin-bottom:8px;">
           <div class="history-card-header">
             <div style="display:flex; align-items:center; gap:8px;">
-              <img src="${clientAvatar}" class="history-driver-avatar-thumb" alt="${t.clientName || 'Pasajero'}" onclick="openImageLightbox('${clientAvatar}', 'Pasajero: ${t.clientName || 'Cliente'}')" title="Toca para ampliar foto">
+              <img src="${liveAvatar}" class="history-driver-avatar-thumb" alt="${clientName}" onclick="openImageLightbox('${liveAvatar}', 'Pasajero: ${clientName}')" title="Toca para ampliar foto">
               <div>
                 <span class="badge-tag-neon">${t.service || 'Viaje'}</span>
-                <strong style="margin-left:4px; font-size:0.85rem; color:#fff;">👤 ${t.clientName || 'Pasajero'}</strong>
+                <strong style="margin-left:4px; font-size:0.85rem; color:#fff;">👤 ${clientName}</strong>
               </div>
             </div>
             <strong style="color:var(--primary); font-size:0.95rem;">+$${netUsd} USD</strong>
@@ -1429,7 +1445,7 @@ async function fetchDriverTripHistory() {
 }
 
 // ==============================================================
-// DOBLE VERIFICACIÓN DE RECARGAS EN FIRESTORE (REFERENCIA + MONTO EN BS)
+// BLINDAJE TOTAL DE RECARGAS EN FIRESTORE (BDV, ZINLI, BINANCE)
 // ==============================================================
 function parseAmountToNumber(val) {
   if (typeof val === 'number') return val;
@@ -1455,18 +1471,16 @@ async function verifyPaymentReference(e) {
     return;
   }
 
+  if (!db) {
+    showNeonToast('error', 'Error al conectar con la base de datos de pagos.');
+    return;
+  }
+
   submitBtn.disabled = true;
   submitBtn.innerText = 'Verificando con el banco...';
 
-  // VALIDACIÓN ESTRICTA CRUZADA CONTRA LA COLECCIÓN verificacion_pagos
+  // 1. PAGO MÓVIL BANCO DE VENEZUELA (COLECCIÓN: verificacion_pagos)
   if (selectedRechargeMethodKey === 'bdv') {
-    if (!db) {
-      showNeonToast('error', 'Error al conectar con la base de datos de pagos.');
-      submitBtn.disabled = false;
-      submitBtn.innerText = 'Verificar y Acreditar Saldo';
-      return;
-    }
-
     try {
       const snap = await db.collection('verificacion_pagos')
         .where('referencia_6digitos', '==', ref)
@@ -1484,7 +1498,6 @@ async function verifyPaymentReference(e) {
         paymentDoc = { ...doc.data(), docId: doc.id };
       });
 
-      // 1. VERIFICAR QUE NO HAYA SIDO CANJEADO PREVIAMENTE
       if (paymentDoc.canjeado_en_junride === true) {
         showNeonToast('error', '⚠️ Esta referencia ya fue acreditada previamente en JunRide.');
         submitBtn.disabled = false;
@@ -1492,7 +1505,6 @@ async function verifyPaymentReference(e) {
         return;
       }
 
-      // 2. VERIFICAR DOBLE FACTOR DE MONTO EXACTO EN BOLÍVARES
       const dbAmountNum = parseAmountToNumber(paymentDoc.monto);
       const diff = Math.abs(dbAmountNum - inputAmountNum);
 
@@ -1503,19 +1515,16 @@ async function verifyPaymentReference(e) {
         return;
       }
 
-      // 3. CÁLCULO EN DÓLARES CON TASA BCV
       const creditedUsd = Number((dbAmountNum / currentBcvRate).toFixed(2));
       userData.kmBalance = (parseFloat(userData.kmBalance) || 0) + creditedUsd;
       logWalletMovement('credit', `Pago Móvil BDV (#${ref})`, creditedUsd);
 
-      // 4. MARCAR DOCUMENTO COMO CANJEADO EN FIRESTORE (ANTIFRAUDE)
       await db.collection('verificacion_pagos').doc(paymentDoc.docId).update({
         canjeado_en_junride: true,
         usuario_id: currentUserId,
         fecha_acreditado_junride: new Date().toISOString()
       });
 
-      // 5. GUARDAR SALDO EN CUENTA DEL USUARIO
       await db.collection('users').doc(currentUserId).update({
         kmBalance: userData.kmBalance,
         walletLedger: userData.walletLedger
@@ -1527,31 +1536,144 @@ async function verifyPaymentReference(e) {
       e.target.reset();
 
     } catch(err) {
-      console.error("Error al verificar pago:", err);
+      console.error("Error al verificar BDV:", err);
       showNeonToast('error', 'Error al procesar la verificación bancaria.');
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerText = 'Verificar y Acreditar Saldo';
     }
+    return;
+  }
 
-  } else {
-    // MÉTODOS ZINLI / BINANCE
-    const creditedUsd = inputAmountNum;
-    userData.kmBalance = (parseFloat(userData.kmBalance) || 0) + creditedUsd;
-    logWalletMovement('credit', `Recarga ${selectedRechargeMethodKey.toUpperCase()} (#${ref})`, creditedUsd);
+  // 2. TRANSFERENCIA ZINLI (COLECCIÓN: verificacion_pagos_zinli)
+  if (selectedRechargeMethodKey === 'zinli') {
+    try {
+      const snap = await db.collection('verificacion_pagos_zinli')
+        .where('referencia_6digitos', '==', ref)
+        .get();
 
-    if (db && currentUserId) {
-      db.collection('users').doc(currentUserId).update({
+      if (snap.empty) {
+        showNeonToast('error', '❌ Pago Zinli no encontrado en el servidor. Verifica el comprobante.');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Verificar y Acreditar Saldo';
+        return;
+      }
+
+      let paymentDoc = null;
+      snap.forEach(doc => {
+        paymentDoc = { ...doc.data(), docId: doc.id };
+      });
+
+      if (paymentDoc.canjeado_en_junride === true) {
+        showNeonToast('error', '⚠️ Esta referencia Zinli ya fue acreditada previamente.');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Verificar y Acreditar Saldo';
+        return;
+      }
+
+      const dbAmountNum = parseAmountToNumber(paymentDoc.monto);
+      const diff = Math.abs(dbAmountNum - inputAmountNum);
+
+      if (diff > 0.05) {
+        showNeonToast('error', `❌ El monto en USD ingresado ($${inputAmountNum.toFixed(2)}) no coincide con el comprobante Zinli ($${dbAmountNum.toFixed(2)}).`);
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Verificar y Acreditar Saldo';
+        return;
+      }
+
+      const creditedUsd = dbAmountNum;
+      userData.kmBalance = (parseFloat(userData.kmBalance) || 0) + creditedUsd;
+      logWalletMovement('credit', `Zinli Transferencia (#${ref})`, creditedUsd);
+
+      await db.collection('verificacion_pagos_zinli').doc(paymentDoc.docId).update({
+        canjeado_en_junride: true,
+        usuario_id: currentUserId,
+        fecha_acreditado_junride: new Date().toISOString()
+      });
+
+      await db.collection('users').doc(currentUserId).update({
         kmBalance: userData.kmBalance,
         walletLedger: userData.walletLedger
-      }).catch(() => {});
-    }
+      });
 
-    updateUIProfile();
-    showNeonToast('success', `✅ ¡Recarga acreditada por $${creditedUsd.toFixed(2)} USD!`);
-    submitBtn.disabled = false;
-    submitBtn.innerText = 'Verificar y Acreditar Saldo';
-    e.target.reset();
+      updateUIProfile();
+      playChimeSound();
+      showNeonToast('success', `🎉 ¡Pago Zinli confirmado! Se acreditaron +$${creditedUsd.toFixed(2)} USD a tu billetera.`);
+      e.target.reset();
+
+    } catch(err) {
+      console.error("Error al verificar Zinli:", err);
+      showNeonToast('error', 'Error al consultar la colección de Zinli.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Verificar y Acreditar Saldo';
+    }
+    return;
+  }
+
+  // 3. BINANCE PAY (COLECCIÓN: verificacion_pagos_binance)
+  if (selectedRechargeMethodKey === 'binance') {
+    try {
+      const snap = await db.collection('verificacion_pagos_binance')
+        .where('referencia_6digitos', '==', ref)
+        .get();
+
+      if (snap.empty) {
+        showNeonToast('error', '❌ Pago Binance no encontrado en el servidor. Verifica el Order/Pay ID.');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Verificar y Acreditar Saldo';
+        return;
+      }
+
+      let paymentDoc = null;
+      snap.forEach(doc => {
+        paymentDoc = { ...doc.data(), docId: doc.id };
+      });
+
+      if (paymentDoc.canjeado_en_junride === true) {
+        showNeonToast('error', '⚠️ Este Pay ID de Binance ya fue acreditado previamente.');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Verificar y Acreditar Saldo';
+        return;
+      }
+
+      const dbAmountNum = parseAmountToNumber(paymentDoc.monto);
+      const diff = Math.abs(dbAmountNum - inputAmountNum);
+
+      if (diff > 0.05) {
+        showNeonToast('error', `❌ El monto ingresado ($${inputAmountNum.toFixed(2)} USDT) no coincide con el pago de Binance.`);
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Verificar y Acreditar Saldo';
+        return;
+      }
+
+      const creditedUsd = dbAmountNum;
+      userData.kmBalance = (parseFloat(userData.kmBalance) || 0) + creditedUsd;
+      logWalletMovement('credit', `Binance Pay (#${ref})`, creditedUsd);
+
+      await db.collection('verificacion_pagos_binance').doc(paymentDoc.docId).update({
+        canjeado_en_junride: true,
+        usuario_id: currentUserId,
+        fecha_acreditado_junride: new Date().toISOString()
+      });
+
+      await db.collection('users').doc(currentUserId).update({
+        kmBalance: userData.kmBalance,
+        walletLedger: userData.walletLedger
+      });
+
+      updateUIProfile();
+      playChimeSound();
+      showNeonToast('success', `🎉 ¡Binance Pay confirmado! Se acreditaron +$${creditedUsd.toFixed(2)} USD a tu billetera.`);
+      e.target.reset();
+
+    } catch(err) {
+      console.error("Error al verificar Binance:", err);
+      showNeonToast('error', 'Error al consultar la colección de Binance.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Verificar y Acreditar Saldo';
+    }
   }
 }
 
@@ -2858,7 +2980,7 @@ function renderRechargeDetails(method) {
   } else if (method === 'zinli') {
     if (logoEl) logoEl.src = "https://files.catbox.moe/24w3zq.png";
     if (titleEl) titleEl.innerText = "Transferencia Zinli (Dólares USD)";
-    if (lblRef) lblRef.innerText = "Referencia / Comprobante de Zinli:";
+    if (lblRef) lblRef.innerText = "Referencia / Comprobante de Zinli (6 dígitos):";
     if (lblAmount) lblAmount.innerText = "Monto enviado en USD ($):";
     container.innerHTML = `
       <div class="pay-detail-row">
@@ -2869,8 +2991,8 @@ function renderRechargeDetails(method) {
   } else if (method === 'binance') {
     if (logoEl) logoEl.src = "https://files.catbox.moe/0amryl.png";
     if (titleEl) titleEl.innerText = "Binance Pay (USDT)";
-    if (lblRef) lblRef.innerText = "Binance Order ID / Pay ID:";
-    if (lblAmount) lblAmount.innerText = "Monto enviado en USDT:";
+    if (lblRef) lblRef.innerText = "Binance Order ID / Pay ID (6 dígitos o ref):";
+    if (lblAmount) lblAmount.innerText = "Monto enviado en USDT ($):";
     container.innerHTML = `
       <div class="pay-detail-row">
         <div><span style="font-size:0.72rem; color:var(--text-muted);">Binance Pay ID:</span><div style="font-size:0.85rem; font-weight:700;">521126834</div></div>
