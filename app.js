@@ -182,6 +182,116 @@ let backgroundChatUnsubscribe = null;
 let lastReviewedTripId = null;
 
 // ==============================================================
+// NAVEGACIÓN DINÁMICA ENTRE PESTAÑAS Y CONTROL DE ROLES
+// ==============================================================
+function renderDynamicBottomNav() {
+  const navContainer = document.getElementById('dynamic-bottom-nav');
+  if (!navContainer || !userData) return;
+  const isDriver = (userData.role === 'driver');
+
+  if (isDriver) {
+    navContainer.innerHTML = `
+      <button class="nav-item-btn ${currentTab === 'driver-panel' ? 'active' : ''}" onclick="switchTab('driver-panel')">
+        <div class="nav-active-pill"></div>
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+        <small>Tablero</small>
+      </button>
+      <button class="nav-item-btn ${currentTab === 'driver-ganancias' ? 'active' : ''}" onclick="switchTab('driver-ganancias')">
+        <div class="nav-active-pill"></div>
+        <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+        <small>Ganancias</small>
+      </button>
+      <button class="nav-item-btn ${currentTab === 'driver-mensajes' ? 'active' : ''}" onclick="switchTab('driver-mensajes')">
+        <div class="nav-active-pill"></div>
+        <div class="nav-unread-dot" id="nav-unread-badge-driver"></div>
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+        <small>Mensajes</small>
+      </button>
+      <button class="nav-item-btn ${currentTab === 'perfil' ? 'active' : ''}" onclick="switchTab('perfil')">
+        <div class="nav-active-pill"></div>
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <small>Perfil</small>
+      </button>
+    `;
+  } else {
+    navContainer.innerHTML = `
+      <button class="nav-item-btn ${currentTab === 'inicio' ? 'active' : ''}" onclick="switchTab('inicio')">
+        <div class="nav-active-pill"></div>
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <small>Inicio</small>
+      </button>
+      <button class="nav-item-btn ${currentTab === 'recargas' ? 'active' : ''}" onclick="switchTab('recargas')">
+        <div class="nav-active-pill"></div>
+        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <small>Pagos</small>
+      </button>
+      <button class="nav-item-btn ${currentTab === 'historial' ? 'active' : ''}" onclick="switchTab('historial')">
+        <div class="nav-active-pill"></div>
+        <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+        <small>Viajes</small>
+      </button>
+      <button class="nav-item-btn ${currentTab === 'perfil' ? 'active' : ''}" onclick="switchTab('perfil')">
+        <div class="nav-active-pill"></div>
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <small>Perfil</small>
+      </button>
+    `;
+  }
+}
+
+function switchTab(tabName) {
+  triggerHaptic(25);
+  currentTab = tabName;
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  const targetTab = document.getElementById(`tab-${tabName}`);
+  if (targetTab) targetTab.style.display = 'block';
+
+  if (tabName === 'driver-mensajes') {
+    const dot = document.getElementById('nav-unread-badge-driver');
+    if (dot) dot.style.display = 'none';
+  }
+
+  if (tabName === 'historial') {
+    fetchUserTripHistory();
+  }
+
+  if (tabName === 'driver-ganancias') {
+    fetchDriverTripHistory();
+  }
+
+  renderDynamicBottomNav();
+  window.scrollTo(0, 0);
+}
+
+function switchDriverMode() {
+  triggerHaptic();
+  if (!userData) return;
+  userData.role = 'driver';
+  localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
+  updateUIProfile();
+  renderDynamicBottomNav();
+  switchTab('driver-panel');
+  speakDriverAlert("Modo chofer activado");
+}
+
+function switchPassengerMode() {
+  triggerHaptic();
+  if (!userData) return;
+  userData.role = 'passenger';
+  localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
+  updateUIProfile();
+  renderDynamicBottomNav();
+  switchTab('inicio');
+  speakDriverAlert("Modo pasajero activado");
+}
+
+function handleHeaderHomeClick() {
+  triggerHaptic();
+  if (userData && userData.role === 'driver') switchTab('driver-panel');
+  else switchTab('inicio');
+}
+
+// ==============================================================
 // INICIALIZACIÓN PROTEGIDA (GATEKEEPER)
 // ==============================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -215,7 +325,13 @@ function checkSessionAndAuth() {
         if (roleSelectScreen) roleSelectScreen.style.display = 'none';
         if (mainApp) mainApp.style.setProperty('display', 'block', 'important');
 
+        currentTab = (userData.role === 'driver') ? 'driver-panel' : 'inicio';
         renderDynamicBottomNav();
+
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        const activeTabEl = document.getElementById(`tab-${currentTab}`);
+        if (activeTabEl) activeTabEl.style.display = 'block';
+
         updateUIProfile();
         requestStartupGpsLocation();
         listenRoadAlertsRealtime();
@@ -303,7 +419,7 @@ async function handleAuthSubmit(e) {
   submitBtn.disabled = true;
   submitBtn.innerText = 'Verificando con el servidor...';
 
-  // 1. REGISTRO (ROLES AISLADOS: PASAJERO Y CHOFER INDEPENDIENTES)
+  // 1. REGISTRO
   if (authCurrentMode === 'register') {
     const name = document.getElementById('auth-input-name').value.trim();
     const lastname = document.getElementById('auth-input-lastname').value.trim();
@@ -356,13 +472,11 @@ async function handleAuthSubmit(e) {
       verifiedDriver: false,
       kmBalance: 1.00,
       
-      // DATOS AISLADOS DE PASAJERO
       passengerTrips: 0,
       passengerTokens: 100,
       passengerRating: 5.00,
       passengerRatingCount: 1,
 
-      // DATOS AISLADOS DE CHOFER
       driverEarnings: 0.00,
       driverTrips: 0,
       driverTokens: 100,
@@ -383,7 +497,7 @@ async function handleAuthSubmit(e) {
     return;
   }
 
-  // 2. LOGIN ESTRICTO (DOBLE LLAVE: TELÉFONO + CORREO)
+  // 2. LOGIN ESTRICTO
   if (authCurrentMode === 'login') {
     if (!db) {
       showNeonToast('error', 'Conectando con la base de datos... Por favor intenta de nuevo.');
@@ -417,7 +531,6 @@ async function handleAuthSubmit(e) {
       return;
     }
 
-    // SI LLEGÓ AQUÍ, LAS CREDENCIALES FUERON 100% VALIDADAS
     currentUserId = userDoc.id;
     localStorage.setItem('jr_session_uid', currentUserId);
 
@@ -522,10 +635,13 @@ function launchMainApplication() {
     db.collection('users').doc(currentUserId).set(userData, { merge: true }).catch(() => {});
   }
 
-  // 1. DIBUJAR PRIMERO LA BARRA DE NAVEGACIÓN INFERIOR
+  currentTab = (userData.role === 'driver') ? 'driver-panel' : 'inicio';
   renderDynamicBottomNav();
 
-  // 2. ACTUALIZAR ELEMENTOS DE PERFIL PROTEGIDAMENTE
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  const activeTabEl = document.getElementById(`tab-${currentTab}`);
+  if (activeTabEl) activeTabEl.style.display = 'block';
+
   try {
     updateUIProfile();
   } catch(e) {
@@ -2083,7 +2199,6 @@ function listenTripsRealtime() {
       const trip = doc.data();
       const tripId = doc.id;
 
-      // CHOFER: VIAJE ASIGNADO O EN TRAYECTO
       if (trip.driverId === currentUserId && (trip.status === 'Conductor asignado' || trip.status === 'En trayecto')) {
         activeTripId = tripId;
         currentTripData = { ...trip, id: tripId };
@@ -2107,7 +2222,6 @@ function listenTripsRealtime() {
         }
       }
 
-      // PASAJERO: VIAJE ASIGNADO, EN TRAYECTO O COMPLETADO
       if (activeTripId === tripId && userData.role === 'passenger') {
         currentTripData = { ...trip, id: tripId };
 
@@ -2182,7 +2296,6 @@ async function acceptTrip(tripId) {
   document.getElementById('driver-in-route-area').style.display = 'none';
 }
 
-// ACTUALIZACIÓN DE UI BLINDADA CON AISLAMIENTO TOTAL ENTRE PASAJERO Y CHOFER
 function updateUIProfile() {
   if (!userData) {
     const pName = document.getElementById('profile-fullname');
@@ -2330,6 +2443,19 @@ function updateUIProfile() {
   }
 }
 
+function getUserCurrentLevel(tripsCount, isDriver = false) {
+  const levels = isDriver ? JUNRIDE_LEVELS_DRIVER : JUNRIDE_LEVELS_PASSENGER;
+  let current = levels[0];
+  let next = levels[1];
+  for (let i = 0; i < levels.length; i++) {
+    if (tripsCount >= levels[i].minTrips) {
+      current = levels[i];
+      next = levels[i + 1] || null;
+    }
+  }
+  return { current, next };
+}
+
 function renderLevelsBreakdownList() {
   const container = document.getElementById('levels-list-container');
   if (!container) return;
@@ -2474,6 +2600,131 @@ function copyToClipboard(txt, label) {
     showNeonToast('error', `Error al copiar ${label}.`);
   }
   document.body.removeChild(tempTextArea);
+}
+
+function triggerAvatarUpload() {
+  triggerHaptic();
+  document.getElementById('profile-avatar-input').click();
+}
+
+function handleAvatarFileSelected(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxDim = 256;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxDim) { height *= maxDim / width; width = maxDim; }
+      } else {
+        if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+      if (userData) {
+        userData.avatar = compressedDataUrl;
+        localStorage.setItem('jr_user_profile_data_v41', JSON.stringify(userData));
+        if (currentUserId && db) {
+          db.collection('users').doc(currentUserId).update({ avatar: compressedDataUrl }).catch(() => {});
+        }
+        updateUIProfile();
+      }
+      showNeonToast('success', 'Foto de perfil actualizada con éxito.');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function playChimeSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+function playMessageNotificationSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+function speakDriverAlert(text) {
+  playChimeSound();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-ES';
+    utterance.rate = 1.0;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+function startBackgroundChatListener(tripId) {
+  if (!db || !tripId || !userData) return;
+
+  if (backgroundChatUnsubscribe) {
+    backgroundChatUnsubscribe();
+  }
+
+  backgroundChatUnsubscribe = db.collection('trips').doc(tripId).collection('messages')
+    .orderBy('createdAt', 'desc')
+    .limit(1)
+    .onSnapshot(snapshot => {
+      if (snapshot.empty) return;
+
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        const isFromOtherPerson = (msg.senderId && msg.senderId !== currentUserId);
+
+        if (isFromOtherPerson && !isChatModalOpen) {
+          playMessageNotificationSound();
+          showNeonToast('info', `💬 Nuevo mensaje de ${msg.senderName || 'tu chofer/pasajero'}`);
+
+          const dotActiveBtn = document.getElementById('active-trip-unread-dot');
+          if (dotActiveBtn) dotActiveBtn.style.display = 'block';
+
+          const dotPassengerLive = document.getElementById('passenger-live-chat-dot');
+          if (dotPassengerLive) dotPassengerLive.style.display = 'block';
+
+          const dotBottom = document.getElementById('nav-unread-badge-driver');
+          if (dotBottom) dotBottom.style.display = 'block';
+        }
+      });
+    }, () => {});
 }
 
 function logout() {
