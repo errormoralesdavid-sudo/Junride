@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=42">
+  <link rel="manifest" href="manifest.json?v=43">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -112,17 +112,17 @@
       <form id="auth-main-form" onsubmit="handleAuthSubmit(event)">
         <div id="auth-register-extra-fields">
           <label style="font-size:0.75rem; color:var(--text-muted);">Nombre:</label>
-          <input type="text" id="auth-input-name" placeholder="Tu nombre">
+          <input type="text" id="auth-input-name" maxlength="40" placeholder="Tu nombre">
 
           <label style="font-size:0.75rem; color:var(--text-muted);">Apellido:</label>
-          <input type="text" id="auth-input-lastname" placeholder="Tu apellido">
+          <input type="text" id="auth-input-lastname" maxlength="40" placeholder="Tu apellido">
         </div>
 
         <label style="font-size:0.75rem; color:var(--text-muted);">Teléfono Móvil (WhatsApp):</label>
-        <input type="tel" id="auth-input-phone" placeholder="Ej. 04123456789" required>
+        <input type="tel" id="auth-input-phone" maxlength="15" placeholder="Ej. 04123456789" required>
 
         <label style="font-size:0.75rem; color:var(--text-muted);">Correo Electrónico:</label>
-        <input type="email" id="auth-input-email" placeholder="Ej. usuario@correo.com" required>
+        <input type="email" id="auth-input-email" maxlength="80" placeholder="Ej. usuario@correo.com" required>
 
         <button type="submit" class="btn-primary-neon" style="width:100%; padding:14px; margin-top:10px;" id="auth-submit-btn">
           Continuar
@@ -149,10 +149,10 @@
       <input type="hidden" id="driver-veh-setup-val" value="Moto">
 
       <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">Modelo y Color del Vehículo:</label>
-      <input type="text" id="driver-veh-model-input" placeholder="Ej. Bera SBR Azul / Toyota Corolla Blanco" required>
+      <input type="text" id="driver-veh-model-input" maxlength="50" placeholder="Ej. Bera SBR Azul / Toyota Corolla Blanco" required>
 
       <label style="font-size:0.75rem; color:var(--text-muted);">Número de Placa:</label>
-      <input type="text" id="driver-veh-plate-input" placeholder="Ej. AA1B23C" required>
+      <input type="text" id="driver-veh-plate-input" maxlength="12" placeholder="Ej. AA1B23C" required>
 
       <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">Foto del Vehículo (Para que el cliente te identifique):</label>
       <div class="veh-photo-upload-container" onclick="triggerVehiclePhotoUpload()">
@@ -349,10 +349,10 @@
 
           <form onsubmit="verifyPaymentReference(event)">
             <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-ref">Últimos 6 dígitos de la referencia:</label>
-            <input type="text" id="pay-ref-input" maxlength="12" placeholder="Ej. 466324" required>
+            <input type="text" id="pay-ref-input" maxlength="20" placeholder="Ej. 466324" required>
             
             <label style="font-size:0.75rem; color:var(--text-muted);" id="lbl-recharge-amount">Monto pagado en Bs.:</label>
-            <input type="text" id="pay-amount-input" placeholder="Ej. 4444,41" required>
+            <input type="text" id="pay-amount-input" maxlength="15" placeholder="Ej. 4444,41" required>
             
             <button type="submit" class="btn-primary-neon" style="width:100%; margin-top:4px;" id="btn-submit-recharge">
               Verificar y Acreditar Saldo
@@ -379,7 +379,7 @@
         </div>
       </section>
 
-      <!-- Pestaña CONDUCTOR - TABLERO (CON FOTO DEL PASAJERO EN VIVO) -->
+      <!-- Pestaña CONDUCTOR - TABLERO -->
       <section class="tab-content animate-fade" id="tab-driver-panel" style="display:none;">
         <div class="card-neon" style="padding:20px;">
           <div class="panel-header-row">
@@ -432,7 +432,7 @@
             <div id="driver-otp-input-area" style="margin:10px 0; background:rgba(0,0,0,0.4); padding:10px; border-radius:14px; text-align:center;">
               <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:4px;">Pide el PIN de 4 dígitos al pasajero:</label>
               <div style="display:flex; justify-content:center; gap:8px;">
-                <input type="number" id="driver-input-otp" placeholder="Ej. 8196" maxlength="4" style="max-width:140px; text-align:center; font-size:1.4rem; font-weight:900; letter-spacing:4px; margin:0;">
+                <input type="text" inputmode="numeric" id="driver-input-otp" placeholder="Ej. 8196" maxlength="4" style="max-width:140px; text-align:center; font-size:1.4rem; font-weight:900; letter-spacing:4px; margin:0;">
                 <button class="btn-primary-neon btn-sm" onclick="validatePassengerOTP()">Validar</button>
               </div>
             </div>
@@ -835,7 +835,7 @@
         <button type="button" id="btn-record-audio" class="chat-mic-large-btn" onclick="toggleAudioRecording()" title="Toca para grabar nota de voz">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="#00ff87"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
         </button>
-        <input type="text" id="chat-text-input" placeholder="Escribe tu referencia aquí..." style="margin:0; padding:12px 14px; font-size:0.85rem;" onkeypress="handleChatKeyPress(event)">
+        <input type="text" id="chat-text-input" maxlength="250" placeholder="Escribe tu referencia aquí..." style="margin:0; padding:12px 14px; font-size:0.85rem;" onkeypress="handleChatKeyPress(event)">
         <button type="button" class="btn-primary-neon btn-sm" onclick="sendChatMessageText()" style="padding:12px 16px;">➤</button>
       </div>
       <div id="audio-recording-indicator" style="display:none; text-align:center; font-size:0.72rem; color:#ef4444; font-weight:800; margin-top:4px;">
@@ -852,7 +852,7 @@
         <button class="btn-close" onclick="closeKmPickerModal()">&times;</button>
       </div>
       
-      <input type="text" id="poi-search-box" placeholder="Buscar por lugar (ej. El Panorama, Plaza Bolívar, La Parada)..." oninput="filterKmPickerList(this.value)" style="margin:6px 0 10px 0;">
+      <input type="text" id="poi-search-box" maxlength="50" placeholder="Buscar por lugar (ej. El Panorama, Plaza Bolívar, La Parada)..." oninput="filterKmPickerList(this.value)" style="margin:6px 0 10px 0;">
       
       <div id="km-cards-container" style="max-height:55vh; overflow-y:auto; padding-right:4px;"></div>
     </div>
@@ -900,7 +900,7 @@
       </div>
 
       <label style="font-size:0.75rem; color:var(--text-muted);">Tarifa Ofrecida ($):</label>
-      <input type="number" step="0.5" id="schedule-fare-input" value="4.00">
+      <input type="number" step="0.5" min="1.0" max="150.0" id="schedule-fare-input" value="4.00">
       <button class="btn-primary-neon" style="width:100%; margin-top:6px;" onclick="confirmScheduleTrip()">Confirmar Reserva</button>
     </div>
   </div>
@@ -978,7 +978,7 @@
 
       <div style="margin-top:8px;">
         <label style="font-size:0.75rem; color:var(--text-muted);">Deja una reseña pública sobre el chofer:</label>
-        <textarea id="receipt-public-comment" class="review-textarea" rows="2" placeholder="Ej. Muy educado, prudente en las curvas de la montaña y puntual."></textarea>
+        <textarea id="receipt-public-comment" class="review-textarea" maxlength="200" rows="2" placeholder="Ej. Muy educado, prudente en las curvas de la montaña y puntual."></textarea>
       </div>
 
       <div style="margin-top:4px;">
@@ -1014,7 +1014,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
   <script src="app.js"></script>
 </body>
