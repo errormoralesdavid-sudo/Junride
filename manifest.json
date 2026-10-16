@@ -1,22 +1,22 @@
 {
-  "name": "JunRide - Movilidad El Junquito",
+  "name": "JunRide - Movilidad Inteligente El Junquito",
   "short_name": "JunRide",
-  "id": "https://errormoralesdavid-sudo.github.io/junride-app-official",
-  "start_url": "index.html?app=junride",
+  "description": "Solicita traslados particulares, motos, por puesto y mudanzas en El Junquito desde el Km 0 hasta el Km 28 con ubicación satelital exacta.",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#050811",
   "theme_color": "#050811",
-  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://files.catbox.moe/oh53r9.png",
+      "src": "logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "https://files.catbox.moe/oh53r9.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
