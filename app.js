@@ -1763,7 +1763,6 @@ function closeRideOrderScreen() {
   triggerHaptic();
   document.getElementById('screen-ride-order').classList.remove('active');
 }
-
 function selectOrderVehicle(cat) {
   triggerHaptic(20);
   selectedOrderCategory = cat;
@@ -1778,15 +1777,16 @@ function selectOrderVehicle(cat) {
 
   const radarIcon = document.getElementById('radar-vehicle-icon');
   if (radarIcon) {
-    if (cat === 'Carro') radarIcon.src = 'https://files.catbox.moe/lkxyw7.png';
-    else if (cat === 'Moto') radarIcon.src = 'https://files.catbox.moe/xriwyl.png';
-    else if (cat === 'Colectivo') radarIcon.src = 'https://files.catbox.moe/w6c0q9.png';
-    else if (cat === 'Carga') radarIcon.src = 'https://files.catbox.moe/bjsczm.png';
+    if (cat === 'Carro') radarIcon.src = 'carro.png';
+    else if (cat === 'Moto') radarIcon.src = 'moto.png';
+    else if (cat === 'Colectivo') radarIcon.src = 'puesto.png';
+    else if (cat === 'Carga') radarIcon.src = 'carga.png';
   }
 
   listenRealDriversInZone();
   calculateRouteOrder();
 }
+
 
 function createNeonPinIcon(label) {
   return L.divIcon({
