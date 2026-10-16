@@ -1,35 +1,98 @@
-const CACHE_NAME = 'junride-pwa-v28';
-const LOCAL_ASSETS = [
+const CACHE_NAME = 'junride-local-v45';
+
+const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './styles.css',
   './app.js',
-  './manifest.json'
+  './manifest.json',
+  './logo.png',
+  './carro.png',
+  './moto.png',
+  './puesto.png',
+  './carga.png',
+  './pasajero.png',
+  './chofer.png',
+  './btn-off.png',
+  './btn-on.png',
+  './chat.png',
+  './cartera.png',
+  './bdv.png',
+  './zinli.png',
+  './binance.png',
+  './flyer-madrugada.png',
+  './flyer-alerta.png',
+  './nivel1.png',
+  './nivel2.png',
+  './nivel3.png',
+  './nivel4.png',
+  './nivel5.png',
+  './nivel6.png'
 ];
 
-self.addEventListener('install', (e) => {
+// Instalación y guardado de imágenes locales en caché
+self.addEventListener('install', (event) => {
   self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(LOCAL_ASSETS)).catch((err) => console.log('Cache error:', err))
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return Promise.allSettled(
+        ASSETS_TO_CACHE.map((url) => cache.add(url))
+      );
+    })
   );
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
+// Limpieza de versiones viejas de caché
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.map((k) => {
-          if (k !== CACHE_NAME) return caches.delete(k);
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
         })
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((res) => {
-      return res || fetch(e.request).catch(() => caches.match('./index.html'));
-    })
+// Estrategia: Red primero para archivos de código, Caché primero para imágenes locales
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Para tus imágenes .png locales: sirve desde caché rápido y actualiza en segundo plano
+  if (url.origin === self.location.origin && url.pathname.endsWith('.png')) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, networkResponse.clone());
+          });
+          return networkResponse;
+        }).catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Para HTML, CSS y JS: intenta red primero para tener siempre la última versión, y si no hay señal usa caché
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (url.origin === self.location.origin) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
