@@ -1936,10 +1936,10 @@ function listenRealDriversInZone() {
         if (availS > totalColectivoSeatsFound) totalColectivoSeatsFound = availS;
       }
 
-      const iconImg = selectedOrderCategory === 'Moto' ? 'https://files.catbox.moe/xriwyl.png'
-        : selectedOrderCategory === 'Colectivo' ? 'https://files.catbox.moe/w6c0q9.png'
-        : selectedOrderCategory === 'Carga' ? 'https://files.catbox.moe/bjsczm.png'
-        : 'https://files.catbox.moe/lkxyw7.png';
+            const iconImg = selectedOrderCategory === 'Moto' ? 'moto.png'
+        : selectedOrderCategory === 'Colectivo' ? 'puesto.png'
+        : selectedOrderCategory === 'Carga' ? 'carga.png'
+        : 'carro.png';
 
       const safeFirstName = escapeHTML(driver.name ? driver.name.split(' ')[0] : 'Chofer');
       const seatsBadgeHtml = (selectedOrderCategory === 'Colectivo')
