@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>JunRide - Movilidad Inteligente El Junquito</title>
-  <link rel="manifest" href="manifest.json?v=44">
+  <link rel="manifest" href="manifest.json?v=45">
   <meta name="theme-color" content="#050811">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="JunRide">
-  <link rel="icon" type="image/png" href="https://files.catbox.moe/oh53r9.png">
-  <link rel="apple-touch-icon" href="https://files.catbox.moe/oh53r9.png">
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -41,7 +41,7 @@
       
       <div class="welcome-logo-container">
         <div class="welcome-logo-halo"></div>
-        <img src="https://files.catbox.moe/oh53r9.png" alt="Logo JunRide" class="welcome-floating-logo">
+        <img src="logo.png" alt="Logo JunRide" class="welcome-floating-logo">
       </div>
 
       <div class="welcome-brand-text">
@@ -79,7 +79,7 @@
       
       <div class="role-card card-neon" onclick="chooseAppRole('passenger')">
         <div class="role-icon-box">
-          <img src="https://files.catbox.moe/e6ctf1.png" style="width:42px; height:42px; object-fit:contain;" alt="Modo Pasajero">
+          <img src="pasajero.png" style="width:42px; height:42px; object-fit:contain;" alt="Modo Pasajero">
         </div>
         <div style="text-align:left;">
           <h3 style="color:#00ff87; font-size:1.15rem; font-weight:900;">Modo Pasajero / Cliente</h3>
@@ -89,7 +89,7 @@
 
       <div class="role-card card-neon" onclick="chooseAppRole('driver')">
         <div class="role-icon-box">
-          <img src="https://files.catbox.moe/wr94fi.png" style="width:40px; height:40px; object-fit:contain;" alt="Modo Chofer">
+          <img src="chofer.png" style="width:40px; height:40px; object-fit:contain;" alt="Modo Chofer">
         </div>
         <div style="text-align:left;">
           <h3 style="color:#38bdf8; font-size:1.15rem; font-weight:900;">Modo Conductor / Chofer</h3>
@@ -131,7 +131,7 @@
     </div>
   </div>
 
-  <!-- 4. MODAL DE CONFIGURACIÓN DE VEHÍCULO DEL CONDUCTOR (CON CAPACIDAD DE PUESTOS) -->
+  <!-- 4. MODAL DE CONFIGURACIÓN DE VEHÍCULO DEL CONDUCTOR -->
   <div class="modal" id="modal-driver-vehicle-setup">
     <div class="modal-content card-neon animate-fade">
       <div class="panel-header-row">
@@ -148,7 +148,6 @@
       </div>
       <input type="hidden" id="driver-veh-setup-val" value="Moto">
 
-      <!-- CONFIGURADOR DE PUESTOS TOTALES SI ELIGE COLECTIVO / POR PUESTO -->
       <div id="driver-seats-setup-box" style="display:none; background:rgba(56,189,248,0.08); border:1px solid #38bdf8; padding:12px; border-radius:14px; margin:6px 0;">
         <label style="font-size:0.75rem; color:#38bdf8; font-weight:800; display:block; margin-bottom:6px;">💺 ¿Cuántos puestos totales tiene tu unidad?</label>
         <div style="display:flex; align-items:center; justify-content:space-between;">
@@ -169,7 +168,7 @@
 
       <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">Foto del Vehículo (Para que el cliente te identifique):</label>
       <div class="veh-photo-upload-container" onclick="triggerVehiclePhotoUpload()">
-        <img id="setup-veh-photo-preview" src="https://files.catbox.moe/lkxyw7.png" alt="Foto del Vehículo">
+        <img id="setup-veh-photo-preview" src="carro.png" alt="Foto del Vehículo">
         <div>
           <strong id="setup-veh-photo-label" style="font-size:0.82rem; color:var(--primary); display:block;">📸 Toca para subir foto de tu vehículo</strong>
           <small style="font-size:0.68rem; color:var(--text-muted);">Opcional pero recomendado para mayor confianza</small>
@@ -189,18 +188,18 @@
   <!-- 5. INTERFAZ PRINCIPAL -->
   <div id="app-main-interface" style="display:none !important;">
     
-    <!-- CABECERA (CON PÍLDORA BCV COMPACTA EN UNA SOLA LÍNEA) -->
+    <!-- CABECERA -->
     <header class="top-bar" id="main-header">
       <div class="top-bar-left">
         <div class="brand-logo-lockup" onclick="handleHeaderHomeClick()">
-          <img class="brand-logo-img" src="https://files.catbox.moe/oh53r9.png" alt="Logo JunRide">
+          <img class="brand-logo-img" src="logo.png" alt="Logo JunRide">
           <span class="brand-name">
             <span class="part-jun">Jun</span><span class="part-ride">Ride</span>
           </span>
         </div>
 
         <div class="driver-badge-header" id="header-driver-badge" onclick="switchPassengerMode()" title="Modo Chofer Activo">
-          <img src="https://files.catbox.moe/wr94fi.png" alt="Chofer Activo">
+          <img src="chofer.png" alt="Chofer Activo">
           <span>Chofer</span>
         </div>
       </div>
@@ -240,24 +239,24 @@
 
         <div class="services-3d-grid">
           <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Carro')">
-            <div class="service-img-wrap"><img src="https://files.catbox.moe/lkxyw7.png" alt="Carro"></div>
+            <div class="service-img-wrap"><img src="carro.png" alt="Carro"></div>
             <span class="service-title">Carro</span>
           </div>
           <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Moto')">
-            <div class="service-img-wrap"><img src="https://files.catbox.moe/xriwyl.png" alt="Moto"></div>
+            <div class="service-img-wrap"><img src="moto.png" alt="Moto"></div>
             <span class="service-title">Moto</span>
           </div>
           <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Colectivo')">
-            <div class="service-img-wrap"><img src="https://files.catbox.moe/w6c0q9.png" alt="Por Puesto"></div>
+            <div class="service-img-wrap"><img src="puesto.png" alt="Por Puesto"></div>
             <span class="service-title">Por Puesto</span>
           </div>
           <div class="service-card-3d card-neon" onclick="openRideOrderScreen('Carga')">
-            <div class="service-img-wrap"><img src="https://files.catbox.moe/bjsczm.png" alt="Mudanzas"></div>
+            <div class="service-img-wrap"><img src="carga.png" alt="Mudanzas"></div>
             <span class="service-title">Mudanzas</span>
           </div>
         </div>
 
-        <!-- PANEL DE MIS RESERVAS DE MADRUGADA ACTIVAS (VER QUIÉN ACEPTÓ, COMUNICARSE O ELIMINAR) -->
+        <!-- PANEL DE MIS RESERVAS DE MADRUGADA ACTIVAS -->
         <div id="my-scheduled-trips-section" class="card-neon" style="display:none; padding:16px; margin-bottom:14px;">
           <div class="panel-header-row" style="margin-bottom:8px;">
             <h4 style="color:#38bdf8; font-size:0.9rem;">⏰ Mis Viajes de Madrugada Apartados</h4>
@@ -268,15 +267,15 @@
 
         <div class="flyers-carousel-wrap">
           <div class="flyer-graphic-card" onclick="openScheduleTripModal()" title="Aparta tu Viaje de Madrugada">
-            <img src="https://files.catbox.moe/6njpmq.png" alt="Aparta tu Viaje">
+            <img src="flyer-madrugada.png" alt="Aparta tu Viaje">
           </div>
           <div class="flyer-graphic-card" onclick="openReportTrafficModal()" title="Alertas en la Vía en Vivo">
-            <img src="https://files.catbox.moe/5u8428.png" alt="Alerta en la Vía">
+            <img src="flyer-alerta.png" alt="Alerta en la Vía">
           </div>
         </div>
 
         <div class="driver-mode-cta card-neon" onclick="handleDriverCtaClick()">
-          <img src="https://files.catbox.moe/wr94fi.png" alt="Icono Conductor">
+          <img src="chofer.png" alt="Icono Conductor">
           <span>CAMBIAR AL MODO CONDUCTOR</span>
         </div>
 
@@ -298,10 +297,10 @@
           <div class="live-driver-profile-hud">
             <div class="live-driver-avatars-row">
               <div class="live-driver-avatar-circle" title="Toca para ampliar foto del Chofer" onclick="triggerZoomElementImage('live-driver-avatar-img', 'Foto del Chofer')">
-                <img id="live-driver-avatar-img" src="https://files.catbox.moe/oh53r9.png" alt="Chofer">
+                <img id="live-driver-avatar-img" src="logo.png" alt="Chofer">
               </div>
               <div class="live-vehicle-photo-circle" title="Toca para ampliar foto del Vehículo" onclick="triggerZoomElementImage('live-vehicle-photo-img', 'Foto del Vehículo')">
-                <img id="live-vehicle-photo-img" src="https://files.catbox.moe/lkxyw7.png" alt="Vehículo">
+                <img id="live-vehicle-photo-img" src="carro.png" alt="Vehículo">
               </div>
             </div>
 
@@ -332,7 +331,7 @@
         <div class="card-neon" style="display:flex; align-items:center; justify-content:space-between; padding:20px; margin-bottom:14px; background:linear-gradient(135deg, rgba(0,255,135,0.08) 0%, rgba(15,23,42,0.95) 100%); border:1.5px solid var(--primary); box-shadow:0 0 24px rgba(0,255,135,0.18);">
           <div style="display:flex; align-items:center; gap:16px;">
             <div style="width:68px; height:68px; border-radius:18px; background:rgba(0,255,135,0.08); border:1px solid var(--border-glow); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-              <img src="https://files.catbox.moe/r7k3mk.png" style="width:54px; height:54px; object-fit:contain; filter:drop-shadow(0 0 10px var(--primary-glow));" alt="Cartera">
+              <img src="cartera.png" style="width:54px; height:54px; object-fit:contain; filter:drop-shadow(0 0 10px var(--primary-glow));" alt="Cartera">
             </div>
             <div>
               <h3 style="color:white; font-size:1.08rem; font-weight:800;">Cartera Digital</h3>
@@ -350,21 +349,21 @@
           
           <div class="recharge-method-selector">
             <div class="recharge-brand-card active" id="btn-pay-bdv" onclick="selectRechargeMethod('bdv')">
-              <img class="recharge-brand-logo" src="https://files.catbox.moe/m27j7r.png" alt="Banco de Venezuela">
+              <img class="recharge-brand-logo" src="bdv.png" alt="Banco de Venezuela">
               <strong>B. de Venezuela</strong>
             </div>
             <div class="recharge-brand-card" id="btn-pay-zinli" onclick="selectRechargeMethod('zinli')">
-              <img class="recharge-brand-logo" src="https://files.catbox.moe/24w3zq.png" alt="Zinli">
+              <img class="recharge-brand-logo" src="zinli.png" alt="Zinli">
               <strong>Zinli</strong>
             </div>
             <div class="recharge-brand-card" id="btn-pay-binance" onclick="selectRechargeMethod('binance')">
-              <img class="recharge-brand-logo" src="https://files.catbox.moe/0amryl.png" alt="Binance Pay">
+              <img class="recharge-brand-logo" src="binance.png" alt="Binance Pay">
               <strong>Binance Pay</strong>
             </div>
           </div>
 
           <div class="pay-details-neon-card" id="pay-details-box">
-            <img class="pay-corner-logo" id="pay-current-logo" src="https://files.catbox.moe/m27j7r.png" alt="Logo Método">
+            <img class="pay-corner-logo" id="pay-current-logo" src="bdv.png" alt="Logo Método">
             <h5 id="pay-method-title" style="color:var(--primary); font-size:0.85rem; margin-bottom:8px;">Pago Móvil BDV</h5>
             <div id="pay-fields-container"></div>
           </div>
@@ -401,7 +400,7 @@
         </div>
       </section>
 
-      <!-- Pestaña CONDUCTOR - TABLERO (CON CONTROL DE PUESTOS Y VIAJES DE MADRUGADA) -->
+      <!-- Pestaña CONDUCTOR - TABLERO -->
       <section class="tab-content animate-fade" id="tab-driver-panel" style="display:none;">
         <div class="card-neon" style="padding:20px;">
           <div class="panel-header-row">
@@ -409,14 +408,12 @@
             <button class="btn-sm btn-secondary-dim" onclick="switchPassengerMode()">Salir a Pasajero</button>
           </div>
 
-          <!-- BANNER DE SUSPENSIÓN POR BAJO RATING -->
           <div id="driver-suspended-warning" style="display:none; background:rgba(239,68,68,0.15); border:1.5px solid var(--danger); border-radius:16px; padding:12px; margin:10px 0; text-align:center;">
             <strong style="color:#ef4444; font-size:0.88rem; display:block;">🔴 Cuenta Suspendida por Baja Calificación</strong>
             <p style="font-size:0.72rem; color:#cbd5e1; margin:4px 0 8px 0;">Tu promedio actual está por debajo de 3.0 estrellas. Comunícate con soporte JunRide para reactivación.</p>
             <button class="btn-sm btn-secondary-dim" style="background:#25d366; color:#050811; font-weight:800;" onclick="sendKycToWhatsApp()">📲 Contactar a Soporte</button>
           </div>
 
-          <!-- BANNER DE VERIFICACIÓN PENDIENTE -->
           <div id="driver-unverified-warning" style="display:none; background:rgba(245,158,11,0.12); border:1.5px dashed var(--warning); border-radius:16px; padding:12px; margin:10px 0; text-align:center;">
             <strong style="color:#fbbf24; font-size:0.85rem; display:block;">⚠️ Cuenta Pendiente de Verificación</strong>
             <p style="font-size:0.72rem; color:#cbd5e1; margin:4px 0 8px 0;">Envía tu Licencia y Carnet de Circulación a soporte para poder conectarte y aceptar carreras.</p>
@@ -427,12 +424,11 @@
             <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">ESTADO DE CONEXIÓN & VOZ GPS:</span>
             
             <div class="driver-toggle-image-btn" id="btn-driver-status-img" onclick="toggleDriverStatus()">
-              <img id="img-driver-toggle-state" src="https://files.catbox.moe/qi6nhs.png" alt="Estado Conductor">
+              <img id="img-driver-toggle-state" src="btn-off.png" alt="Estado Conductor">
             </div>
             
             <small id="driver-status-text" style="color:#ef4444; font-size:0.75rem; font-weight:800;">🔴 Desconectado (Toca el botón para conectarte)</small>
 
-            <!-- PANEL RÁPIDO DE PUESTOS DISPONIBLES EN VIVO PARA CHOFERES DE COLECTIVO / POR PUESTO -->
             <div id="driver-live-seats-control" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
               <span style="font-size:0.72rem; color:#38bdf8; font-weight:800; display:block; margin-bottom:6px;">🚐 Control de Puestos Libres en tu Unidad:</span>
               <div style="display:flex; align-items:center; justify-content:center; gap:14px;">
@@ -444,7 +440,6 @@
             </div>
           </div>
 
-          <!-- PANEL DE VIAJE EN CURSO PARA EL CONDUCTOR -->
           <div id="driver-active-trip-box" style="display:none; background:rgba(0,255,135,0.06); border:1.5px solid var(--primary); border-radius:18px; padding:16px; margin-bottom:14px;">
             <div class="panel-header-row">
               <span style="font-size:0.8rem; font-weight:800; color:var(--primary);">🚕 VIAJE EN EJECUCIÓN</span>
@@ -453,7 +448,7 @@
 
             <div class="driver-passenger-card-hud">
               <div class="driver-passenger-avatar-wrap" onclick="triggerZoomElementImage('driver-passenger-avatar-img', 'Foto del Pasajero')">
-                <img id="driver-passenger-avatar-img" src="https://files.catbox.moe/oh53r9.png" alt="Pasajero">
+                <img id="driver-passenger-avatar-img" src="logo.png" alt="Pasajero">
               </div>
               <div style="flex:1;">
                 <strong id="driver-passenger-name" style="font-size:0.9rem; color:#fff; display:block;">Pasajero en espera</strong>
@@ -488,7 +483,6 @@
           <h4 style="margin-top:14px; color:white;">Solicitudes de Carreras en Vivo:</h4>
           <ul id="driver-requests-list" style="list-style:none; margin-top:10px; display:flex; flex-direction:column; gap:8px;"></ul>
 
-          <!-- SOLICITUDES DE VIAJES DE MADRUGADA PARA QUE EL CHOFER LAS ACEPTE -->
           <div style="margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08);">
             <h4 style="color:#38bdf8; font-size:0.95rem;">⏰ Viajes de Madrugada Programados:</h4>
             <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:8px;">Acepta reservas anticipadas de pasajeros y coordina con ellos:</p>
@@ -502,7 +496,7 @@
         <div class="driver-earnings-hero">
           <div style="display:flex; align-items:center; gap:16px;">
             <div class="driver-wallet-hero-box">
-              <img src="https://files.catbox.moe/r7k3mk.png" alt="Cartera del Conductor">
+              <img src="cartera.png" alt="Cartera del Conductor">
             </div>
             <div>
               <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:800;">Ganancias Netas (85%)</span>
@@ -540,7 +534,7 @@
               <span style="font-size:0.75rem; color:var(--primary); font-weight:800;">Coordinación de Ruta Activa</span>
             </div>
             <div style="width:54px; height:54px; display:flex; align-items:center; justify-content:center; background:rgba(0,255,135,0.08); border:1.5px solid var(--primary); border-radius:18px; box-shadow:0 0 18px var(--primary-glow);">
-              <img src="https://files.catbox.moe/w75pvv.png" style="width:40px; height:40px; object-fit:contain;" alt="Logo Chat">
+              <img src="chat.png" style="width:40px; height:40px; object-fit:contain;" alt="Logo Chat">
             </div>
           </div>
 
@@ -564,7 +558,7 @@
         <div class="profile-header-card">
           <div class="profile-user-row">
             <div class="profile-avatar-wrap" onclick="triggerZoomElementImage('profile-avatar-img', 'Mi Foto de Perfil')" title="Toca para ver o cambiar tu foto de perfil">
-              <img id="profile-avatar-img" src="https://files.catbox.moe/oh53r9.png" alt="Avatar">
+              <img id="profile-avatar-img" src="logo.png" alt="Avatar">
               <div class="avatar-edit-overlay" onclick="event.stopPropagation(); triggerAvatarUpload();">FOTO</div>
             </div>
             
@@ -574,11 +568,10 @@
             </div>
 
             <div class="profile-tier-badge-right" onclick="openLevelsModal()" title="Toca para ver tu rango">
-              <img id="profile-tier-icon-right" src="https://files.catbox.moe/31p0et.png" alt="Trofeo Nivel">
+              <img id="profile-tier-icon-right" src="nivel1.png" alt="Trofeo Nivel">
             </div>
           </div>
 
-          <!-- MANTENIMIENTO Y FOTO DE UNIDAD PARA CHOFER -->
           <div id="driver-maintenance-hud" style="display:none; margin-top:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border-glow); padding:12px; border-radius:16px;">
             <div class="panel-header-row" style="margin-bottom:8px;">
               <span style="font-size:0.75rem; color:#38bdf8; font-weight:800;">🔧 Unidad Registrada (<span id="profile-driver-veh-type">---</span>)</span>
@@ -587,7 +580,7 @@
 
             <div class="driver-veh-profile-card">
               <div class="driver-veh-thumb-wrap" onclick="triggerZoomElementImage('profile-driver-veh-img', 'Foto de la Unidad')" title="Toca para ver en grande">
-                <img id="profile-driver-veh-img" src="https://files.catbox.moe/lkxyw7.png" alt="Vehículo Chofer">
+                <img id="profile-driver-veh-img" src="carro.png" alt="Vehículo Chofer">
                 <span class="veh-edit-tag" onclick="event.stopPropagation(); triggerVehiclePhotoUpload();">EDITAR</span>
               </div>
               <div style="flex:1;">
@@ -598,7 +591,6 @@
             </div>
           </div>
 
-          <!-- BARRA DE NIVEL DEL PASAJERO -->
           <div class="tier-progress-section" id="passenger-tier-hud">
             <div class="tier-progress-header">
               <span>Progreso de Nivel (Pasajero)</span>
@@ -609,7 +601,6 @@
             </div>
           </div>
 
-          <!-- BARRA DE NIVEL DEL CONDUCTOR -->
           <div class="tier-progress-section" id="driver-tier-hud" style="display:none;">
             <div class="tier-progress-header">
               <span style="color:#38bdf8;">Progreso de Rango (Chofer)</span>
@@ -636,7 +627,6 @@
           </div>
         </div>
 
-        <!-- TARJETA DESTACADA SOS -->
         <div class="profile-sos-card" onclick="triggerPanicSOS()">
           <div style="display:flex; align-items:center; gap:12px;">
             <div class="profile-sos-icon-circle">🚨</div>
@@ -715,7 +705,7 @@
     <nav class="bottom-nav" id="dynamic-bottom-nav"></nav>
   </div>
 
-  <!-- PANTALLA DEDICADA DE PEDIDO CON MAPA EXACTO, SATÉLITE Y FORMAS DE PAGO NEÓN -->
+  <!-- PANTALLA DEDICADA DE PEDIDO -->
   <div id="screen-ride-order">
     <div class="order-screen-header">
       <div class="btn-round-back" onclick="closeRideOrderScreen()">
@@ -735,7 +725,6 @@
 
     <div class="order-map-container">
       <div id="order-leaflet-map"></div>
-      <!-- BOTÓN FLOTANTE DE UBICACIÓN GPS EXACTA SOBRE EL MAPA -->
       <button type="button" class="map-floating-gps-btn" onclick="useCurrentGpsLocation()" title="Ir a mi ubicación satelital exacta">
         📍 Mi Ubicación Exacta
       </button>
@@ -746,7 +735,7 @@
       
       <div class="search-radar-overlay" id="search-radar-box">
         <div class="radar-circle-pulse">
-          <img class="radar-unit-img" id="radar-vehicle-icon" src="https://files.catbox.moe/lkxyw7.png" alt="Unidad Buscando">
+          <img class="radar-unit-img" id="radar-vehicle-icon" src="carro.png" alt="Unidad Buscando">
         </div>
         <strong style="color:#ffffff; font-size:1.05rem; margin-top:14px;">Buscando Unidad Cercana...</strong>
         <p style="font-size:0.75rem; color:#34d399; margin-top:4px;">Enviando tu coordenada exacta a los choferes</p>
@@ -773,42 +762,41 @@
         </div>
         <div id="stop-row-box" style="display:none; margin-bottom:6px;">
           <div class="km-selector-trigger" onclick="openKmPickerModal('stop')">
-            <span id="trigger-stop-name">Parada: Km 12 (Panadería La Parada)</span>
+            <span id="trigger-stop-name">Parada: Km 12 (Panadería La Parada / Luis Hurtado)</span>
             <span>Cambiar ▾</span>
           </div>
         </div>
 
         <label style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Punto de Llegada (Destino):</label>
         <div class="km-selector-trigger" onclick="openKmPickerModal('destination')">
-          <span id="trigger-destination-name">Km 0 (La Yaguara / Metro)</span>
+          <span id="trigger-destination-name">Km 0 (La Yaguara / Redoma)</span>
           <span>Cambiar ▾</span>
         </div>
 
         <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">Selecciona tu Servicio:</label>
         <div class="order-vehicles-row">
           <div class="order-veh-chip selected" id="chip-carro" onclick="selectOrderVehicle('Carro')">
-            <img src="https://files.catbox.moe/lkxyw7.png" alt="Carro">
+            <img src="carro.png" alt="Carro">
             <strong>Carro</strong>
             <span id="price-carro">$2.50</span>
           </div>
           <div class="order-veh-chip" id="chip-moto" onclick="selectOrderVehicle('Moto')">
-            <img src="https://files.catbox.moe/xriwyl.png" alt="Moto">
+            <img src="moto.png" alt="Moto">
             <strong>Moto</strong>
             <span id="price-moto">$1.50</span>
           </div>
           <div class="order-veh-chip" id="chip-puesto" onclick="selectOrderVehicle('Colectivo')">
-            <img src="https://files.catbox.moe/w6c0q9.png" alt="Por Puesto">
+            <img src="puesto.png" alt="Por Puesto">
             <strong>Puesto</strong>
             <span id="price-puesto">$1.00</span>
           </div>
           <div class="order-veh-chip" id="chip-carga" onclick="selectOrderVehicle('Carga')">
-            <img src="https://files.catbox.moe/bjsczm.png" alt="Mudanzas">
+            <img src="carga.png" alt="Mudanzas">
             <strong>Mudanza</strong>
             <span id="price-carga">$4.00</span>
           </div>
         </div>
 
-        <!-- SELECTOR DE ASIENTOS CON INFORMACIÓN DE UNIDADES Y PUESTOS DISPONIBLES EN VIVO -->
         <div id="seats-selector-box" style="display:none; flex-direction:column; gap:6px; background:rgba(56,189,248,0.07); border:1px solid rgba(56,189,248,0.35); padding:10px 12px; border-radius:14px; margin:6px 0;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <span style="font-size:0.75rem; color:#f8fafc; font-weight:700;">💺 Puestos a apartar ($1.00 c/u):</span>
@@ -843,7 +831,6 @@
           <small id="cash-change-result" style="font-size:0.7rem; color:#a7f3d0; display:block; text-align:center;"></small>
         </div>
 
-        <!-- SELECTOR DE FORMA DE PAGO PERSONALIZADO NEÓN (REEMPLAZA EL SELECT GRIS FEO) -->
         <label style="font-size:0.75rem; color:var(--text-muted); margin-top:6px; display:block;">Forma de Pago:</label>
         <div class="custom-pay-mode-grid" id="order-pay-mode-cards">
           <div class="pay-mode-option-card active" onclick="selectOrderPaymentMode('cartera', this)">
@@ -970,7 +957,7 @@
 
       <label style="font-size:0.75rem; color:var(--text-muted);">Destino:</label>
       <div class="km-selector-trigger" onclick="openKmPickerModal('schedule_dest')">
-        <span id="trigger-sched-dest-name">Km 0 (La Yaguara / Metro)</span>
+        <span id="trigger-sched-dest-name">Km 0 (La Yaguara / Redoma)</span>
         <span>Cambiar ▾</span>
       </div>
 
