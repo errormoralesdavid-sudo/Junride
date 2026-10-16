@@ -108,21 +108,22 @@ function triggerZoomElementImage(elementId, title = 'Foto Ampliada') {
 // ESCALAS DE NIVELES EXIGENTES (MODELO ECONÓMICO SOSTENIBLE)
 // ==============================================================
 const JUNRIDE_LEVELS_PASSENGER = [
-  { id: 1, name: "Caminante", minTrips: 0, maxTrips: 14, icon: "https://files.catbox.moe/31p0et.png", desc: "Rango de bienvenida. Acumula 15 tokens por viaje particular completado." },
-  { id: 2, name: "Senderista", minTrips: 15, maxTrips: 39, icon: "https://files.catbox.moe/hpp6uj.png", desc: "Pasajero frecuente de El Junquito. Desbloquea soporte prioritario en horas pico." },
-  { id: 3, name: "Explorador", minTrips: 40, maxTrips: 79, icon: "https://files.catbox.moe/aezw5k.png", desc: "Conocedor experto de la vía. Prioridad de despacho en clima de niebla intensa o lluvia." },
-  { id: 4, name: "Escalador", minTrips: 80, maxTrips: 139, icon: "https://files.catbox.moe/jin2u3.png", desc: "Viajero de altura constante. Apartado destacado en traslados de madrugada." },
-  { id: 5, name: "Guía", minTrips: 140, maxTrips: 219, icon: "https://files.catbox.moe/ybh81r.png", desc: "Veterano respetado de la montaña. Asignación preferencial con choferes 5 estrellas." },
-  { id: 6, name: "Conquistador", minTrips: 220, maxTrips: 99999, icon: "https://files.catbox.moe/htwomx.png", desc: "Rango supremo JunRide. Insignia dorada en perfil y atención VIP 24/7." }
+  { id: 1, name: "Caminante", minTrips: 0, maxTrips: 14, icon: "nivel1.png", desc: "Rango de bienvenida. Acumula 15 tokens por viaje particular completado." },
+  { id: 2, name: "Senderista", minTrips: 15, maxTrips: 39, icon: "nivel2.png", desc: "Pasajero frecuente de El Junquito. Desbloquea soporte prioritario en horas pico." },
+  { id: 3, name: "Explorador", minTrips: 40, maxTrips: 79, icon: "nivel3.png", desc: "Conocedor experto de la vía. Prioridad de despacho en clima de niebla intensa o lluvia." },
+  { id: 4, name: "Escalador", minTrips: 80, maxTrips: 139, icon: "nivel4.png", desc: "Viajero de altura constante. Apartado destacado en traslados de madrugada." },
+  { id: 5, name: "Guía", minTrips: 140, maxTrips: 219, icon: "nivel5.png", desc: "Veterano respetado de la montaña. Asignación preferencial con choferes 5 estrellas." },
+  { id: 6, name: "Conquistador", minTrips: 220, maxTrips: 99999, icon: "nivel6.png", desc: "Rango supremo JunRide. Insignia dorada en perfil y atención VIP 24/7." }
 ];
 
 const JUNRIDE_LEVELS_DRIVER = [
-  { id: 1, name: "Conductor Iniciado", minTrips: 0, maxTrips: 24, icon: "https://files.catbox.moe/31p0et.png", desc: "Recibes el 85% neto de cada carrera (15% comisión plataforma). Sin generación de tokens en este nivel." },
-  { id: 2, name: "Conductor Activo", minTrips: 25, maxTrips: 69, icon: "https://files.catbox.moe/hpp6uj.png", desc: "Preferencia en servicios de retorno y acceso a reservas de madrugada. Sin generación de tokens." },
-  { id: 3, name: "Ruta Experto", minTrips: 70, maxTrips: 139, icon: "https://files.catbox.moe/aezw5k.png", desc: "Desbloquea bono de +5 tokens por carrera completada y prioridad en mudanzas." },
-  { id: 4, name: "Capitán de Montaña", minTrips: 140, maxTrips: 249, icon: "https://files.catbox.moe/jin2u3.png", desc: "Acumula +10 tokens por carrera y acceso a indumentaria oficial JunRide." },
-  { id: 5, name: "Master JunRide", minTrips: 250, maxTrips: 99999, icon: "https://files.catbox.moe/htwomx.png", desc: "Rango élite: +15 tokens por carrera y prioridad absoluta en toda la Troncal 4." }
+  { id: 1, name: "Conductor Iniciado", minTrips: 0, maxTrips: 24, icon: "nivel1.png", desc: "Recibes el 85% neto de cada carrera (15% comisión plataforma). Sin generación de tokens en este nivel." },
+  { id: 2, name: "Conductor Activo", minTrips: 25, maxTrips: 69, icon: "nivel2.png", desc: "Preferencia en servicios de retorno y acceso a reservas de madrugada. Sin generación de tokens." },
+  { id: 3, name: "Ruta Experto", minTrips: 70, maxTrips: 139, icon: "nivel3.png", desc: "Desbloquea bono de +5 tokens por carrera completada y prioridad en mudanzas." },
+  { id: 4, name: "Capitán de Montaña", minTrips: 140, maxTrips: 249, icon: "nivel4.png", desc: "Acumula +10 tokens por carrera y acceso a indumentaria oficial JunRide." },
+  { id: 5, name: "Master JunRide", minTrips: 250, maxTrips: 99999, icon: "nivel6.png", desc: "Rango élite: +15 tokens por carrera y prioridad absoluta en toda la Troncal 4." }
 ];
+
 
 // ==============================================================
 // COORDENADAS REALES CORREGIDAS DE LA CARRETERA EL JUNQUITO
