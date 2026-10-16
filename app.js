@@ -736,9 +736,8 @@ async function handleAuthSubmit(e) {
       driverTokens: 0, // Choferes inician con 0 tokens
       driverRating: 5.00,
       driverRatingCount: 1,
-
-      avatar: 'https://files.catbox.moe/oh53r9.png',
-      vehiclePhoto: 'https://files.catbox.moe/lkxyw7.png',
+      avatar: 'logo.png',
+      vehiclePhoto: 'carro.png',
       vehicleType: 'Moto',
       vehicleModel: 'S/M',
       vehiclePlate: 'S/P',
@@ -806,7 +805,7 @@ async function handleAuthSubmit(e) {
       vehicleType: userDoc.vehicleType || 'Moto',
       vehicleModel: cleanInputText(userDoc.vehicleModel || 'S/M', 50),
       vehiclePlate: cleanInputText(userDoc.vehiclePlate || 'S/P', 12),
-      vehiclePhoto: userDoc.vehiclePhoto || 'https://files.catbox.moe/lkxyw7.png',
+      vehiclePhoto: userDoc.vehiclePhoto || 'carro.png',
       maxSeats: parseInt(userDoc.maxSeats || 4) || 4,
       availableSeats: parseInt(userDoc.availableSeats !== undefined ? userDoc.availableSeats : (userDoc.maxSeats || 4)),
       kmBalance: parseFloat(userDoc.kmBalance !== undefined ? userDoc.kmBalance : 1.00) || 0.00,
@@ -822,7 +821,7 @@ async function handleAuthSubmit(e) {
       driverRating: parseFloat(userDoc.driverRating || 5.00) || 5.00,
       driverRatingCount: parseInt(userDoc.driverRatingCount || 1) || 1,
 
-      avatar: userDoc.avatar || 'https://files.catbox.moe/oh53r9.png',
+      avatar: userDoc.avatar: userDoc.avatar || 'logo.png',
       batterySaver: userDoc.batterySaver || false,
       walletLedger: userDoc.walletLedger || [{ type: 'credit', title: 'Cuenta Restaurada', amount: 1.00, date: 'Hoy' }]
     };
